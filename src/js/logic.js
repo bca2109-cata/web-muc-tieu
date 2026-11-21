@@ -185,6 +185,54 @@ App.logic = {
   },
   isTop3Today: function (t, today) { return App.util.isTrue(t.is_top3) && t.top3_date === today; },
 
+  /* Danh sách việc hôm nay (bảng và biểu đồ): việc chưa xong có hạn đến ngày mai (gồm trễ hạn) hoặc nằm trong Top 3,
+     cộng việc đã xong hôm nay. Chưa xong xếp trước, rồi theo hạn sớm nhất, rồi theo ưu tiên. */
+  workList: function (tasks, today) {
+    var L = App.logic, tmr = App.date.addDays(today, 1);
+    return tasks.filter(function (t) {
+      if (L.isDone(t)) return t.done_at === today;
+      return L.isTop3Today(t, today) || (!!t.due_date && t.due_date <= tmr);
+    }).sort(function (a, b) {
+      var d = (L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0);
+      if (d) return d;
+      var da = a.due_date || '9999', db = b.due_date || '9999';
+      if (da !== db) return da < db ? -1 : 1;
+      return L.priorityRank(a.priority) - L.priorityRank(b.priority);
+    });
+  },
+  // Đếm tỷ trọng cho biểu đồ. Độ khẩn cấp chỉ tính việc chưa xong.
+  dayStats: function (list, today) {
+    var L = App.logic, tmr = App.date.addDays(today, 1);
+    var s = { total: list.length, done: 0, status: { done: 0, doing: 0, todo: 0 }, pri: { hi: 0, mid: 0, low: 0 },
+      urg: { over: 0, today: 0, tmr: 0, other: 0 } };
+    list.forEach(function (t) {
+      if (L.isDone(t)) { s.done++; s.status.done++; }
+      else if (t.status === 'Đang làm') s.status.doing++;
+      else s.status.todo++;
+      s.pri[t.priority === 'Cao' ? 'hi' : t.priority === 'Thấp' ? 'low' : 'mid']++;
+      if (L.isDone(t)) return;
+      s.urg[!t.due_date ? 'other' : t.due_date < today ? 'over' : t.due_date === today ? 'today' : t.due_date === tmr ? 'tmr' : 'other']++;
+    });
+    return s;
+  },
+  // Việc sắp đến hạn: chưa xong, hạn từ ngày kia đến 7 ngày tới (đến ngày mai đã nằm trong bảng hôm nay)
+  upcoming: function (tasks, today) {
+    var L = App.logic, from = App.date.addDays(today, 2), to = App.date.addDays(today, 7);
+    return tasks.filter(function (t) { return !L.isDone(t) && !!t.due_date && t.due_date >= from && t.due_date <= to; })
+      .sort(function (a, b) { return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : L.priorityRank(a.priority) - L.priorityRank(b.priority); });
+  },
+  // Gợi ý điền Top 3 còn trống: việc trễ hạn trước, rồi việc ô Khẩn cấp
+  top3Suggest: function (tasks, today, room) {
+    var L = App.logic;
+    var pool = tasks.filter(function (t) { return !L.isDone(t) && !L.isTop3Today(t, today); });
+    var byDue = function (a, b) {
+      return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : L.priorityRank(a.priority) - L.priorityRank(b.priority);
+    };
+    var over = pool.filter(function (t) { return L.isOverdue(t, today); }).sort(byDue);
+    var urgent = pool.filter(function (t) { return !L.isOverdue(t, today) && L.quadrant(t, today) === 1; }).sort(byDue);
+    return over.concat(urgent).slice(0, Math.max(0, room));
+  },
+
   // Top 3 hôm trước chưa xong thì giữ lại sang hôm nay
   top3CarryOver: function (tasks, today) {
     return tasks.filter(function (t) {
@@ -209,17 +257,17 @@ App.logic = {
   },
 
   /* Ma trận 4 ô. Quan trọng = ưu tiên Cao. Gấp = trễ hạn, hạn hôm nay hoặc ngày mai.
-     1 Làm ngay, 2 Lên lịch, 3 Làm nhanh, 4 Để sau */
+     1 Khẩn cấp, 2 Lên lịch, 3 Xử lý sau, 4 Xem xét */
   quadrant: function (t, today) {
     var imp = t.priority === 'Cao';
     var urg = !!t.due_date && t.due_date <= App.date.addDays(today, 1);
     return imp && urg ? 1 : imp ? 2 : urg ? 3 : 4;
   },
   QUADRANTS: {
-    1: { label: 'Làm ngay', icon: 'flame', hint: 'Gấp và quan trọng' },
-    2: { label: 'Lên lịch', icon: 'calendar', hint: 'Quan trọng, chưa gấp' },
-    3: { label: 'Làm nhanh', icon: 'bolt', hint: 'Gấp, không quan trọng' },
-    4: { label: 'Để sau', icon: 'hourglass', hint: 'Không gấp, không quan trọng' }
+    1: { label: 'Khẩn cấp', icon: 'flame', hint: 'Quan trọng và khẩn cấp', act: 'Xử lý ngay lập tức' },
+    2: { label: 'Lên lịch', icon: 'calendar', hint: 'Quan trọng, không khẩn cấp', act: 'Lập kế hoạch, đặt thời hạn rõ ràng' },
+    3: { label: 'Xử lý sau', icon: 'hourglass', hint: 'Khẩn cấp, không quan trọng', act: 'Giao người khác hoặc xử lý nhanh' },
+    4: { label: 'Xem xét', icon: 'refresh', hint: 'Không quan trọng, không khẩn cấp', act: 'Cắt giảm hoặc bỏ nếu không phục vụ mục tiêu' }
   },
 
   // Mức quan trọng của mục tiêu: 1 đến 3 trái tim, để trống thì coi là 2

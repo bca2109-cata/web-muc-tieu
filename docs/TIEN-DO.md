@@ -62,7 +62,7 @@
 ## Lỗi mức Thấp còn tồn
 - Số trong hộp hỏi xóa mục tiêu ("có 4 task") và trong nhãn kỳ ở ô chọn (`<option>`) chưa có kiểu số đậm, thẳng hàng. Ô chọn không cho tạo kiểu riêng cho số.
 - `<meta name="theme-color">` viết thẳng mã màu (thẻ meta không dùng được biến CSS). Sẽ xử lý khi làm chế độ tối ở Giai đoạn 4.
-- Ô chọn ngày hiện theo ngôn ngữ của trình duyệt (máy tiếng Anh hiện mm/dd/yyyy). Dữ liệu lưu vẫn là yyyy-mm-dd.
+- Ô chọn ngày hiện theo ngôn ngữ của trình duyệt (máy tiếng Anh hiện mm/dd/yyyy). Đã đỡ hơn (22/11): ghi thêm ngày kiểu Việt Nam ngay dưới ô.
 - Nếu có hơn 3 task Top 3 cũ chưa xong (do nhiều ngày không mở), chỉ 3 task được giữ sang hôm nay.
 
 ### Kết quả kiểm tra đợt đổi giao diện (21/11/2026)
@@ -70,11 +70,22 @@
 - qa-tester: khoảng 150 điểm kiểm. 2 lỗi Cao: nội dung đè lên thanh tab đáy nên không bấm được tab trên điện thoại; nút tick nhảy lên góc phải sau khi tick (trùng tên lớp CSS với ô chọn hình nền). 1 lỗi Trung bình: ô chọn hình nền bị che.
 - Đã sửa: thứ tự lớp của đầu trang, đổi tên lớp hiệu ứng tick, mọi nút có vùng bấm 44px, chữ tab đang mở dùng `--accent-deep`, ghi rõ trong SPEC là ma trận bỏ việc Top 3. Thêm: số trong tiêu đề cũng dùng Nunito, tên icon trong form bằng tiếng Việt, nút trong hộp hỏi và thông báo có icon.
 
+### Soát giao diện và sửa theo góp ý (22/11/2026)
+- Ma trận trên điện thoại xếp 1 cột, tên việc xuống 2 dòng thay vì bị cắt. Logo nhỏ lại trên điện thoại. Icon các tab "Sắp có" mờ đi, chữ "Sắp có" 12px. Thêm biểu tượng web (`src/favicon.svg`). Ô chọn ngày có thêm dòng ngày kiểu Việt Nam.
+- Sửa lỗi trang trượt ngang khoảng 8 đến 22px trên điện thoại (lưới tab Hôm nay và Top 3 chưa giới hạn bề ngang).
+- Tab Hôm nay (theo góp ý của người dùng): bỏ 3 chip trong khung chào, thay bằng **biểu đồ tổng quan** (xong trên tổng, tỷ trọng theo tình trạng, mức ưu tiên, độ khẩn cấp; `logic.workList`, `logic.dayStats`, `views.overview`). Dạng Danh sách đổi thành **Bảng** tác vụ, lọc hạn đến ngày mai (`views.taskTable`). Top 3 mỗi ngày tự điền chỗ trống bằng việc trễ hạn rồi việc Khẩn cấp (`logic.top3Suggest`, `app.autoFillTop3`, nhớ ngày đã điền ở localStorage `lp_top3_auto`). Thêm khối **Sắp đến hạn** (hạn từ ngày kia đến 7 ngày tới). Ma trận đổi tên ô: Khẩn cấp, Lên lịch, Xử lý sau, Xem xét, dưới tên ghi cách xử lý. Đã ghi vào SPEC mục 5, 7 và DESIGN.md.
+
+### Kết quả kiểm tra đợt góp ý tab Hôm nay (22/11/2026)
+- spec-reviewer: đủ 6 ý. 1 lỗi Trung bình (việc xong trong bảng không hiện dấu tick xanh), đã sửa. Đã sửa các lỗi Thấp: câu gợi ý ma trận và Top 3, cờ tự điền Top 3 chỉ ghi khi có việc để điền hoặc Top 3 đã đủ, ghi chú tài liệu (favicon, dòng ngày, mốc 560px, ngoại lệ màu).
+- qa-tester: ĐẠT, không lỗi Cao hay Trung bình. Đã sửa: % trong chú thích biểu đồ làm tròn sao cho tổng luôn 100.
+- Bộ `tests-qa/qa-lifeplanner.js` cập nhật theo giao diện mới: đạt toàn bộ.
+
 ## Câu hỏi chờ người dùng
 - Task chưa xong mà không có hạn chót, hoặc hạn từ ngày kia trở đi, hiện chưa thấy ở tab Hôm nay (chỉ thấy trong chi tiết mục tiêu). Tab Task (có đủ bộ lọc) có trong SPEC mục 5 nhưng lộ trình mục 8 chưa xếp vào giai đoạn nào. Làm tab Task ở giai đoạn nào?
 - Thêm task hiện chỉ có ô thêm nhanh, muốn đổi mục tiêu, hạn hay ưu tiên thì bấm vào task để sửa. Có cần nút "Thêm task đầy đủ" mở form ngay không?
 
 ## Lỗi mức Thấp của đợt đổi giao diện
+- Dữ liệu mẫu có việc "Họp chốt số liệu với phòng kế toán" đã Xong mà ngày xong ở tương lai (`mock-data.js`), nên giả lập sang ngày hôm sau sẽ thấy 1 việc xong sẵn. Chỉ ảnh hưởng bản mock.
 - Mặt trời trong khung chào có mặt cười. Bạn đã duyệt ở bản xem trước, nhưng SPEC ghi "không dùng mascot": cần bạn xác nhận giữ hay bỏ mặt cười.
 - Màu đỏ còn dùng cho nút Xóa và lỗi trong form (ngoài nghĩa "gấp"). Nhãn ưu tiên Cao cùng họ hồng với trái tim.
 - Bo góc vài khối khác 22px: khung chào và hộp thoại 24px, ô ma trận 20px, giấy note 18px.

@@ -128,7 +128,7 @@ App.comp = (function () {
       var items = L.sortTasks(tasks.filter(function (t) { return L.quadrant(t, ctx.today) === q; }));
       var open = items.filter(function (t) { return !L.isDone(t); }).length;
       out += '<section class="q q' + q + '" aria-label="' + Q.label + ': ' + Q.hint + '"><h3 title="' + Q.hint + '">' + icon(Q.icon, 'ic14') + Q.label +
-        '<span class="num qn">' + open + '</span></h3><ul>' +
+        '<span class="num qn">' + open + '</span></h3><p class="q-act">' + Q.act + '</p><ul>' +
         (items.length ? items.map(function (t) {
           return '<li class="' + (L.isDone(t) ? 'is-done' : '') + '">' + tickButton(t, ctx) +
             '<button type="button" class="qname" data-action="open-task" data-id="' + esc(t.id) + '" title="' + esc(t.title) + '">' +
@@ -167,7 +167,7 @@ App.comp = (function () {
 
   return {
     tag: tag, groupMeta: groupMeta, progressBar: progressBar, groupTag: groupTag, periodTag: periodTag, deadlineTag: deadlineTag,
-    hearts: hearts, taskRow: taskRow, taskList: taskList, topNote: topNote, matrix: matrix, goalCard: goalCard,
+    hearts: hearts, taskRow: taskRow, tickButton: tickButton, starButton: starButton, dueTag: dueTag, quadTag: quadTag, taskList: taskList, topNote: topNote, matrix: matrix, goalCard: goalCard,
     goalStatusLine: goalStatusLine, quickAdd: quickAdd
   };
 })();

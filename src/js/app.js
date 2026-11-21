@@ -144,6 +144,22 @@ App.app = (function () {
     App.store.batch(ops);
   }
 
+  /* Mỗi ngày một lần: Top 3 còn chỗ thì tự điền việc trễ hạn, rồi việc Khẩn cấp.
+     Chỉ chạy một lần mỗi ngày trên mỗi máy, để bỏ sao một việc thì nó không tự quay lại. */
+  function autoFillTop3() {
+    var today = App.date.today();
+    if (readPref('lp_top3_auto', '') === today) return;
+    var room = App.C.TOP3_MAX - top3Count();
+    var list = App.logic.top3Suggest(App.store.get().tasks, today, room);
+    // Chưa có việc nào để điền thì chưa đánh dấu, lần mở sau trong ngày thử lại
+    if (room > 0 && !list.length) return;
+    writePref('lp_top3_auto', today);
+    if (!list.length) return;
+    App.store.batch(list.map(function (t) {
+      return { type: 'upsert', table: 'Tasks', row: Object.assign({}, t, { is_top3: 'TRUE', top3_date: today }) };
+    }));
+  }
+
   view.addEventListener('click', function (e) {
     var el = e.target.closest('[data-action]');
     if (!el) return;
@@ -217,6 +233,7 @@ App.app = (function () {
     return App.store.load().then(function () {
       loaded = true;
       carryOverTop3();
+      autoFillTop3();
       render();
     }, function (err) {
       if (err && (err.code === 'NO_TOKEN' || err.code === 'BAD_TOKEN')) {

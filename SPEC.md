@@ -65,7 +65,7 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 
 | Tab | Nội dung chính |
 |---|---|
-| **Hôm nay** (mặc định) | Khối Top 3, task hôm nay và task trễ hạn, thói quen cần làm hôm nay, nút thêm task nhanh. Chuyển qua lại giữa dạng **Danh sách** và **Ma trận 4 ô** (ma trận gồm mọi việc chưa xong, trừ việc đã ở Top 3 để không lặp lại) |
+| **Hôm nay** (mặc định) | **Biểu đồ tổng quan**: số việc đã xong trên tổng và 3 thanh tỷ trọng của danh sách việc hôm nay (tình trạng Xong / Đang làm / Cần làm; mức ưu tiên Cao / Trung bình / Thấp; độ khẩn cấp của việc chưa xong: Quá hạn / Hôm nay / Ngày mai / Chưa có hạn). **Top 3**: mỗi ngày một lần, chỗ trống tự điền việc trễ hạn rồi việc ô Khẩn cấp, người dùng vẫn đổi được bằng ngôi sao. **Sắp đến hạn**: việc chưa xong có hạn từ ngày kia đến 7 ngày tới. **Việc hôm nay** chuyển giữa dạng **Bảng** (việc chưa xong có hạn đến ngày mai gồm trễ hạn, việc Top 3, việc đã xong hôm nay; cột Việc, Hạn, Ưu tiên, Ô ma trận) và **Ma trận 4 ô** (gồm mọi việc chưa xong, trừ việc đã ở Top 3). Thói quen cần làm hôm nay, nút thêm task nhanh. |
 | **Mục tiêu** | Lọc theo kỳ (Năm / Quý / Tháng / Tuần) và theo nhóm. Mỗi thẻ mục tiêu có thanh %, bấm vào thì mở chi tiết và danh sách task |
 | **Task** | Danh sách đủ bộ lọc (trạng thái, ưu tiên, mục tiêu, hạn), sắp xếp theo hạn hoặc ưu tiên |
 | **Thói quen** | Lưới tick và streak |
@@ -123,10 +123,10 @@ Tên web: **LIFE PLANNER**. Chi tiết đầy đủ (vai trò từng màu, cỡ 
   --accent:#d6336c; --accent-soft:#ffe0ec; --accent-deep:#a8204f; --accent-ink:#ffffff;
   --butter:#fff1b8; --mint:#d6f5e6; --sky:#dcecff;
   --work:#2c58aa; --work-bg:#dcebff; --study:#6a40b5; --study-bg:#ede5ff; --health:#1e7149; --health-bg:#d8f5e7;
-  --q1:#b42339; --q1-bg:#ffe0e5; --q1-bar:#e5485f;   /* Làm ngay: gấp + quan trọng */
-  --q2:#7a5300; --q2-bg:#fff1b8; --q2-bar:#e8b400;   /* Lên lịch: quan trọng, chưa gấp */
-  --q3:#a3470a; --q3-bg:#ffdcc4; --q3-bar:#f08a4b;   /* Làm nhanh: gấp, không quan trọng */
-  --q4:#3d5a69; --q4-bg:#e3eef3; --q4-bar:#8fb0c0;   /* Để sau */
+  --q1:#b42339; --q1-bg:#ffe0e5; --q1-bar:#e5485f;   /* Khẩn cấp: quan trọng + khẩn cấp */
+  --q2:#7a5300; --q2-bg:#fff1b8; --q2-bar:#e8b400;   /* Lên lịch: quan trọng, không khẩn cấp */
+  --q3:#a3470a; --q3-bg:#ffdcc4; --q3-bar:#f08a4b;   /* Xử lý sau: khẩn cấp, không quan trọng */
+  --q4:#3d5a69; --q4-bg:#e3eef3; --q4-bar:#8fb0c0;   /* Xem xét */
   --hot:#b42339; --hot-bg:#ffe0e5; --warm:#994705; --warm-bg:#ffe8d1; --calm:#1e7149; --calm-bg:#dcf5e9;
   --ok:#1e7149; --ok-bar:#5cc49a; --pr:#855600; --pr-bar:#f2b84b; --warn:#b42339; --warn-bar:#ff8fa3;
   --font:'Nunito',system-ui,sans-serif;
@@ -137,7 +137,7 @@ Tên web: **LIFE PLANNER**. Chi tiết đầy đủ (vai trò từng màu, cỡ 
 - Font: **Baloo 2** cho tiêu đề và chữ LIFE PLANNER, **Nunito** cho chữ thường. Mọi con số dùng Nunito đậm kèm `font-variant-numeric:tabular-nums` (chữ số thẳng hàng).
 - Mỗi màu và mỗi icon chỉ mang **một nghĩa**: đỏ là gấp, ngôi sao là Top 3, trái tim hồng là mức quan trọng của mục tiêu.
 - Màu tiến độ: đạt dùng `--ok`, gần đạt dùng `--pr`, cần chú ý dùng `--warn`.
-- **Ma trận 4 ô** (quan trọng = ưu tiên Cao; gấp = trễ hạn, hạn hôm nay hoặc ngày mai): Làm ngay `--q1`, Lên lịch `--q2`, Làm nhanh `--q3`, Để sau `--q4`. Mỗi task tô màu theo ô của nó (vạch trái, ô icon, nhãn).
+- **Ma trận 4 ô** (quan trọng = ưu tiên Cao; khẩn cấp = trễ hạn, hạn hôm nay hoặc ngày mai): Khẩn cấp `--q1` (xử lý ngay lập tức), Lên lịch `--q2` (lập kế hoạch, đặt thời hạn rõ ràng), Xử lý sau `--q3` (giao người khác hoặc xử lý nhanh), Xem xét `--q4` (cắt giảm hoặc bỏ nếu không phục vụ mục tiêu). Dưới tên mỗi ô ghi cách xử lý. Mỗi task tô màu theo ô của nó (vạch trái, ô icon, nhãn).
 - Icon SVG nét tròn (stroke 2, lưới 24), có icon cạnh mọi nhãn và nút. Mỗi task có một icon riêng. **Không dùng emoji.**
 - Trang trí bằng **12 loại hoa** vẽ SVG (cúc, anh đào, tulip, hồng, hướng dương, oải hương, lưu ly, sứ, cánh bướm, chuông, cẩm tú cầu, cành lá), băng dính washi trên thẻ mục tiêu, giấy note dán nghiêng cho Top 3. Không dùng mascot.
 - Hình nền chọn được: **Hoa bay nhẹ, màu mờ** (mặc định) hoặc **Trơn**. Lưu lựa chọn trên từng thiết bị.

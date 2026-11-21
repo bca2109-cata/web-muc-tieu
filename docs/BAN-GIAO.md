@@ -1,4 +1,4 @@
-# Bàn giao phiên làm việc (cập nhật 22/11/2026)
+# Bàn giao phiên làm việc (cập nhật 22/11/2026, chiều)
 
 Đọc file này trước, rồi chỉ mở thêm file nào thật sự cần. Chi tiết yêu cầu ở `SPEC.md`, quy tắc giao diện ở `DESIGN.md`, lịch sử ở `docs/TIEN-DO.md`.
 
@@ -23,12 +23,13 @@ Duyệt xong thì: ghi ngày xong GĐ1 vào bảng trong `docs/TIEN-DO.md`, comm
 - JS thường, không ES module, mọi thứ nằm trong `window.App`. Thứ tự nạp ở `src/index.html`: config, logic, mock-data, api-mock, api-sheet, api, flowers, ui, store, components, views/today, views/goals, forms, app.
 - Bản mock: mở bằng `file:` hoặc thêm `?mock=1`. Tham số kiểm thử: `?today=yyyy-mm-dd`, `?fail=1` (giả lập lưu lỗi).
 - `store.js`: cập nhật lạc quan, hàng đợi lưu nền, có bộ nhớ đệm để mở lại hiện ngay.
-- localStorage của người dùng: `lp_bg` (`flowers` mặc định hoặc `plain`), `lp_today_view` (`matrix` mặc định hoặc `list`).
+- localStorage của người dùng: `lp_bg` (`flowers` mặc định hoặc `plain`), `lp_today_view` (`matrix` mặc định hoặc `list` = dạng Bảng), `lp_top3_auto` (ngày đã tự điền Top 3).
 - Định tuyến: `#/hom-nay`, `#/muc-tieu`, `#/muc-tieu/<id>`, `#/sap-co/(task|thoi-quen|tong-ket)`.
 
 ## 4. Quy tắc nghiệp vụ đã chốt (ngoài SPEC hoặc dễ quên)
-- Ma trận 4 ô: quan trọng là ưu tiên Cao; gấp là `due_date` đến ngày mai (tính cả trễ hạn). Ma trận gồm mọi việc chưa xong, cộng việc xong hôm nay; việc đã ở Top 3 thì không hiện lại. `logic.quadrant()`.
-- Top 3 hôm trước chưa xong thì giữ sang hôm nay, tối đa 3. Xóa mục tiêu thì hỏi mỗi lần: chuyển task thành "Việc lặt vặt" hay xóa theo.
+- Ma trận 4 ô: Khẩn cấp, Lên lịch, Xử lý sau, Xem xét (người dùng chốt 22/11). Quan trọng là ưu tiên Cao; khẩn cấp là `due_date` đến ngày mai (tính cả trễ hạn). Ma trận gồm mọi việc chưa xong, cộng việc xong hôm nay; việc đã ở Top 3 thì không hiện lại. `logic.quadrant()`.
+- Top 3 hôm trước chưa xong thì giữ sang hôm nay, tối đa 3. Sau đó, lần đầu mở web mỗi ngày, chỗ trống tự điền việc trễ hạn rồi việc ô Khẩn cấp (`logic.top3Suggest`).
+- Tab Hôm nay: biểu đồ tổng quan và dạng Bảng tính trên `logic.workList` (chưa xong có hạn <= ngày mai hoặc Top 3, cộng việc xong hôm nay). Khối Sắp đến hạn: hạn từ ngày kia đến 7 ngày tới. Xóa mục tiêu thì hỏi mỗi lần: chuyển task thành "Việc lặt vặt" hay xóa theo.
 - Task lặp (GĐ2): sinh bù những ngày không mở web, tính từ ngày tạo, tối đa 30 ngày gần nhất; mỗi lần sinh tính 1 task vào %.
 - Mục tiêu: `importance` 1 đến 3 (mặc định 2, hiện bằng tim). Nhãn hạn: còn ≤3 ngày là `hot`, ≤10 ngày là `warm`, còn lại `calm`. `logic.goalDeadline()`.
 - Icon task: `logic.guessIcon()` so cả từ, giữ dấu tiếng Việt, khớp từ dài nhất thắng; tên gõ không dấu thì so với từ khóa đã bỏ dấu. Người dùng chọn icon tay trong form thì không tự đổi nữa.

@@ -15,7 +15,8 @@ Phong cách: sổ kế hoạch dễ thương, tông hồng pastel, nhiều hoa v
 | `--accent-soft` | Nền tab đang mở, nhãn ưu tiên Cao |
 | `--butter`, `--mint`, `--sky` | Nền 3 tờ giấy note Top 3 |
 | `--work`, `--study`, `--health` (+ `-bg`) | Nhóm mục tiêu Công việc, Học tập, Sức khỏe |
-| `--q1`…`--q4` (+ `-bg`, `-bar`) | 4 ô ma trận: Làm ngay, Lên lịch, Làm nhanh, Để sau |
+| `--cv-*` | Màu biểu đồ tổng quan (đã chạy kiểm tra mù màu). Đoạn "phần còn lại" dùng `--cv-rest` |
+| `--q1`…`--q4` (+ `-bg`, `-bar`) | 4 ô ma trận: Khẩn cấp, Lên lịch, Xử lý sau, Xem xét |
 | `--hot`, `--warm`, `--calm` (+ `-bg`) | Nhãn "Còn N ngày" của mục tiêu: dưới 4 ngày, dưới 11 ngày, còn thong thả |
 | `--ok`, `--pr`, `--warn` (+ `-bar`) | Tiến độ: đạt, gần đạt, cần chú ý |
 
@@ -50,7 +51,12 @@ Chế độ tối (làm ở Giai đoạn 4): giữ tên biến, đổi giá tr�
 - **Nút tick**: hình tròn 30px, vùng bấm 44px, luôn nằm bên trái. Viền hồng đậm, xong thì nền `--ok` có dấu tick trắng.
 - **Dòng task**: vạch màu bên trái theo ô ma trận, ô icon 38px cùng màu, tên việc, hàng nhãn gồm ô ma trận, hạn, ưu tiên và mục tiêu. Ngôi sao Top 3 ở bên phải.
 - **Top 3**: 3 tờ giấy note màu bơ, bạc hà, da trời, xoay nhẹ, có số thứ tự và một bông hoa ghim. Ô trống là khung nét đứt.
-- **Ma trận**: lưới 2×2, mỗi ô có icon, tên ô, số việc chưa xong. Tên việc dài thì cắt bằng "…".
+- **Ma trận**: lưới 2×2, mỗi ô có icon, tên ô, số việc chưa xong. Tên việc dài xuống tối đa 2 dòng rồi cắt bằng "…". Điện thoại (dưới 560px) xếp 4 ô thành 1 cột.
+- **Biểu đồ tổng quan**: thanh tỷ trọng cao 14px, khe 2px giữa các đoạn, bo 4px. Dưới mỗi thanh có chú thích: ô màu, tên, số việc và %. Không chỉ dựa vào màu.
+- **Bảng tác vụ**: tick, Việc (tên + mục tiêu và "Đang làm" ở dòng nhỏ), Hạn, Ưu tiên, Ô ma trận. Vạch trái theo ô ma trận. Điện thoại ẩn cột Ưu tiên, ô ma trận chỉ còn icon.
+- **Ô chọn ngày**: dưới ô có dòng nhỏ ghi ngày kiểu Việt Nam (`.date-read`), vì ô chọn ngày hiện theo ngôn ngữ trình duyệt.
+- **Mốc bề ngang**: 560px (ma trận 2 cột, bảng hiện đủ cột), 620px, 900px (2 cột tab Hôm nay).
+- **Ngoại lệ màu viết thẳng**: `src/favicon.svg` (file riêng, không dùng được biến), hình mặt trời và hoa trang trí (màu cố định).
 - **Thẻ mục tiêu**: băng dính washi sọc theo màu nhóm, sticker icon nhóm xoay nghiêng, nhãn kỳ, nhãn "Còn N ngày", trái tim, thanh tiến độ có sọc chéo, câu trạng thái ("Cần tăng tốc", "Sắp tới đích", "Đạt rồi, giỏi quá!").
 - **Nút**: chính (nền accent, chữ trắng, bóng đặc), phụ (nền trắng, viền accent nhạt), nguy hiểm (chữ đỏ). Nút nào cũng có icon.
 - **Thông báo**: viên thuốc màu `--ink`, chữ trắng, ở đáy màn hình. Thông báo chúc mừng có 2 bông hoa phía trước.

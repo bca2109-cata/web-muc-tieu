@@ -1,40 +1,30 @@
-/* Tab Hôm nay: khung chào, ô thêm nhanh, Top 3, việc hôm nay (dạng danh sách hoặc ma trận 4 ô) */
+/* Tab Hôm nay: khung chào, biểu đồ tổng quan, ô thêm nhanh, Top 3, sắp đến hạn, việc hôm nay (dạng bảng hoặc ma trận 4 ô) */
 var App = window.App || (window.App = {});
 App.views = App.views || {};
 
 App.views.today = function (state, ui) {
   var C = App.comp, L = App.logic, D = App.date, icon = App.ui.icon, fl = App.flowers.html;
-  var today = D.today(), tomorrow = D.addDays(today, 1);
+  var today = D.today();
   var goalsById = {};
   state.goals.forEach(function (g) { goalsById[g.id] = g; });
   var ctx = { today: today, goalsById: goalsById, flashId: ui.flashId };
 
   var top3 = L.sortTasks(state.tasks.filter(function (t) { return L.isTop3Today(t, today); }));
-  var rest = state.tasks.filter(function (t) { return !L.isTop3Today(t, today); });
-  var overdue = L.sortTasks(rest.filter(function (t) { return L.isOverdue(t, today); }));
-  var dueToday = L.sortTasks(rest.filter(function (t) {
-    // Việc xong hôm nay vẫn hiện (gạch ngang) để thấy mình đã làm được gì
-    return t.due_date === today || (L.isDone(t) && t.done_at === today && t.due_date < today);
-  }));
-  var dueTomorrow = L.sortTasks(rest.filter(function (t) { return t.due_date === tomorrow && (!L.isDone(t) || t.done_at === today); }));
-  // Ma trận: mọi việc chưa xong, cộng việc vừa xong hôm nay
-  var forMatrix = rest.filter(function (t) { return !L.isDone(t) || t.done_at === today; });
+  var work = L.workList(state.tasks, today);
+  var upcoming = L.upcoming(state.tasks, today);
+  // Ma trận: mọi việc chưa xong, cộng việc vừa xong hôm nay, trừ việc đã ở Top 3
+  var forMatrix = state.tasks.filter(function (t) {
+    return !L.isTop3Today(t, today) && (!L.isDone(t) || t.done_at === today);
+  });
 
-  var top3Done = top3.filter(L.isDone).length;
-  var nowCount = state.tasks.filter(function (t) { return !L.isDone(t) && L.quadrant(t, today) === 1; }).length;
-  var doneToday = state.tasks.filter(function (t) { return L.isDone(t) && t.done_at === today; }).length;
   var h = new Date().getHours();
   var hello = h < 11 ? 'Chào buổi sáng!' : h < 13 ? 'Chào buổi trưa!' : h < 18 ? 'Chào buổi chiều!' : 'Chào buổi tối!';
 
   var html = '<div class="today-cols"><div class="today-main">';
   html += '<section class="hello">' + App.views.sun() + fl('daisy', 44, 2, 'hello-f1') + fl('sakura', 26, 8, 'hello-f2') +
-    '<h1>' + hello + '</h1><p>' + icon('calendar', 'ic14') + D.weekday(today) + ', <span class="num">' + D.fmt(today) + '</span></p>' +
-    '<div class="stats">' +
-    '<span class="chip">' + icon('star', 'ic14') + '<span><span class="num">' + top3Done + '/' + top3.length + '</span> Top 3</span></span>' +
-    '<span class="chip c-q1">' + icon('flame', 'ic14') + '<span><span class="num">' + nowCount + '</span> làm ngay</span></span>' +
-    '<span class="chip c-ok">' + icon('check', 'ic14') + '<span><span class="num">' + doneToday + '</span> đã xong</span></span>' +
-    '</div></section>';
+    '<h1>' + hello + '</h1><p>' + icon('calendar', 'ic14') + D.weekday(today) + ', <span class="num">' + D.fmt(today) + '</span></p></section>';
 
+  html += App.views.overview(L.dayStats(work, today));
   html += C.quickAdd('quick-add-today', 'Hôm nay mình sẽ làm gì nè?');
 
   html += '<section class="block" aria-labelledby="top3-title"><h2 class="sec-title" id="top3-title">' + fl('sakura', 24, 1) +
@@ -42,37 +32,111 @@ App.views.today = function (state, ui) {
     '<ul class="notes">' + top3.map(function (t, i) { return C.topNote(t, i, ctx); }).join('') +
     (top3.length < App.C.TOP3_MAX
       ? '<li class="note empty">' + icon('star', 'ic14') + '<span>' + (top3.length ? 'Còn chỗ trống. ' : '') + 'Bấm ngôi sao ở một việc để đưa lên đây</span></li>'
-      : '') + '</ul></section>';
+      : '') + '</ul>' +
+    '<p class="hint">' + icon('sparkle', 'ic14') + 'Lần đầu mở web mỗi ngày, chỗ trống được tự điền bằng việc trễ hạn rồi việc Khẩn cấp. Bấm ngôi sao để đổi.</p></section>';
 
   html += '</div><div class="today-side">';
   var mode = ui.todayView === 'list' ? 'list' : 'matrix';
   html += '<section class="block" aria-labelledby="tasks-title"><h2 class="sec-title" id="tasks-title">' + fl('sunflower', 24, 4) +
     '<span>Việc hôm nay</span><span class="seg-switch" role="group" aria-label="Cách xem">' +
-    '<button type="button" data-action="today-view" data-view="list" aria-pressed="' + (mode === 'list') + '"' + (mode === 'list' ? ' class="on"' : '') + '>' + icon('list', 'ic14') + 'Danh sách</button>' +
+    '<button type="button" data-action="today-view" data-view="list" aria-pressed="' + (mode === 'list') + '"' + (mode === 'list' ? ' class="on"' : '') + '>' + icon('list', 'ic14') + 'Bảng</button>' +
     '<button type="button" data-action="today-view" data-view="matrix" aria-pressed="' + (mode === 'matrix') + '"' + (mode === 'matrix' ? ' class="on"' : '') + '>' + icon('grid', 'ic14') + 'Ma trận</button>' +
     '</span></h2>';
 
-  function section(title, iconName, list, cls) {
-    if (!list.length) return '';
-    return '<div class="sub-block"><h3 class="sub-title ' + (cls || '') + '">' + icon(iconName, 'ic14') + title +
-      '<span class="badge num">' + list.length + '</span></h3>' + C.taskList(list, ctx) + '</div>';
-  }
-
   if (mode === 'matrix') {
     html += forMatrix.length
-      ? '<p class="hint">' + icon('sparkle', 'ic14') + 'Gồm mọi việc chưa xong. Quan trọng là ưu tiên Cao, gấp là trễ hạn hoặc hạn đến ngày mai.</p>' + C.matrix(forMatrix, ctx)
+      ? '<p class="hint">' + icon('sparkle', 'ic14') + 'Gồm mọi việc chưa xong, trừ việc đã ở Top 3. Quan trọng là ưu tiên Cao, khẩn cấp là trễ hạn hoặc hạn đến ngày mai.</p>' + C.matrix(forMatrix, ctx)
       : App.views.emptyCard('Không còn việc nào chưa xong. Thảnh thơi ghê!', 'Gõ tên việc vào ô ở trên rồi bấm Enter để thêm.');
-  } else if (!overdue.length && !dueToday.length && !dueTomorrow.length) {
-    html += App.views.emptyCard(top3.length ? 'Không còn việc nào khác hạn hôm nay.' : 'Hôm nay chưa có việc nào.',
-      'Gõ tên việc vào ô ở trên rồi bấm Enter để thêm.');
+  } else if (!work.length) {
+    html += App.views.emptyCard('Hôm nay chưa có việc nào.', 'Gõ tên việc vào ô ở trên rồi bấm Enter để thêm.');
   } else {
-    html += section('Trễ hạn', 'alert', overdue, 'is-warn');
-    html += section('Hạn hôm nay', 'clock', dueToday, '');
-    html += section('Sắp đến hạn: ngày mai', 'calendar', dueTomorrow, '');
+    html += '<p class="hint">' + icon('sparkle', 'ic14') + 'Việc có hạn đến ngày mai (gồm trễ hạn), việc Top 3 và việc đã xong hôm nay.</p>' +
+      App.views.taskTable(work, ctx);
   }
-  html += '</section></div></div>';
+  html += '</section></div><div class="today-soon">';
+  html += '<section class="block" aria-labelledby="soon-title"><h2 class="sec-title" id="soon-title">' + fl('tulip', 24, 6) +
+    '<span>Sắp đến hạn</span><span class="badge num">' + upcoming.length + '</span></h2>' +
+    '<p class="hint">' + icon('calendar', 'ic14') + 'Việc chưa xong có hạn từ ngày kia đến <span class="num">7</span> ngày tới.</p>' +
+    (upcoming.length ? C.taskList(upcoming, ctx) : '<p class="muted soon-none">Tuần tới chưa có việc nào đến hạn.</p>') + '</section>';
+
+  html += '</div></div>';
   return html;
 };
+
+// Bảng tác vụ của tab Hôm nay
+App.views.taskTable = function (list, ctx) {
+  var C = App.comp, L = App.logic, icon = App.ui.icon, esc = App.util.esc;
+  var PRI = { 'Cao': ['tpri', 'up'], 'Thấp': ['tplain', 'down'] };
+  var rows = list.map(function (t) {
+    var done = L.isDone(t), q = L.quadrant(t, ctx.today);
+    var g = t.goal_id ? ctx.goalsById[t.goal_id] : null;
+    var p = PRI[t.priority] || ['tplain', 'flag'];
+    return '<tr class="' + (done ? 'is-done' : 'tq-row' + q) + '">' +
+      '<td class="c-tick">' + C.tickButton(t, ctx) + '</td>' +
+      '<td class="c-name"><button type="button" class="tt-name" data-action="open-task" data-id="' + esc(t.id) + '">' +
+      icon(L.iconOf(t), 'ic14') + '<span class="tt-text"><span class="tt-title">' + esc(t.title) + '</span>' +
+      '<span class="tt-sub">' + (t.status === 'Đang làm' ? 'Đang làm · ' : '') + (g ? esc(g.name) : esc(App.C.MISC)) + '</span></span></button></td>' +
+      '<td class="c-due">' + (done ? C.tag('tok', 'check', 'Xong') : C.dueTag(t, ctx.today)) + '</td>' +
+      '<td class="c-pri">' + C.tag(p[0], p[1], esc(t.priority || 'Trung bình')) + '</td>' +
+      '<td class="c-q">' + C.quadTag(q) + '</td>' +
+      '<td class="c-star">' + C.starButton(t, ctx) + '</td></tr>';
+  }).join('');
+  return '<div class="tt-wrap"><table class="ttable"><thead><tr>' +
+    '<th class="c-tick"><span class="sr-only">Xong</span></th><th class="c-name">Việc</th><th class="c-due">Hạn</th>' +
+    '<th class="c-pri">Ưu tiên</th><th class="c-q"><span class="th-long">Ô ma trận</span><span class="th-short">Ô</span></th><th class="c-star"><span class="sr-only">Top 3</span></th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+};
+
+// Chia % cho các phần sao cho tổng đúng 100 (làm tròn theo phần dư lớn nhất)
+App.views.shares = function (ns) {
+  var sum = ns.reduce(function (a, n) { return a + n; }, 0);
+  if (!sum) return ns.map(function () { return 0; });
+  var raw = ns.map(function (n) { return n / sum * 100; }), out = raw.map(Math.floor);
+  var left = 100 - out.reduce(function (a, n) { return a + n; }, 0);
+  raw.map(function (r, i) { return [r - out[i], i]; }).sort(function (a, b) { return b[0] - a[0]; })
+    .slice(0, left).forEach(function (x) { out[x[1]]++; });
+  return out;
+};
+
+/* Biểu đồ tổng quan hôm nay: số việc đã xong trên tổng, rồi 3 thanh tỷ trọng
+   (tình trạng, mức ưu tiên, độ khẩn cấp). Mỗi thanh có chú thích kèm số việc, nên không chỉ dựa vào màu. */
+App.views.overview = function (s) {
+  var pct = s.total ? Math.round(s.done / s.total * 100) : 0;
+  function bar(title, sub, parts, base) {
+    var sum = parts.reduce(function (a, p) { return a + p.n; }, 0);
+    var shares = App.views.shares(parts.map(function (p) { return p.n; }));
+    var segs = sum ? parts.map(function (p, i) { p.share = shares[i]; return p; }).filter(function (p) { return p.n; }).map(function (p) {
+      var share = p.share;
+      return '<span class="ov-seg" style="flex-grow:' + p.n + ';background:var(' + p.c + ')" title="' + p.label + ': ' + p.n + ' việc (' + share + '%)"></span>';
+    }).join('') : '<span class="ov-seg ov-empty"></span>';
+    return '<div class="ov-row"><p class="ov-title">' + title + (sub ? ' <span class="muted">' + sub + '</span>' : '') + '</p>' +
+      '<div class="ov-bar" aria-hidden="true">' + segs + '</div><ul class="ov-legend">' +
+      parts.map(function (p) {
+        return '<li' + (p.n ? '' : ' class="is-zero"') + '><i style="background:var(' + p.c + ')"></i>' + p.label +
+          ' <span class="num">' + p.n + '</span>' + (sum ? '<span class="num ov-share">' + p.share + '%</span>' : '') + '</li>';
+      }).join('') + '</ul></div>';
+  }
+  return '<section class="card overview" aria-labelledby="ov-title">' +
+    '<div class="ov-head"><h2 id="ov-title" class="ov-h">Tổng quan hôm nay</h2>' +
+    '<p class="ov-big"><span class="num">' + s.done + '/' + s.total + '</span> việc đã xong</p>' +
+    '<span class="num ov-pct">' + pct + '%</span></div>' +
+    (s.total ? bar('Tình trạng', '', [
+      { label: 'Đã xong', n: s.status.done, c: '--cv-done' },
+      { label: 'Đang làm', n: s.status.doing, c: '--cv-doing' },
+      { label: 'Cần làm', n: s.status.todo, c: '--cv-rest' }]) +
+    bar('Mức ưu tiên', '', [
+      { label: 'Cao', n: s.pri.hi, c: '--cv-hi' },
+      { label: 'Trung bình', n: s.pri.mid, c: '--cv-mid' },
+      { label: 'Thấp', n: s.pri.low, c: '--cv-rest' }]) +
+    bar('Độ khẩn cấp', '(việc chưa xong)', [
+      { label: 'Quá hạn', n: s.urg.over, c: '--cv-over' },
+      { label: 'Hôm nay', n: s.urg.today, c: '--cv-today' },
+      { label: 'Ngày mai', n: s.urg.tmr, c: '--cv-tmr' },
+      { label: 'Chưa có hạn', n: s.urg.other, c: '--cv-rest' }])
+      : '<p class="muted">Hôm nay chưa có việc nào cần xử lý.</p>') +
+    '</section>';
+};
+
 
 // Mặt trời cười trong khung chào (hình trang trí, màu cố định)
 App.views.sun = function () {

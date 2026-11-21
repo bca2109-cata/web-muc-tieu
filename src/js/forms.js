@@ -38,6 +38,24 @@ App.forms = (function () {
         '<span><span class="hearts">' + h + '</span>' + IMPORTANCE[n - 1] + '</span></label>';
     }).join('') + '</div>';
   }
+  /* Ô chọn ngày hiện theo ngôn ngữ trình duyệt (có máy ra 11/22/2026),
+     nên ghi thêm ngày kiểu Việt Nam ngay dưới để đọc cho chắc */
+  function dateRead(v) {
+    return App.date.isValid(v) ? App.date.weekday(v) + ', <span class="num">' + App.date.fmt(v) + '</span>' : 'Chưa chọn ngày';
+  }
+  function dateInput(name, value) {
+    return '<input class="input" type="date" name="' + name + '" value="' + esc(value) + '">' +
+      '<small class="date-read" data-for="' + name + '">' + dateRead(value) + '</small>';
+  }
+  function refreshDates(form) {
+    Array.prototype.forEach.call(form.querySelectorAll('.date-read'), function (el) {
+      el.innerHTML = dateRead(form.elements[el.getAttribute('data-for')].value);
+    });
+  }
+  function bindDates(form) {
+    form.addEventListener('input', function (e) { if (e.target.type === 'date') refreshDates(form); });
+    form.addEventListener('change', function (e) { if (e.target.type === 'date') refreshDates(form); });
+  }
   function val(form, name) { var el = form.elements[name]; return el ? String(el.value).trim() : ''; }
 
   /* ---------- Task ---------- */
@@ -56,7 +74,7 @@ App.forms = (function () {
       '<p class="form-error" hidden data-err="title">Hãy nhập tên việc.</p>' +
       '<div class="field"><span>' + icon('sparkle', 'ic14') + 'Icon <small class="muted">(tự đoán theo tên, bấm để đổi)</small></span>' + iconPicker(App.logic.iconOf(t)) + '</div>' +
       '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu</span><select class="select" name="goal_id">' + options(goalOpts, t.goal_id) + '</select></label>' +
-      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Hạn chót</span><input class="input" type="date" name="due_date" value="' + esc(t.due_date) + '"></label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Hạn chót</span>' + dateInput('due_date', t.due_date) + '</label>' +
       '<div class="field"><span>' + icon('up', 'ic14') + 'Mức ưu tiên</span>' + seg('priority', App.C.PRIORITY, t.priority) + '</div>' +
       '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.TASK_STATUS, t.status) + '</div>' +
       '<label class="field"><span>' + icon('text', 'ic14') + 'Ghi chú</span><textarea class="textarea" name="note" maxlength="500">' + esc(t.note) + '</textarea></label>' +
@@ -69,6 +87,7 @@ App.forms = (function () {
 
     var m = App.ui.openModal({ title: isNew ? 'Thêm việc' : 'Sửa việc', body: body });
     var form = m.querySelector('form');
+    bindDates(form);
 
     // Chưa tự chọn icon thì đổi icon theo tên đang gõ
     var iconTouched = !isNew && App.logic.TASK_ICONS.indexOf(t.icon) >= 0 && t.icon !== App.logic.guessIcon(t.title);
@@ -139,8 +158,8 @@ App.forms = (function () {
       '<label class="field"><span>' + icon('calendar', 'ic14') + 'Loại kỳ</span><select class="select" name="period_type">' + options(App.C.PERIOD_TYPES, g.period_type) + '</select></label>' +
       '<label class="field"><span>' + icon('calendar', 'ic14') + 'Kỳ</span><select class="select" name="period_value">' + periodOpts(g.period_type, g.period_value) + '</select></label>' +
       '</div><div class="row2">' +
-      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Ngày bắt đầu</span><input class="input" type="date" name="start_date" value="' + esc(g.start_date) + '"></label>' +
-      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Ngày kết thúc</span><input class="input" type="date" name="end_date" value="' + esc(g.end_date) + '"></label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Ngày bắt đầu</span>' + dateInput('start_date', g.start_date) + '</label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Ngày kết thúc</span>' + dateInput('end_date', g.end_date) + '</label>' +
       '</div>' +
       '<p class="form-error" hidden data-err="dates">Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.</p>' +
       '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.GOAL_STATUS, g.status) + '</div>' +
@@ -155,8 +174,9 @@ App.forms = (function () {
     // Đổi kỳ thì tự điền ngày bắt đầu, kết thúc theo kỳ (vẫn sửa tay được)
     function fillDates() {
       var r = App.period.range(typeSel.value, valSel.value);
-      if (r) { form.elements.start_date.value = r.start; form.elements.end_date.value = r.end; }
+      if (r) { form.elements.start_date.value = r.start; form.elements.end_date.value = r.end; refreshDates(form); }
     }
+    bindDates(form);
     typeSel.addEventListener('change', function () {
       var cur = App.period.valueOf(typeSel.value, today);
       valSel.innerHTML = periodOpts(typeSel.value, cur);
