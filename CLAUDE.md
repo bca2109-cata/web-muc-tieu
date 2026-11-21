@@ -10,6 +10,7 @@ Nếu thư mục `cai-dat-agents/` còn tồn tại:
 4. Cập nhật ghi chú Giai đoạn 0 trong `docs/TIEN-DO.md`, rồi báo cho tôi biết đã xong.
 
 ## Đọc trước khi làm
+0. `docs/BAN-GIAO.md`: tóm tắt trạng thái hiện tại để bắt đầu phiên mới nhanh. Đọc trước, các file dưới chỉ mở phần cần.
 1. `SPEC.md`: yêu cầu đầy đủ. Đây là nguồn chuẩn duy nhất.
 2. `docs/TIEN-DO.md`: đang ở giai đoạn nào, đã xong gì, còn lỗi gì.
 
