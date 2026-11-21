@@ -166,8 +166,13 @@ App.period = (function () {
 App.logic = {
   /* Tiến độ của mục tiêu.
      Theo task: số task xong / tổng task gắn với mục tiêu (không tính việc lặp mẫu, có tính mọi lần lặp đã sinh).
-     Theo chỉ số: thực tế / target. */
+     Theo chỉ số: thực tế / target.
+     Theo thói quen: số ngày đã tick / số ngày cần làm từ đầu kỳ đến hôm nay (đọc thói quen từ store). */
   goalProgress: function (goal, tasks) {
+    if (goal.progress_mode === 'habit') {
+      var st = App.store && App.store.get ? App.store.get() : {};
+      return App.logic.habitProgress(goal, st.habits || [], st.habitLogs || [], App.date.today());
+    }
     if (goal.progress_mode === 'metric') {
       var target = App.logic.num(goal.target), actual = App.logic.num(goal.actual);
       return { mode: 'metric', done: actual, total: target, unit: goal.unit || '',
@@ -264,6 +269,55 @@ App.logic = {
       }
     });
     return out;
+  },
+
+  /* Thói quen. Tần suất lưu như luật lặp của task ("Hằng ngày", "Hằng tuần: T2, T4, T6").
+     Mỗi ô tick là một dòng HabitLogs: id = id thói quen + "-" + ngày, done TRUE/FALSE.
+     Chỉ đếm ngày cần làm. Hôm nay chưa tick thì chưa tính là lỡ. */
+  habitActive: function (h) { return String(h.active).toUpperCase() !== 'FALSE'; },
+  habitLogId: function (habitId, date) { return habitId + '-' + date; },
+  isHabitDay: function (h, date) { return App.logic.ruleMatches(h.frequency, date); },
+  // Các ngày đã tick: { 'yyyy-mm-dd': true }
+  habitDone: function (h, logs) {
+    var m = {};
+    logs.forEach(function (l) { if (l.habit_id === h.id && App.util.isTrue(l.done)) m[l.date] = true; });
+    return m;
+  },
+  // Ngày bắt đầu theo dõi: ngày tạo, hoặc ngày tick sớm nhất nếu sớm hơn (tick bù)
+  habitStart: function (h, done) {
+    var s = String(h.created_at || '').slice(0, 10);
+    Object.keys(done).forEach(function (d) { if (!App.date.isValid(s) || d < s) s = d; });
+    return App.date.isValid(s) ? s : App.date.today();
+  },
+  // Chuỗi hiện tại và chuỗi dài nhất
+  habitStreak: function (h, logs, today) {
+    var L = App.logic, D = App.date, done = L.habitDone(h, logs), run = 0, best = 0;
+    for (var d = L.habitStart(h, done); d <= today; d = D.addDays(d, 1)) {
+      if (!L.isHabitDay(h, d)) continue;
+      if (done[d]) { run++; if (run > best) best = run; }
+      else if (d !== today) run = 0;
+    }
+    return { current: run, best: best };
+  },
+  habitProgress: function (goal, habits, logs, today) {
+    var L = App.logic, D = App.date, done = 0, total = 0, n = 0;
+    habits.forEach(function (h) {
+      if (h.goal_id !== goal.id) return;
+      n++;
+      // Thói quen tạm dừng: chỉ tính ngày đã tick, ngày bỏ trống không kéo % xuống
+      var m = L.habitDone(h, logs), from = L.habitStart(h, m), on = L.habitActive(h);
+      if (D.isValid(goal.start_date) && goal.start_date > from) from = goal.start_date;
+      var to = D.isValid(goal.end_date) && goal.end_date < today ? goal.end_date : today;
+      for (var d = from; d <= to; d = D.addDays(d, 1)) {
+        if (!L.isHabitDay(h, d)) continue;
+        if (m[d]) { done++; total++; } else if (on && d !== today) total++;
+      }
+    });
+    return { mode: 'habit', done: done, total: total, habits: n, pct: total ? Math.min(100, Math.round(done / total * 100)) : 0 };
+  },
+  newHabit: function (fields) {
+    var now = App.util.now();
+    return Object.assign({ id: App.util.uuid(), name: '', goal_id: '', frequency: 'Hằng ngày', active: 'TRUE', created_at: now, updated_at: now }, fields || {});
   },
 
   // ≥ 100% đạt, 80–99% gần đạt, < 80% cần chú ý

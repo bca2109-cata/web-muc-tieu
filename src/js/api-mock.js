@@ -5,7 +5,7 @@
 var App = window.App || (window.App = {});
 
 App.createMockApi = function (options) {
-  var KEY = 'muctieu_mock_db_v2';
+  var KEY = 'muctieu_mock_db_v3';
   var failRate = options.failRate || 0;
   var DELAY = 150;
 

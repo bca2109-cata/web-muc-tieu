@@ -420,3 +420,46 @@ button.goal:hover{box-shadow:0 4px 0 var(--accent-soft),0 12px 28px color-mix(in
 .tf-foot .seg-switch{margin-left:0}
 .tf-reset{margin-left:auto}
 .recur-list .ticon{margin-left:12px}
+
+/* ---------- Giai đoạn 3: thói quen ---------- */
+.habit-sum{display:flex;align-items:center;gap:6px;margin:0 0 10px;font-weight:700}
+.habit-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.habit-bar .seg-switch{margin-left:0}
+.habit-nav{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.habit-nav .icon.flip{color:inherit;margin-left:0}
+.habit-nav .round:disabled{opacity:.4}
+.habit-range{min-width:9.5em;text-align:center;font-weight:700;font-size:14px}
+.habit-list{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.habit-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.habit-head{display:flex;align-items:flex-start;flex-wrap:wrap;gap:4px 10px;margin-bottom:10px}
+.habit-name{flex:1 1 220px;min-width:0;min-height:44px;padding:0;border:0;background:transparent;text-align:left}
+.h-title{display:block;font-weight:800;font-size:17px;overflow-wrap:anywhere}
+.habit-name .meta{margin-top:4px}
+.streak{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:var(--warm)}
+.streak .muted{font-weight:600}
+.hgrid{display:grid}
+.hweek{grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.hm-head,.hm-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.hm-head span{text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
+.hm-days{margin-top:4px}
+.hc{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:44px;padding:4px 0;border-radius:12px;border:2px solid transparent;background:transparent;font-size:12px;color:var(--muted)}
+.hweek .hc{min-height:64px}
+.hc-wd{font-weight:800}
+.hc-day{font-size:14px}
+.hmonth .hc-mark{display:none}
+.hc-mark{display:grid;place-items:center;width:22px;height:22px;border-radius:99px}
+button.hc{border-color:var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.hc .hc-mark{color:var(--tick-line)}
+.hc-miss{background:var(--plain-bg) !important;border-style:dashed !important}
+.hc-today{border-color:var(--accent) !important}
+.hc-done{background:var(--ok) !important;border-color:var(--ok) !important;color:var(--accent-ink) !important}
+.hc-done .hc-mark{color:var(--accent-ink) !important}
+.hc-done.hc-today{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent)}
+.hc-off{opacity:.45}
+.hc-future{opacity:.3}
+.hc-blank{min-height:0}
+button.hc:focus-visible,.habit-name:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sec-btn{margin-left:auto}
+.habit-today .meta{margin-top:2px}
+a.task-body{color:inherit;text-decoration:none}
+@media (max-width:400px){.card.habit{padding:12px 8px}.card.habit .hweek,.card.habit .hm-head,.card.habit .hm-days{gap:0}}

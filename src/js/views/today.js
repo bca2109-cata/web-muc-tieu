@@ -46,6 +46,7 @@ App.views.today = function (state, ui) {
       ? '<li class="note empty">' + icon('star', 'ic14') + '<span>' + (top3.length ? 'Còn chỗ trống. ' : '') + 'Bấm ngôi sao ở một việc để đưa lên đây</span></li>'
       : '') + '</ul>' +
     '<p class="hint">' + icon('sparkle', 'ic14') + 'Lần đầu mở web mỗi ngày, chỗ trống được tự điền bằng việc trễ hạn rồi việc Khẩn cấp. Bấm ngôi sao để đổi.</p></section>';
+  html += App.views.habitToday(state, today);
 
   html += '</div><div class="today-side">';
   var mode = ui.todayView === 'list' ? 'list' : 'matrix';
@@ -170,10 +171,9 @@ App.views.emptyCard = function (title, sub, button) {
 App.views.soon = function (name) {
   var fl = App.flowers.html, icon = App.ui.icon;
   var INFO = {
-    'thoi-quen': { title: 'Thói quen', icon: 'calcheck', when: 'Lưới tick theo ngày và chuỗi ngày liên tiếp. Làm ở Giai đoạn 3.' },
     'tong-ket': { title: 'Tổng kết', icon: 'barchart', when: 'Chỉ số, biểu đồ và ghi chú review. Làm ở Giai đoạn 4.' }
   };
-  var x = INFO[name] || INFO['thoi-quen'];
+  var x = INFO[name] || INFO['tong-ket'];
   return '<div class="card soon-card">' +
     '<div class="soon-flowers">' + fl('tulip', 44, 1) + fl('hydrangea', 38, 9) + fl('sunflower', 40, 4) + fl('lavender', 44, 3) + fl('tulip', 44, 6) + '</div>' +
     '<h1>' + icon(x.icon) + 'Tab ' + x.title + ' sắp có</h1>' +

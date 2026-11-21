@@ -5,7 +5,8 @@ App.app = (function () {
   var view = document.getElementById('view');
   var ui = {
     groupFilter: '', periodType: '', periodValue: '', flashId: null, todayView: readPref('lp_today_view', 'matrix'),
-    taskFilter: { status: 'open', priority: '', goal: '', due: '' }, taskSort: 'due'
+    taskFilter: { status: 'open', priority: '', goal: '', due: '' }, taskSort: 'due',
+    habitView: readPref('lp_habit_view', 'week'), habitShift: 0
   };
   function readPref(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
   function writePref(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* bỏ qua */ } }
@@ -15,12 +16,13 @@ App.app = (function () {
 
   function route() {
     var h = location.hash || '#/hom-nay';
-    var s = /^#\/sap-co\/(thoi-quen|tong-ket)$/.exec(h);
+    var s = /^#\/sap-co\/(tong-ket)$/.exec(h);
     if (s) return { tab: s[1], soon: true };
     var m = /^#\/muc-tieu\/(.+)$/.exec(h);
     if (m) return { tab: 'goals', goalId: decodeURIComponent(m[1]) };
     if (h.indexOf('#/muc-tieu') === 0) return { tab: 'goals' };
     if (h.indexOf('#/task') === 0) return { tab: 'task' };
+    if (h.indexOf('#/thoi-quen') === 0) return { tab: 'habits' };
     return { tab: 'today' };
   }
   function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
@@ -69,6 +71,7 @@ App.app = (function () {
     else if (r.tab === 'goals' && r.goalId) html = App.views.goalDetail(state, ui, r.goalId);
     else if (r.tab === 'goals') html = App.views.goals(state, ui);
     else if (r.tab === 'task') html = App.views.tasks(state, ui);
+    else if (r.tab === 'habits') html = App.views.habits(state, ui);
     else html = App.views.today(state, ui);
     view.innerHTML = html;
     restoreInputs(snap);
@@ -129,6 +132,20 @@ App.app = (function () {
       return;
     }
     App.store.upsert('Tasks', Object.assign({}, t, { is_top3: 'TRUE', top3_date: today }));
+  }
+
+  // Tick hoặc bỏ tick thói quen cho một ngày (không tick ngày tương lai)
+  function toggleHabit(id, date, el) {
+    var today = App.date.today();
+    if (!App.date.isValid(date) || date > today) return;
+    var h = App.store.get().habits.find(function (x) { return x.id === id; });
+    if (!h || !App.logic.isHabitDay(h, date)) return;
+    var logId = App.logic.habitLogId(id, date);
+    var log = App.store.get().habitLogs.find(function (l) { return l.id === logId; });
+    var on = !!log && App.util.isTrue(log.done);
+    var rect = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+    App.store.upsert('HabitLogs', Object.assign({ id: logId, habit_id: id, date: date, created_at: App.util.now() }, log || {}, { done: on ? 'FALSE' : 'TRUE' }));
+    if (!on && rect && rect.width) App.flowers.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, false);
   }
 
   function quickAdd(form) {
@@ -224,6 +241,11 @@ App.app = (function () {
         render(); break;
       case 'new-task': App.forms.openTask(null, el.getAttribute('data-goal') ? { goal_id: el.getAttribute('data-goal') } : null); break;
       case 'metric-add': addMetric(id); break;
+      case 'new-habit': App.forms.openHabit(null, el.getAttribute('data-goal') ? { goal_id: el.getAttribute('data-goal') } : null); break;
+      case 'edit-habit': var hb = App.store.get().habits.find(function (x) { return x.id === id; }); if (hb) App.forms.openHabit(hb); break;
+      case 'habit-tick': toggleHabit(id, el.getAttribute('data-date'), el); break;
+      case 'habit-view': ui.habitView = el.getAttribute('data-view'); ui.habitShift = 0; writePref('lp_habit_view', ui.habitView); render(); break;
+      case 'habit-shift': ui.habitShift = Math.min(0, (ui.habitShift || 0) + (+el.getAttribute('data-dir') || 0)); render(); break;
       case 'task-sort': ui.taskSort = el.getAttribute('data-sort'); render(); break;
       case 'task-reset': ui.taskFilter = { status: 'open', priority: '', goal: '', due: '' }; render(); break;
       case 'go': go(el.getAttribute('data-href')); break;

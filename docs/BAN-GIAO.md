@@ -3,7 +3,7 @@
 Đọc file này trước, rồi chỉ mở thêm file nào thật sự cần. Chi tiết yêu cầu ở `SPEC.md`, quy tắc giao diện ở `DESIGN.md`, lịch sử ở `docs/TIEN-DO.md`.
 
 ## 1. Đang ở đâu
-- Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). Giai đoạn 2: xong (duyệt 22/11/2026). **Tiếp theo: Giai đoạn 3** (thói quen, streak, tab Thói quen), chưa bắt đầu.
+- Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). Giai đoạn 2: xong (duyệt 22/11/2026). **Giai đoạn 3** (thói quen, streak, tab Thói quen): đã làm, đã kiểm tra, chờ người dùng duyệt.
 - Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
 - Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
 - Mặt trời mặt cười: người dùng chốt **giữ**.

@@ -22,6 +22,9 @@ App.mockData = function (today) {
   // Mục tiêu theo chỉ số
   var g6 = goal('Chạy đủ 50 km trong tháng', 'Sức khỏe', 'Tháng', null, 2);
   Object.assign(g6, { progress_mode: 'metric', unit: 'km', target: '50', actual: '12' });
+  // Mục tiêu theo thói quen
+  var g7 = goal('Giữ nếp sống lành mạnh', 'Sức khỏe', 'Tháng', null, 2);
+  g7.progress_mode = 'habit';
 
   function task(title, g, dueOffset, priority, status, extra) {
     var t = {
@@ -60,5 +63,28 @@ App.mockData = function (today) {
     task('Tập yoga buổi tối', g3, -10, 'Trung bình', 'Cần làm', { recurring_rule: 'Hằng tuần: T2, T4, T6' })
   ];
 
-  return { goals: [g1, g2, g3, g4, g5, g6], tasks: tasks, habits: [], habitLogs: [], reviews: [] };
+  // Thói quen và các ngày đã tick (25 ngày gần nhất)
+  var hStamp = D.addDays(today, -25) + ' 08:00:00';
+  function habit(name, g, freq, active) {
+    return { id: uuid(), name: name, goal_id: g ? g.id : '', frequency: freq, active: active || 'TRUE', created_at: hStamp, updated_at: hStamp };
+  }
+  var h1 = habit('Đọc sách 20 phút', g7, 'Hằng ngày');
+  var h2 = habit('Tập thể dục buổi sáng', g7, 'Hằng tuần: T2, T4, T6');
+  var h3 = habit('Ngủ trước 23 giờ', null, 'Hằng ngày');
+  var h4 = habit('Thiền 10 phút', null, 'Hằng ngày', 'FALSE');
+  var logs = [];
+  function tick(h, offset) {
+    var d = D.addDays(today, offset);
+    if (!App.logic.ruleMatches(h.frequency, d)) return;
+    logs.push({ id: h.id + '-' + d, habit_id: h.id, date: d, done: 'TRUE', created_at: d + ' 21:00:00', updated_at: d + ' 21:00:00' });
+  }
+  for (var k = -25; k <= -1; k++) {
+    if (k !== -6 && k !== -13) tick(h1, k); // lỡ 2 ngày, chuỗi hiện tại 5
+    if (k !== -9) tick(h2, k);
+    if (k % 3) tick(h3, k);
+    if (k < -15) tick(h4, k);
+  }
+  tick(h1, 0);
+
+  return { goals: [g1, g2, g3, g4, g5, g6, g7], tasks: tasks, habits: [h1, h2, h3, h4], habitLogs: logs, reviews: [] };
 };

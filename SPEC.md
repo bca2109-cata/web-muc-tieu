@@ -56,6 +56,7 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 - Bảng lưới ô tick theo ngày, xem được 7 ngày hoặc cả tháng.
 - Đếm **chuỗi ngày liên tiếp** (streak) hiện tại và chuỗi dài nhất.
 - Mục tiêu liên kết với thói quen có thể tính % theo số ngày đã tick / số ngày cần làm trong kỳ.
+  - Chốt GĐ3 (22/11/2026): `frequency` lưu như luật lặp của task ("Hằng ngày", "Hằng tuần: T2, T4, T6"). Mỗi ô tick là một dòng HabitLogs, `id` = id thói quen + "-" + ngày, `done` TRUE/FALSE. `active` FALSE = tạm dừng. Tick được mọi ngày đã qua, không tick ngày tương lai. Streak chỉ đếm ngày cần làm; hôm nay chưa tick thì chưa mất chuỗi. Theo dõi tính từ ngày tạo (hoặc ngày tick sớm nhất). % mục tiêu theo thói quen (`progress_mode` = habit) = ngày đã tick / ngày cần làm từ đầu kỳ đến hôm nay (hôm nay chỉ tính khi đã tick). Lưới mặc định 7 ngày, chuyển được sang cả tháng, có nút lùi về kỳ trước. Tab Hôm nay có khối "Thói quen hôm nay".
 
 ### 4.4 Tổng kết tuần / tháng
 - Số task đã xong, % đúng hạn, % trung bình của các mục tiêu trong kỳ.

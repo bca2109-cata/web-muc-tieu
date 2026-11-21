@@ -303,19 +303,36 @@ async function small(p, sel, min, label) {
   console.log(JSON.stringify(cards));
   for (const g of goals2) {
     const c = cards.find(x => x.id === g.id);
-    const metric = g.progress_mode === 'metric';
+    const metric = g.progress_mode === 'metric', habitMode = g.progress_mode === 'habit';
     const mine = tasks.filter(t => t.goal_id === g.id), done = mine.filter(t => t.status === 'Xong').length;
-    const pct = metric ? Math.round(+g.actual / +g.target * 100) : mine.length ? Math.round(done / mine.length * 100) : 0;
+    // Theo thói quen: tự đếm ngày cần làm từ đầu kỳ đến hôm nay (hôm nay chỉ tính khi đã tick)
+    const hp = habitMode ? await p.evaluate(gid => {
+      const st = App.store.get(), td = App.date.today(), g = st.goals.find(x => x.id === gid);
+      let dn = 0, tot = 0;
+      st.habits.filter(h => h.goal_id === gid).forEach(h => {
+        const ticks = new Set(st.habitLogs.filter(l => l.habit_id === h.id && l.done === 'TRUE').map(l => l.date));
+        let from = h.created_at.slice(0, 10); ticks.forEach(d => { if (d < from) from = d; });
+        if (g.start_date > from) from = g.start_date;
+        const to = g.end_date < td ? g.end_date : td;
+        for (let d = from; d <= to; d = App.date.addDays(d, 1)) {
+          if (!App.logic.ruleMatches(h.frequency, d)) continue;
+          if (ticks.has(d)) { dn++; tot++; } else if (d !== td) tot++;
+        }
+      });
+      return { dn, tot };
+    }, g.id) : null;
+    const pct = habitMode ? (hp.tot ? Math.round(hp.dn / hp.tot * 100) : 0) : metric ? Math.round(+g.actual / +g.target * 100) : mine.length ? Math.round(done / mine.length * 100) : 0;
     ok('Thẻ "' + g.name + '": % = ' + pct, c && c.pct === pct + '%', c && c.pct);
     ok('  tim = ' + g.importance, c && c.hearts === +g.importance, c && '' + c.hearts);
     let exp;
     const d = Math.round((Date.parse(g.end_date) - Date.parse(TODAY)) / 86400000);
     if (g.status === 'Hoàn thành') exp = 'Hoàn thành'; else if (g.status === 'Tạm dừng') exp = 'Tạm dừng'; else exp = d < 0 ? 'Quá hạn ' + (-d) + ' ngày' : d === 0 ? 'Hết hạn hôm nay' : 'Còn ' + d + ' ngày';
     ok('  nhãn hạn = "' + exp + '"', c && c.dl.some(x => x.includes(exp)), c && c.dl.join(' / '));
-    if (metric) ok('  foot chỉ số ' + g.actual + '/' + g.target, c && c.foot.includes(g.actual + '/' + g.target), c && c.foot);
+    if (habitMode) ok('  foot thói quen ' + hp.dn + '/' + hp.tot, c && c.foot.includes(hp.dn + '/' + hp.tot + ' ngày đã tick'), c && c.foot);
+    else if (metric) ok('  foot chỉ số ' + g.actual + '/' + g.target, c && c.foot.includes(g.actual + '/' + g.target), c && c.foot);
     else ok('  foot đúng ' + done + '/' + mine.length, c && (mine.length ? c.foot.includes(done + '/' + mine.length) : /Chưa có task/.test(c.foot)), c && c.foot);
   }
-  for (const [k, exp] of [['Công việc', 2], ['Học tập', 1], ['Sức khỏe', 3], ['', 6]]) {
+  for (const [k, exp] of [['Công việc', 2], ['Học tập', 1], ['Sức khỏe', 4], ['', 7]]) {
     await p.click(`[data-action="filter-group"][data-group="${k}"]`); await p.waitForTimeout(100);
     const n = await p.locator('.goal-grid .goal').count();
     ok('Lọc nhóm "' + (k || 'Tất cả') + '" -> ' + exp + ' thẻ', n === exp, '' + n);
@@ -384,12 +401,12 @@ async function small(p, sel, min, label) {
 
   // ===== G. Sắp có
   ({ ctx, p } = await mk(browser));
-  for (const [tab, h] of [['thoi-quen', 'Thói quen'], ['tong-ket', 'Tổng kết']]) {
+  for (const [tab, h] of [['tong-ket', 'Tổng kết']]) {
     await pc(p, `.tab[data-tab="${tab}"]`); await p.waitForSelector('.soon-card'); await p.waitForTimeout(150);
     const tx = await p.innerText('.soon-card');
     ok('Tab ' + h + ': "sắp có" + nút Về Hôm nay', /sắp có/i.test(tx) && await p.locator('.soon-card a[href="#/hom-nay"]').count() === 1, tx.replace(/\n/g, ' | '));
     ok('Tab ' + h + ' có nhãn "Sắp có" trên thanh tab', /Sắp có/.test(await p.locator(`.tab[data-tab="${tab}"]`).innerText()));
-    if (tab === 'thoi-quen') await p.screenshot({ path: SS + '/lp-16-sapco-390.png', fullPage: true });
+    await p.screenshot({ path: SS + '/lp-16-sapco-390.png', fullPage: true });
     await layoutChecks(p, 'Sắp có ' + h);
     await p.click('.soon-card a[href="#/hom-nay"]'); await p.waitForTimeout(150);
     ok('  Nút về Hôm nay hoạt động', await p.locator('#top3-title').count() === 1);
@@ -437,7 +454,7 @@ async function small(p, sel, min, label) {
   for (const W of [390, 1280]) {
     ({ ctx, p } = await mk(browser, { w: W, h: W === 390 ? 844 : 900 }));
     const L = 'J@' + W + ': ';
-    for (const tab of ['today', 'goals', 'task', 'thoi-quen', 'tong-ket']) {
+    for (const tab of ['today', 'goals', 'task', 'habits', 'tong-ket']) {
       const sel = '.tab[data-tab="' + tab + '"]';
       if (!(await p.locator(sel).count())) { ok(L + 'tab ' + tab + ' tồn tại', false); continue; }
       let good = true, msg = '';

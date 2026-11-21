@@ -146,7 +146,8 @@ App.comp = (function () {
 
   function goalStatusLine(g, p, slow) {
     if (slow) return '<span class="lv-text-warn" title="Đã qua ' + slow.time + '% thời gian, mới đạt ' + slow.pct + '%">' + icon('alert', 'ic14') + 'Chậm tiến độ</span>';
-    if (!p.total) return '<span class="muted">' + icon('sparkle', 'ic14') + (p.mode === 'metric' ? 'Đặt chỉ tiêu để bắt đầu' : 'Thêm task để bắt đầu') + '</span>';
+    if (!p.total) return '<span class="muted">' + icon('sparkle', 'ic14') +
+      (p.mode === 'metric' ? 'Đặt chỉ tiêu để bắt đầu' : p.mode === 'habit' ? (p.habits ? 'Tick thói quen để bắt đầu' : 'Gắn thói quen để bắt đầu') : 'Thêm task để bắt đầu') + '</span>';
     var lv = L.level(p.pct);
     if (lv === 'ok') return '<span class="lv-text-ok">' + fl('sakura', 16, 1) + 'Đạt rồi, giỏi quá!</span>';
     if (lv === 'pr') return '<span class="lv-text-pr">' + icon('flag', 'ic14') + 'Sắp tới đích</span>';
@@ -157,6 +158,9 @@ App.comp = (function () {
   function progressCount(p) {
     if (p.mode === 'metric') {
       return icon('chart', 'ic14') + '<span><span class="num">' + L.fmtVi(p.done) + '/' + L.fmtVi(p.total) + '</span>' + (p.unit ? ' ' + esc(p.unit) : '') + '</span>';
+    }
+    if (p.mode === 'habit') {
+      return icon('calcheck', 'ic14') + (p.habits ? '<span><span class="num">' + p.done + '/' + p.total + '</span> ngày đã tick</span>' : '<span>Chưa có thói quen</span>');
     }
     return icon('check', 'ic14') + (p.total ? '<span><span class="num">' + p.done + '/' + p.total + '</span> task xong</span>' : '<span>Chưa có task</span>');
   }

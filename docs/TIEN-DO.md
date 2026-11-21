@@ -118,6 +118,28 @@
   - Cột đầu bảng task ghi "Ô" (ô ma trận) hơi khó hiểu.
   - Chế độ tối chưa có (đúng lộ trình, Giai đoạn 4).
 
+### Giai đoạn 3: đã làm (22/11/2026)
+- Quyết định của người dùng: tick bù mọi ngày đã qua; streak chỉ đếm ngày cần làm; % mục tiêu theo thói quen tính đến hôm nay; lưới mặc định 7 ngày.
+- **Tab Thói quen** (`src/js/views/habits.js`): mỗi thói quen một thẻ có tên, tần suất, mục tiêu gắn kèm, chuỗi hiện tại và dài nhất, lưới tick 7 ngày hoặc cả tháng (lịch bắt đầu thứ 2), nút lùi về tuần/tháng trước. Ô ngày không cần làm và ngày tương lai không bấm được. Thói quen tạm dừng xếp riêng ở dưới.
+- **Form thói quen**: tên, mục tiêu, tần suất (Hằng ngày / Theo thứ), trạng thái Đang theo / Tạm dừng. Xóa thì xóa luôn các ngày đã ghi (hỏi trước, gợi ý Tạm dừng nếu muốn giữ lịch sử).
+- **Tab Hôm nay**: khối "Thói quen hôm nay" dưới Top 3, tick một chạm.
+- **Mục tiêu**: thêm cách tính "Theo thói quen". Thẻ hiện "28/30 ngày đã tick". Trang chi tiết có mục "Thói quen của mục tiêu" và nút "Thêm thói quen". Xóa mục tiêu thì thói quen gắn kèm được giữ, chỉ bỏ liên kết.
+- Bản mock: thêm mục tiêu "Giữ nếp sống lành mạnh" (theo thói quen) và 4 thói quen (1 tạm dừng) có lịch sử 25 ngày. Khóa mock đổi thành `muctieu_mock_db_v3`.
+- Không đổi cột Sheet: dùng sẵn Habits và HabitLogs như Code.gs đã có.
+- Bộ kiểm thử: 231 PASS, 0 FAIL (bỏ phần kiểm "Sắp có" của tab Thói quen).
+
+### Kết quả kiểm tra GĐ3
+- spec-reviewer: 14/15 đạt. qa-tester: đạt, 0 FAIL, 0 lỗi console.
+- Đã sửa:
+  - (Vừa) Thói quen tạm dừng vẫn kéo % mục tiêu xuống. Nay thói quen tạm dừng chỉ cộng ngày đã tick, ngày bỏ trống không tính.
+  - (Thấp) Chặn tick vào ngày không cần làm ngay cả khi bấm ép (`toggleHabit` kiểm `isHabitDay`).
+  - (Thấp) Ô tick ở điện thoại hẹp hơn 44px. Nay rộng ít nhất 44px ở màn 360px.
+- Ghi nhận, chưa sửa:
+  - (Thấp) Streak không biết thói quen đã tạm dừng từ ngày nào (Sheet không lưu lịch sử tạm dừng), nên bật lại thì các ngày tạm dừng làm đứt chuỗi.
+  - (Thấp) `goalProgress` đọc thẳng store để lấy thói quen.
+  - (Thấp) Ngày bắt đầu theo dõi lấy 10 ký tự đầu của `created_at`, phụ thuộc múi giờ lúc tạo.
+  - Thói quen mới tạo vẫn tick bù được các ngày trước ngày tạo (đúng quyết định "tick bù mọi ngày đã qua").
+
 ## Câu hỏi chờ người dùng
 - (chưa có)
 

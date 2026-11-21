@@ -94,6 +94,7 @@ App.views.goalDetail = function (state, ui, id) {
     '<dt>' + icon('flag', 'ic14') + 'Trạng thái</dt><dd>' + esc(g.status) + '</dd>' +
     '<dt>' + icon('barchart', 'ic14') + 'Tính tiến độ</dt><dd>' + (metric
       ? 'Theo chỉ số: đạt <span class="num">' + L.fmtVi(p.done) + '</span> trên <span class="num">' + L.fmtVi(p.total) + '</span>' + (g.unit ? ' ' + esc(g.unit) : '')
+      : p.mode === 'habit' ? 'Theo thói quen: đã tick <span class="num">' + p.done + '</span> trên <span class="num">' + p.total + '</span> ngày cần làm, tính đến hôm nay'
       : 'Theo task') + '</dd>' +
     '<dt>' + icon('clock', 'ic14') + 'Thời gian đã qua</dt><dd><span class="num">' + L.timePct(g, today) + '%</span></dd>' +
     (g.note ? '<dt>' + icon('text', 'ic14') + 'Ghi chú</dt><dd>' + esc(g.note) + '</dd>' : '') +
@@ -101,6 +102,22 @@ App.views.goalDetail = function (state, ui, id) {
     '<button type="button" class="btn btn-soft" data-action="edit-goal" data-id="' + esc(g.id) + '">' + icon('edit', 'ic18') + 'Sửa</button>' +
     '<button type="button" class="btn btn-danger" data-action="delete-goal" data-id="' + esc(g.id) + '">' + icon('trash', 'ic18') + 'Xóa</button>' +
     '</div></section>';
+
+  // Thói quen gắn với mục tiêu (luôn hiện khi tính theo thói quen)
+  var habits = state.habits.filter(function (h) { return h.goal_id === g.id; });
+  if (habits.length || p.mode === 'habit') {
+    html += '<section class="block"><h2 class="sec-title">' + App.flowers.html('daisy', 24, 5) + '<span>Thói quen của mục tiêu</span>' +
+      (habits.length ? '<span class="badge num">' + habits.length + '</span>' : '') +
+      '<button type="button" class="btn btn-soft sec-btn" data-action="new-habit" data-goal="' + esc(g.id) + '">' + icon('plus', 'ic18') + 'Thêm thói quen</button></h2>' +
+      (habits.length ? '<ul class="task-list">' + habits.map(function (h) {
+        var s = L.habitStreak(h, state.habitLogs, today), on = L.habitActive(h);
+        return '<li class="task"><span class="ticon tplain">' + icon(on ? 'calcheck' : 'pause') + '</span>' +
+          '<button type="button" class="task-body" data-action="edit-habit" data-id="' + esc(h.id) + '"><span class="task-title">' + esc(h.name) + '</span>' +
+          '<span class="meta">' + C.tag('tplain', 'refresh', App.util.numify(L.ruleLabel(h.frequency) || 'Hằng ngày')) +
+          (on ? App.views.habitParts.streakLine(s) : C.tag('tplain', 'pause', 'Tạm dừng')) + '</span></button></li>';
+      }).join('') + '</ul>'
+        : App.views.emptyCard('Mục tiêu này chưa có thói quen.', 'Bấm "Thêm thói quen" để tạo và gắn vào mục tiêu.')) + '</section>';
+  }
 
   html += '<section class="block"><h2 class="sec-title">' + App.flowers.html('sprig', 24, 1) + '<span>Task của mục tiêu</span>' +
     (tasks.length ? '<span class="badge num">' + tasks.length + '</span>' : '') + '</h2>' +

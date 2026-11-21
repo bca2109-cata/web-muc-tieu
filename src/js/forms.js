@@ -213,7 +213,10 @@ App.forms = (function () {
       '<p class="form-error" hidden data-err="dates">Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.</p>' +
       '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.GOAL_STATUS, g.status) + '</div>' +
       '<div class="field"><span>' + icon('barchart', 'ic14') + 'Cách tính tiến độ</span>' +
-      seg('progress_mode', [{ key: 'task', label: 'Theo task' }, { key: 'metric', label: 'Theo chỉ số' }], g.progress_mode === 'metric' ? 'metric' : 'task') + '</div>' +
+      seg('progress_mode', [{ key: 'task', label: 'Theo task' }, { key: 'metric', label: 'Theo chỉ số' }, { key: 'habit', label: 'Theo thói quen' }],
+        g.progress_mode === 'metric' || g.progress_mode === 'habit' ? g.progress_mode : 'task') + '</div>' +
+      '<p class="info-line" data-habit-note' + (g.progress_mode === 'habit' ? '' : ' hidden') + '>' + icon('calcheck', 'ic14') +
+      '<span>% = số ngày đã tick / số ngày cần làm, từ đầu kỳ đến hôm nay, của các thói quen gắn với mục tiêu này. Gắn thói quen ở tab Thói quen.</span></p>' +
       '<div class="metric-fields" data-metric' + (g.progress_mode === 'metric' ? '' : ' hidden') + '>' +
       '<label class="field"><span>' + icon('tag', 'ic14') + 'Đơn vị</span><input class="input" name="unit" maxlength="20" placeholder="giờ, km, cuốn…" value="' + esc(g.unit) + '"></label>' +
       '<div class="row2">' +
@@ -241,7 +244,10 @@ App.forms = (function () {
     });
     valSel.addEventListener('change', fillDates);
     form.addEventListener('change', function (e) {
-      if (e.target.name === 'progress_mode') form.querySelector('[data-metric]').hidden = e.target.value !== 'metric';
+      if (e.target.name === 'progress_mode') {
+        form.querySelector('[data-metric]').hidden = e.target.value !== 'metric';
+        form.querySelector('[data-habit-note]').hidden = e.target.value !== 'habit';
+      }
     });
 
     form.addEventListener('submit', function (e) {
@@ -256,7 +262,8 @@ App.forms = (function () {
       var badDates = start > end;
       form.querySelector('[data-err="dates"]').hidden = !badDates;
       if (badDates) return;
-      var mode = val(form, 'progress_mode') === 'metric' ? 'metric' : 'task';
+      var mode = val(form, 'progress_mode');
+      if (mode !== 'metric' && mode !== 'habit') mode = 'task';
       var tgt = val(form, 'target').replace(',', '.'), act = val(form, 'actual').replace(',', '.') || '0';
       var badMetric = mode === 'metric' && (!(+tgt > 0) || !isFinite(+act));
       form.querySelector('[data-err="target"]').hidden = !badMetric;
@@ -274,6 +281,72 @@ App.forms = (function () {
       App.ui.closeModal();
       App.ui.toast(isNew ? 'Đã tạo mục tiêu.' : 'Đã lưu thay đổi.');
       if (isNew) App.app.go('#/muc-tieu/' + row.id);
+    });
+  }
+
+  /* ---------- Thói quen ---------- */
+  function openHabit(habit, defaults) {
+    var isNew = !habit, L = App.logic;
+    var h = habit ? Object.assign({}, habit) : L.newHabit(defaults);
+    var goalOpts = [{ value: '', label: 'Không gắn mục tiêu' }].concat(store().get().goals.map(function (g) {
+      return { value: g.id, label: g.name + (g.status !== 'Đang làm' ? ' (' + g.status + ')' : '') };
+    }));
+    var rule = L.parseRule(h.frequency) || { daily: true, days: [0, 1, 2, 3, 4, 5, 6] };
+    var freq = rule.daily ? 'daily' : 'weekly';
+    var body = '<form data-form="habit" novalidate>' +
+      '<label class="field"><span>' + icon('text', 'ic14') + 'Tên thói quen</span><input class="input" name="name" maxlength="200" required autofocus placeholder="Đọc sách 20 phút" value="' + esc(h.name) + '"></label>' +
+      '<p class="form-error" hidden data-err="name">Hãy nhập tên thói quen.</p>' +
+      '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu</span><select class="select" name="goal_id">' + options(goalOpts, h.goal_id) + '</select></label>' +
+      '<div class="field"><span>' + icon('refresh', 'ic14') + 'Tần suất</span>' +
+      seg('freq', [{ key: 'daily', label: 'Hằng ngày' }, { key: 'weekly', label: 'Theo thứ' }], freq) +
+      '<div class="weekdays" data-weekdays' + (freq === 'weekly' ? '' : ' hidden') + ' role="group" aria-label="Các thứ trong tuần">' +
+      [1, 2, 3, 4, 5, 6, 0].map(function (d) {
+        var on = !rule.daily && rule.days.indexOf(d) >= 0;
+        return '<label><input type="checkbox" name="wd" value="' + d + '"' + (on ? ' checked' : '') + '><span>' + (d === 0 ? 'CN' : 'T<span class="num">' + (d + 1) + '</span>') + '</span></label>';
+      }).join('') + '</div>' +
+      '<p class="form-error" hidden data-err="wd">Chọn ít nhất một thứ.</p></div>' +
+      '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' +
+      seg('active', [{ key: 'TRUE', label: 'Đang theo' }, { key: 'FALSE', label: 'Tạm dừng' }], L.habitActive(h) ? 'TRUE' : 'FALSE') + '</div>' +
+      '<div class="modal-foot">' +
+      (isNew ? '' : '<button type="button" class="btn btn-danger" data-act="delete">' + icon('trash', 'ic18') + 'Xóa</button>') +
+      '<span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Hủy</button>' +
+      '<button type="submit" class="btn btn-primary">' + icon(isNew ? 'plus' : 'check', 'ic18') + (isNew ? 'Tạo thói quen' : 'Lưu') + '</button></div></form>';
+
+    var m = App.ui.openModal({ title: isNew ? 'Thêm thói quen' : 'Sửa thói quen', body: body });
+    var form = m.querySelector('form');
+    form.addEventListener('change', function (e) {
+      if (e.target.name === 'freq') form.querySelector('[data-weekdays]').hidden = e.target.value !== 'weekly';
+    });
+    var del = m.querySelector('[data-act="delete"]');
+    if (del) del.addEventListener('click', function () {
+      var logs = store().get().habitLogs.filter(function (l) { return l.habit_id === h.id; });
+      App.ui.ask('Xóa thói quen', 'Xóa thói quen "' + h.name + '" cùng ' + logs.length + ' ngày đã ghi? Muốn giữ lịch sử thì chọn Tạm dừng thay vì xóa. Không hoàn tác được.', [
+        { label: 'Xóa thói quen', value: 'yes', kind: 'danger' }, { label: 'Hủy', value: null }
+      ]).then(function (v) {
+        if (v !== 'yes') return;
+        var ops = logs.map(function (l) { return { type: 'delete', table: 'HabitLogs', id: l.id }; });
+        ops.push({ type: 'delete', table: 'Habits', id: h.id });
+        store().batch(ops);
+        App.ui.toast('Đã xóa thói quen.');
+      });
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = val(form, 'name');
+      form.querySelector('[data-err="name"]').hidden = !!name;
+      if (!name) { form.elements.name.focus(); return; }
+      var days = [0, 1, 2, 3, 4, 5, 6];
+      if (val(form, 'freq') === 'weekly') {
+        days = [];
+        Array.prototype.forEach.call(form.querySelectorAll('input[name="wd"]:checked'), function (c) { days.push(+c.value); });
+      }
+      form.querySelector('[data-err="wd"]').hidden = !!days.length;
+      if (!days.length) return;
+      store().upsert('Habits', Object.assign({}, h, {
+        name: name, goal_id: val(form, 'goal_id'), frequency: L.makeRule(days), active: val(form, 'active') === 'FALSE' ? 'FALSE' : 'TRUE'
+      }));
+      App.ui.closeModal();
+      App.ui.toast(isNew ? 'Đã tạo thói quen. Bấm vào ô để tick mỗi ngày.' : 'Đã lưu thay đổi.');
     });
   }
 
@@ -318,6 +391,10 @@ App.forms = (function () {
         return choice === 'keep'
           ? { type: 'upsert', table: 'Tasks', row: Object.assign({}, t, { goal_id: '' }) }
           : { type: 'delete', table: 'Tasks', id: t.id };
+      });
+      // Thói quen gắn với mục tiêu được giữ lại, chỉ bỏ liên kết
+      store().get().habits.forEach(function (h) {
+        if (h.goal_id === goal.id) ops.push({ type: 'upsert', table: 'Habits', row: Object.assign({}, h, { goal_id: '' }) });
       });
       ops.push({ type: 'delete', table: 'Goals', id: goal.id });
       store().batch(ops);
@@ -375,5 +452,5 @@ App.forms = (function () {
     });
   }
 
-  return { openTask: openTask, openGoal: openGoal, deleteGoal: deleteGoal, openSettings: openSettings, addMetric: addMetric };
+  return { openTask: openTask, openGoal: openGoal, deleteGoal: deleteGoal, openSettings: openSettings, addMetric: addMetric, openHabit: openHabit };
 })();
