@@ -31,7 +31,7 @@
 - Lớp dữ liệu tách 2 bản: `api-sheet.js` (thật) và `api-mock.js` (localStorage, dữ liệu mẫu). Cập nhật lạc quan, hàng đợi lưu nền, lưu lỗi thì báo và có nút Thử lại.
 - Quyết định đã áp dụng: Top 3 chưa xong được giữ sang hôm nay; xóa mục tiêu thì hỏi giữ task (thành Việc lặt vặt) hay xóa theo.
 - Bản mock hỗ trợ `?today=yyyy-mm-dd` (giả lập ngày) và `?fail=1` (giả lập lưu lỗi) để kiểm thử.
-- Hướng dẫn triển khai: `docs/HUONG-DAN-TRIEN-KHAI.md`. GitHub Pages chạy thư mục `src/` qua `.github/workflows/pages.yml`.
+- Đã triển khai 21/11/2026: web https://bca2109-cata.github.io/web-muc-tieu/ , kho https://github.com/bca2109-cata/web-muc-tieu , Apps Script "Muc tieu API" (bản triển khai "Ban 1"). Hướng dẫn: `docs/HUONG-DAN-TRIEN-KHAI.md`. GitHub Pages chạy thư mục `src/` qua `.github/workflows/pages.yml`.
 - Làm sớm vì tab Hôm nay cần: nhãn "Trễ hạn" và "Sắp đến hạn". Phần cảnh báo tiến độ chậm để Giai đoạn 2.
 - Chưa làm (đúng lộ trình): tiến độ theo chỉ số, lọc theo kỳ, task lặp, tab Task, thói quen, tổng kết, chế độ tối, PWA.
 

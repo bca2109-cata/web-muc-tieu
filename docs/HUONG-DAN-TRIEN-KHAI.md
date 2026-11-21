@@ -45,7 +45,7 @@ https://docs.google.com/spreadsheets/d/1_zdutUcr7DnRLUm5SFWd959af_h2zZTg700jxPmE
 5. Lần đầu Claude đẩy code, máy sẽ hiện cửa sổ **Connect to GitHub**. Bấm **Sign in with your browser** → trên trang GitHub vừa mở, bấm **Authorize**. Chỉ cần làm một lần trên máy này.
 6. Trên trang kho `web-muc-tieu`: bấm **Settings** (thanh trên cùng) → **Pages** (cột trái) → ở mục **Build and deployment**, ô **Source** chọn **GitHub Actions**.
 7. Bấm tab **Actions** trên cùng. Chờ 1 đến 2 phút đến khi dòng mới nhất có dấu tích xanh. Nếu chưa có dòng nào, báo Claude chạy lại.
-8. Link web của bạn: `https://<tên-tài-khoản>.github.io/web-muc-tieu/`
+8. Link web của bạn: https://bca2109-cata.github.io/web-muc-tieu/
 
 ## Phần C. Mở web lần đầu trên mỗi thiết bị
 
