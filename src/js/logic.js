@@ -239,47 +239,53 @@ App.logic = {
     return { text: 'Còn ' + d + ' ngày', kind: d <= 3 ? 'hot' : d <= 10 ? 'warm' : 'calm' };
   },
 
-  // Đoán icon theo tên việc. Từ khóa viết không dấu, khớp theo từ.
+  // Đoán icon theo tên việc. Từ khóa có dấu để phân biệt "họp"/"hợp", "sách"/"sạch".
+  // Tên gõ không dấu thì so với từ khóa đã bỏ dấu. Khớp theo từ, từ khóa dài nhất thắng.
   ICON_RULES: [
-    ['mail', ['email', 'mail', 'gui thu', 'hop thu']],
-    ['phone', ['goi dien', 'dien thoai', 'goi cho', 'call', 'nhan tin']],
-    ['users', ['hop', 'meeting', 'phong van', 'gap', 'hen']],
-    ['chart', ['bieu do', 'so lieu', 'kpi', 'doanh thu', 'thong ke', 'dashboard']],
-    ['doc', ['bao cao', 'tai lieu', 'hop dong', 'van ban', 'slide', 'ke hoach', 'de xuat', 'nhan xet']],
-    ['laptop', ['code', 'lap trinh', 'website', 'web', 'may tinh', 'phan mem', 'excel']],
-    ['book', ['doc sach', 'sach', 'doc', 'truyen']],
-    ['grad', ['hoc', 'khoa hoc', 'bai', 'on thi', 'thi', 'chung chi', 'kiem tra', 'tieng anh']],
-    ['pencil', ['viet', 'ghi chep', 'nhat ky', 'soan', 've']],
-    ['shoe', ['chay', 'chay bo', 'di bo', 'buoc']],
-    ['dumbbell', ['tap', 'gym', 'yoga', 'the duc', 'boi', 'dap xe']],
-    ['tooth', ['rang', 'nha khoa']],
-    ['pill', ['thuoc', 'kham', 'bac si', 'benh vien', 'vitamin', 'suc khoe']],
-    ['food', ['an', 'nau', 'com', 'bua', 'nha hang', 'an sang']],
-    ['drop', ['uong nuoc', 'nuoc']],
-    ['moon', ['ngu', 'nghi ngoi', 'thien']],
-    ['home', ['don nha', 'nha cua', 'giat', 'rua', 've sinh', 'lau']],
-    ['wallet', ['tien', 'thanh toan', 'hoa don', 'chuyen khoan', 'ngan hang', 'luong', 'bao hiem', 'dong phi']],
-    ['cart', ['mua', 'sieu thi', 'cho', 'dat hang']],
-    ['car', ['xe', 'oto', 'xang', 'bao duong']],
-    ['plane', ['du lich', 'may bay', 'khach san', 'chuyen bay']],
-    ['gift', ['qua', 'sinh nhat', 'tang', 'ky niem']],
-    ['music', ['nhac', 'dan', 'hat', 'piano', 'guitar']]
+    ['mail', ['email', 'mail', 'gửi thư', 'hộp thư']],
+    ['phone', ['gọi điện', 'điện thoại', 'gọi cho', 'call', 'nhắn tin']],
+    ['users', ['họp', 'meeting', 'phỏng vấn', 'gặp', 'hẹn']],
+    ['chart', ['biểu đồ', 'số liệu', 'kpi', 'doanh thu', 'thống kê', 'dashboard', 'dữ liệu']],
+    ['doc', ['báo cáo', 'tài liệu', 'hợp đồng', 'văn bản', 'slide', 'kế hoạch', 'đề xuất', 'nhận xét', 'tổng hợp']],
+    ['laptop', ['code', 'lập trình', 'website', 'web', 'máy tính', 'phần mềm', 'excel', 'power bi']],
+    ['book', ['đọc sách', 'sách', 'đọc', 'truyện']],
+    ['grad', ['học', 'khóa học', 'bài', 'ôn thi', 'thi', 'chứng chỉ', 'kiểm tra', 'tiếng anh', 'ôn tập']],
+    ['pencil', ['viết', 'ghi chép', 'nhật ký', 'soạn', 'vẽ']],
+    ['shoe', ['chạy', 'chạy bộ', 'đi bộ', 'bước', 'giày']],
+    ['dumbbell', ['tập', 'gym', 'yoga', 'thể dục', 'bơi', 'đạp xe']],
+    ['tooth', ['răng', 'nha khoa']],
+    ['pill', ['thuốc', 'khám', 'bác sĩ', 'bệnh viện', 'vitamin', 'sức khỏe']],
+    ['food', ['ăn', 'nấu', 'cơm', 'bữa', 'nhà hàng', 'ăn sáng']],
+    ['drop', ['uống nước', 'nước']],
+    ['moon', ['ngủ', 'nghỉ ngơi', 'thiền']],
+    ['home', ['dọn nhà', 'nhà cửa', 'giặt', 'rửa', 'vệ sinh', 'lau', 'dọn']],
+    ['wallet', ['tiền', 'thanh toán', 'hóa đơn', 'chuyển khoản', 'ngân hàng', 'lương', 'bảo hiểm', 'đóng phí']],
+    ['cart', ['mua', 'siêu thị', 'chợ', 'đặt hàng']],
+    ['car', ['xe', 'ô tô', 'oto', 'xăng', 'bảo dưỡng']],
+    ['plane', ['du lịch', 'máy bay', 'khách sạn', 'chuyến bay']],
+    ['gift', ['quà', 'sinh nhật', 'tặng', 'kỷ niệm']],
+    ['music', ['nhạc', 'đàn', 'hát', 'piano', 'guitar']]
   ],
   TASK_ICONS: ['note', 'mail', 'phone', 'users', 'chart', 'doc', 'laptop', 'book', 'grad', 'pencil', 'shoe', 'dumbbell',
     'tooth', 'pill', 'food', 'drop', 'moon', 'home', 'wallet', 'cart', 'car', 'plane', 'gift', 'music'],
+  // Chữ thường, giữ dấu tiếng Việt, ký tự khác thành khoảng trắng
+  words: function (s) {
+    return String(s || '').normalize('NFC').toLowerCase().replace(/[^0-9a-zà-ỹđ]+/g, ' ').trim();
+  },
   plain: function (s) {
-    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd')
-      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    return App.logic.words(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
   },
   guessIcon: function (title) {
-    var words = ' ' + App.logic.plain(title) + ' ';
-    var rules = App.logic.ICON_RULES;
-    for (var i = 0; i < rules.length; i++) {
-      for (var j = 0; j < rules[i][1].length; j++) {
-        if (words.indexOf(' ' + rules[i][1][j] + ' ') >= 0) return rules[i][0];
-      }
-    }
-    return 'note';
+    var L = App.logic, text = L.words(title);
+    var noMarks = text === L.plain(title);
+    var hay = ' ' + text + ' ', best = 'note', bestLen = 0;
+    L.ICON_RULES.forEach(function (r) {
+      r[1].forEach(function (k) {
+        var key = noMarks ? L.plain(k) : k;
+        if (key.length > bestLen && hay.indexOf(' ' + key + ' ') >= 0) { best = r[0]; bestLen = key.length; }
+      });
+    });
+    return best;
   },
   iconOf: function (t) {
     return App.logic.TASK_ICONS.indexOf(t.icon) >= 0 ? t.icon : App.logic.guessIcon(t.title);
