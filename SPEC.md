@@ -158,9 +158,13 @@ Dùng đúng bộ màu và font dưới đây, không tự đổi mã màu. Mọ
 ## 10. Quy trình kiểm tra mỗi giai đoạn
 
 1. Agent chính xây xong giai đoạn và cập nhật `docs/TIEN-DO.md`.
-2. Gọi agent `spec-reviewer` để đối chiếu code với SPEC.
-3. Gọi agent `qa-tester` để chạy thử bằng bản mock ở khung 390px và 1280px, ở chế độ sáng và tối.
-4. Agent chính sửa mọi lỗi mức **Cao** và **Trung bình** trong 2 báo cáo. Lỗi mức Thấp được ghi vào TIEN-DO.md.
+2. **Gọi `spec-reviewer` và `qa-tester` cùng lúc, trong cùng một lượt, để chạy song song:**
+   - `spec-reviewer` đối chiếu code với SPEC.
+   - `qa-tester` chạy thử bằng bản mock ở khung 390px và 1280px, ở chế độ sáng và tối.
+
+   Trong lúc 2 agent đang chạy, agent chính không sửa code, để kết quả kiểm tra không bị lệch.
+3. Chờ **cả 2** báo cáo về rồi mới gộp lại thành một danh sách lỗi.
+4. Agent chính sửa mọi lỗi mức **Cao** và **Trung bình**. Lỗi mức Thấp được ghi vào TIEN-DO.md.
 5. Gọi lại `qa-tester` một lần để xác nhận đã sửa xong.
 6. Báo cáo cho tôi: đã làm gì, kết quả kiểm tra, cách tôi tự thử, còn hạn chế gì.
 

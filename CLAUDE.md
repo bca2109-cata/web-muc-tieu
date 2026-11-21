@@ -18,6 +18,7 @@ Nếu thư mục `cai-dat-agents/` còn tồn tại:
 - Mỗi giai đoạn chạy 2 agent con trong `.claude/agents/` theo đúng mục 10 của SPEC:
   - `spec-reviewer`: soát code so với yêu cầu.
   - `qa-tester`: kiểm thử chạy thật.
+- 2 agent kiểm tra chỉ đọc, nên **luôn gọi cả hai cùng lúc** (cùng một lượt) để chạy song song.
 - **Không chia nhiều agent cùng viết code song song**, vì các phần đều dùng chung cấu trúc dữ liệu.
 
 ## Quy tắc

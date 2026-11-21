@@ -1,0 +1,231 @@
+/* Hằng số, xử lý ngày và các phép tính thuần (không đụng tới giao diện) */
+var App = window.App || (window.App = {});
+
+App.C = {
+  GROUPS: [
+    { key: 'Công việc', label: 'Công việc' },
+    { key: 'Học tập', label: 'Học tập / kỹ năng' },
+    { key: 'Sức khỏe', label: 'Sức khỏe / thói quen' }
+  ],
+  PERIOD_TYPES: ['Năm', 'Quý', 'Tháng', 'Tuần'],
+  GOAL_STATUS: ['Đang làm', 'Hoàn thành', 'Tạm dừng'],
+  PRIORITY: ['Cao', 'Trung bình', 'Thấp'],
+  TASK_STATUS: ['Cần làm', 'Đang làm', 'Xong'],
+  DONE: 'Xong',
+  MISC: 'Việc lặt vặt',
+  TOP3_MAX: 3,
+  COLUMNS: {
+    Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at'],
+    Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at'],
+    Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
+    HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
+    Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at']
+  },
+  // Tên sheet -> khóa trong state
+  TABLES: { Goals: 'goals', Tasks: 'tasks', Habits: 'habits', HabitLogs: 'habitLogs', Reviews: 'reviews' }
+};
+
+App.util = {
+  uuid: function () {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    var b = new Uint8Array(16);
+    crypto.getRandomValues(b);
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    var h = Array.prototype.map.call(b, function (x) { return (x + 256).toString(16).slice(1); }).join('');
+    return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  },
+  pad: function (n) { return (n < 10 ? '0' : '') + n; },
+  // Dấu thời gian giờ máy: yyyy-mm-dd HH:mm:ss
+  now: function () {
+    var d = new Date(), p = App.util.pad;
+    return App.date.today() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  },
+  esc: function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  },
+  // Lớp CSS cho nhóm, ví dụ "g-Công-việc"
+  groupClass: function (group) { return 'g-' + String(group || '').replace(/\s+/g, '-'); },
+  // Bọc các con số trong chuỗi bằng font mono
+  numify: function (s) { return App.util.esc(s).replace(/\d+([\/.:-]\d+)*%?/g, '<span class="num">$&</span>'); },
+  isTrue: function (v) { return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1'; }
+};
+
+/* Ngày luôn ở dạng chuỗi yyyy-mm-dd. Tính toán bằng UTC để không lệch múi giờ. */
+App.date = (function () {
+  var pad = function (n) { return App.util.pad(n); };
+  var DAY = 86400000;
+  var WEEKDAYS = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+  function toStr(d) { return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); }
+  function parse(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+    return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+  }
+  function isValid(s) { var d = parse(s); return !!d && toStr(d) === String(s).slice(0, 10); }
+  function today() {
+    if (App.config && App.config.todayOverride) return App.config.todayOverride;
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function addDays(s, n) { var d = parse(s); return toStr(new Date(d.getTime() + n * DAY)); }
+  function diffDays(a, b) { return Math.round((parse(b) - parse(a)) / DAY); }
+  function fmt(s) {
+    var d = parse(s);
+    return d ? pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear() : '';
+  }
+  function weekday(s) { var d = parse(s); return d ? WEEKDAYS[d.getUTCDay()] : ''; }
+  function lastDayOfMonth(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+
+  // Tuần ISO 8601: bắt đầu thứ Hai, tuần 1 chứa ngày 4/1
+  function isoWeek(s) {
+    var d = parse(s);
+    var dow = d.getUTCDay() || 7;
+    d = new Date(d.getTime() + (4 - dow) * DAY);
+    var y = d.getUTCFullYear();
+    var week = Math.ceil(((d - Date.UTC(y, 0, 1)) / DAY + 1) / 7);
+    return { year: y, week: week };
+  }
+  function isoWeekMonday(y, w) {
+    var jan4 = new Date(Date.UTC(y, 0, 4));
+    var dow = jan4.getUTCDay() || 7;
+    return toStr(new Date(jan4.getTime() + ((1 - dow) + (w - 1) * 7) * DAY));
+  }
+
+  return {
+    toStr: toStr, parse: parse, isValid: isValid, today: today, addDays: addDays, diffDays: diffDays,
+    fmt: fmt, weekday: weekday, lastDayOfMonth: lastDayOfMonth, isoWeek: isoWeek, isoWeekMonday: isoWeekMonday
+  };
+})();
+
+/* Kỳ của mục tiêu. Giá trị lưu: Năm "2026", Quý "2027-Q1", Tháng "2026-11", Tuần "2026-W48" */
+App.period = (function () {
+  var D = App.date, pad = function (n) { return App.util.pad(n); };
+
+  function valueOf(type, dateStr) {
+    var d = D.parse(dateStr), y = d.getUTCFullYear(), m = d.getUTCMonth() + 1;
+    if (type === 'Năm') return String(y);
+    if (type === 'Quý') return y + '-Q' + Math.ceil(m / 3);
+    if (type === 'Tháng') return y + '-' + pad(m);
+    var w = D.isoWeek(dateStr);
+    return w.year + '-W' + pad(w.week);
+  }
+
+  function range(type, value) {
+    var v = String(value || ''), m;
+    if (type === 'Năm' && (m = /^(\d{4})$/.exec(v))) {
+      return { start: m[1] + '-01-01', end: m[1] + '-12-31' };
+    }
+    if (type === 'Quý' && (m = /^(\d{4})-Q([1-4])$/.exec(v))) {
+      var y = +m[1], q = +m[2], m1 = (q - 1) * 3 + 1, m3 = q * 3;
+      return { start: y + '-' + pad(m1) + '-01', end: y + '-' + pad(m3) + '-' + pad(D.lastDayOfMonth(y, m3)) };
+    }
+    if (type === 'Tháng' && (m = /^(\d{4})-(\d{2})$/.exec(v))) {
+      return { start: v + '-01', end: v + '-' + pad(D.lastDayOfMonth(+m[1], +m[2])) };
+    }
+    if (type === 'Tuần' && (m = /^(\d{4})-W(\d{2})$/.exec(v))) {
+      var mon = D.isoWeekMonday(+m[1], +m[2]);
+      return { start: mon, end: D.addDays(mon, 6) };
+    }
+    return null;
+  }
+
+  function label(type, value) {
+    var v = String(value || ''), m;
+    if (type === 'Năm') return 'Năm ' + v;
+    if (type === 'Quý' && (m = /^(\d{4})-Q(\d)$/.exec(v))) return 'Q' + m[2] + '/' + m[1];
+    if (type === 'Tháng' && (m = /^(\d{4})-(\d{2})$/.exec(v))) return 'Tháng ' + m[2] + '/' + m[1];
+    if (type === 'Tuần' && (m = /^(\d{4})-W(\d{2})$/.exec(v))) return 'Tuần ' + (+m[2]) + '/' + m[1];
+    return v;
+  }
+
+  // Danh sách giá trị kỳ quanh hôm nay để chọn trong form
+  function options(type, todayStr) {
+    var out = [], d = D.parse(todayStr), y = d.getUTCFullYear(), i;
+    if (type === 'Năm') {
+      for (i = y - 1; i <= y + 3; i++) out.push(String(i));
+    } else if (type === 'Quý') {
+      for (i = y - 1; i <= y + 1; i++) for (var q = 1; q <= 4; q++) out.push(i + '-Q' + q);
+    } else if (type === 'Tháng') {
+      var mm = d.getUTCMonth();
+      for (i = -6; i <= 14; i++) {
+        var t = new Date(Date.UTC(y, mm + i, 1));
+        out.push(t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1));
+      }
+    } else {
+      var monday = D.addDays(todayStr, 1 - (d.getUTCDay() || 7));
+      for (i = -8; i <= 30; i++) out.push(valueOf('Tuần', D.addDays(monday, i * 7)));
+    }
+    return out;
+  }
+
+  return { valueOf: valueOf, range: range, label: label, options: options };
+})();
+
+App.logic = {
+  // Tiến độ theo task: số task xong / tổng task gắn với mục tiêu
+  goalProgress: function (goal, tasks) {
+    var mine = tasks.filter(function (t) { return t.goal_id === goal.id; });
+    var done = mine.filter(function (t) { return t.status === App.C.DONE; }).length;
+    var total = mine.length;
+    var pct = total ? Math.round(done / total * 100) : 0;
+    return { done: done, total: total, pct: pct };
+  },
+  // ≥ 100% đạt, 80–99% gần đạt, < 80% cần chú ý
+  level: function (pct) { return pct >= 100 ? 'ok' : pct >= 80 ? 'pr' : 'warn'; },
+  levelLabel: function (pct) { return pct >= 100 ? 'Đạt' : pct >= 80 ? 'Gần đạt' : 'Cần chú ý'; },
+
+  isDone: function (t) { return t.status === App.C.DONE; },
+  isOverdue: function (t, today) { return !!t.due_date && t.due_date < today && t.status !== App.C.DONE; },
+  // Đến hạn hôm nay hoặc ngày mai
+  isDueSoon: function (t, today) {
+    return !!t.due_date && t.status !== App.C.DONE &&
+      (t.due_date === today || t.due_date === App.date.addDays(today, 1));
+  },
+  isTop3Today: function (t, today) { return App.util.isTrue(t.is_top3) && t.top3_date === today; },
+
+  // Top 3 hôm trước chưa xong thì giữ lại sang hôm nay
+  top3CarryOver: function (tasks, today) {
+    return tasks.filter(function (t) {
+      return App.util.isTrue(t.is_top3) && t.top3_date && t.top3_date < today && t.status !== App.C.DONE;
+    });
+  },
+
+  priorityRank: function (p) { return { 'Cao': 0, 'Trung bình': 1, 'Thấp': 2 }[p] != null ? { 'Cao': 0, 'Trung bình': 1, 'Thấp': 2 }[p] : 1; },
+
+  // Việc chưa xong lên trước, rồi theo ưu tiên, rồi theo hạn
+  sortTasks: function (list) {
+    var L = App.logic;
+    return list.slice().sort(function (a, b) {
+      var d = (L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0);
+      if (d) return d;
+      d = L.priorityRank(a.priority) - L.priorityRank(b.priority);
+      if (d) return d;
+      d = (a.due_date || '9999') < (b.due_date || '9999') ? -1 : (a.due_date || '9999') > (b.due_date || '9999') ? 1 : 0;
+      if (d) return d;
+      return (a.created_at || '') < (b.created_at || '') ? -1 : 1;
+    });
+  },
+
+  newTask: function (fields) {
+    var now = App.util.now();
+    var t = {
+      id: App.util.uuid(), title: '', goal_id: '', due_date: App.date.today(), priority: 'Trung bình',
+      status: 'Cần làm', is_top3: 'FALSE', top3_date: '', recurring_rule: '', parent_recurring_id: '',
+      done_at: '', note: '', created_at: now, updated_at: now
+    };
+    return Object.assign(t, fields || {});
+  },
+
+  newGoal: function (fields) {
+    var now = App.util.now(), today = App.date.today();
+    var pv = App.period.valueOf('Tháng', today), r = App.period.range('Tháng', pv);
+    var g = {
+      id: App.util.uuid(), name: '', group: 'Công việc', period_type: 'Tháng', period_value: pv,
+      start_date: r.start, end_date: r.end, progress_mode: 'task', unit: '', target: '', actual: '',
+      status: 'Đang làm', note: '', created_at: now, updated_at: now
+    };
+    return Object.assign(g, fields || {});
+  }
+};

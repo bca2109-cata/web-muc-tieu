@@ -1,0 +1,8 @@
+{
+  "name": "web-muc-tieu",
+  "private": true,
+  "description": "Công cụ kiểm thử cho web quản lý mục tiêu. Web chạy không cần Node.",
+  "devDependencies": {
+    "playwright": "^1.65.1"
+  }
+}
