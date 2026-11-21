@@ -21,6 +21,7 @@ Duyệt xong thì: ghi ngày xong GĐ1 vào bảng trong `docs/TIEN-DO.md`, comm
 - Code.gs ghi theo tên cột ở dòng 1, nên thêm cột vào cuối sheet thì **không cần triển khai lại** Apps Script. `caiDat` tự thêm cột còn thiếu.
 - **Mã bí mật: không bao giờ hỏi, gõ, đọc hay nhắc lại.** Người dùng tự dán vào ô Cài đặt trên web (lưu localStorage).
 - JS thường, không ES module, mọi thứ nằm trong `window.App`. Thứ tự nạp ở `src/index.html`: config, logic, mock-data, api-mock, api-sheet, api, flowers, ui, store, components, views/today, views/goals, forms, app.
+- **Mỗi lần sửa CSS/JS rồi đẩy lên: đổi số `?v=...` ở các thẻ link/script trong `src/index.html`** (đang dùng mã commit gần nhất), vì GitHub Pages cho trình duyệt giữ file cũ khoảng 10 phút.
 - Bản mock: mở bằng `file:` hoặc thêm `?mock=1`. Tham số kiểm thử: `?today=yyyy-mm-dd`, `?fail=1` (giả lập lưu lỗi).
 - `store.js`: cập nhật lạc quan, hàng đợi lưu nền, có bộ nhớ đệm để mở lại hiện ngay.
 - localStorage của người dùng: `lp_bg` (`flowers` mặc định hoặc `plain`), `lp_today_view` (`matrix` mặc định hoặc `list` = dạng Bảng), `lp_top3_auto` (ngày đã tự điền Top 3).
