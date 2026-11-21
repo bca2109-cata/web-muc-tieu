@@ -7,8 +7,8 @@
 | Giai đoạn | Trạng thái | Ngày xong | Ghi chú |
 |---|---|---|---|
 | 0. Đề xuất triển khai | Xong | 21/11/2026 | Xem `docs/DE-XUAT-GD0.md`. 21/11/2026 trên admin-pc: đã chuyển 2 agent vào `.claude/agents/` (có `model: sonnet`), đã xóa `cai-dat-agents/`. Máy có Node v26.13.0, npm 11.20.0 |
-| 1. Mục tiêu và task cơ bản | Đã triển khai, đổi giao diện Life Planner, chờ duyệt | | Xem mục "Giai đoạn 1" bên dưới |
-| 2. Chỉ số, kỳ, task lặp, cảnh báo | Chưa bắt đầu | | |
+| 1. Mục tiêu và task cơ bản | Xong (đã duyệt) | 22/11/2026 | Xem mục "Giai đoạn 1" bên dưới |
+| 2. Chỉ số, kỳ, task lặp, cảnh báo, tab Task | Đang làm | | Người dùng thêm vào GĐ2: tab Task, nút "Thêm task đầy đủ" |
 | 3. Thói quen và streak | Chưa bắt đầu | | |
 | 4. Tổng kết, biểu đồ, chế độ tối, PWA | Chưa bắt đầu | | |
 
@@ -80,13 +80,17 @@
 - qa-tester: ĐẠT, không lỗi Cao hay Trung bình. Đã sửa: % trong chú thích biểu đồ làm tròn sao cho tổng luôn 100.
 - Bộ `tests-qa/qa-lifeplanner.js` cập nhật theo giao diện mới: đạt toàn bộ.
 
+### Quyết định khi duyệt Giai đoạn 1 (22/11/2026)
+- Duyệt Giai đoạn 1.
+- Giữ mặt trời có mặt cười trong khung chào (ngoại lệ của quy tắc "không dùng mascot").
+- Tab Task làm ngay ở Giai đoạn 2. Thêm nút "Thêm task đầy đủ" mở form ngay.
+- Giữ dữ liệu thử trong Sheet để tiếp tục kiểm thử.
+
 ## Câu hỏi chờ người dùng
-- Task chưa xong mà không có hạn chót, hoặc hạn từ ngày kia trở đi, hiện chưa thấy ở tab Hôm nay (chỉ thấy trong chi tiết mục tiêu). Tab Task (có đủ bộ lọc) có trong SPEC mục 5 nhưng lộ trình mục 8 chưa xếp vào giai đoạn nào. Làm tab Task ở giai đoạn nào?
-- Thêm task hiện chỉ có ô thêm nhanh, muốn đổi mục tiêu, hạn hay ưu tiên thì bấm vào task để sửa. Có cần nút "Thêm task đầy đủ" mở form ngay không?
+- (chưa có)
 
 ## Lỗi mức Thấp của đợt đổi giao diện
 - Dữ liệu mẫu có việc "Họp chốt số liệu với phòng kế toán" đã Xong mà ngày xong ở tương lai (`mock-data.js`), nên giả lập sang ngày hôm sau sẽ thấy 1 việc xong sẵn. Chỉ ảnh hưởng bản mock.
-- Mặt trời trong khung chào có mặt cười. Bạn đã duyệt ở bản xem trước, nhưng SPEC ghi "không dùng mascot": cần bạn xác nhận giữ hay bỏ mặt cười.
 - Màu đỏ còn dùng cho nút Xóa và lỗi trong form (ngoài nghĩa "gấp"). Nhãn ưu tiên Cao cùng họ hồng với trái tim.
 - Bo góc vài khối khác 22px: khung chào và hộp thoại 24px, ô ma trận 20px, giấy note 18px.
 - Hình nền và hoa bung chỉ dùng 11 loại hoa, không dùng cành lá (cành lá chỉ để trang trí cố định).

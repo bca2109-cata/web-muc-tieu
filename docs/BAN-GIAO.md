@@ -3,18 +3,13 @@
 Đọc file này trước, rồi chỉ mở thêm file nào thật sự cần. Chi tiết yêu cầu ở `SPEC.md`, quy tắc giao diện ở `DESIGN.md`, lịch sử ở `docs/TIEN-DO.md`.
 
 ## 1. Đang ở đâu
-- Giai đoạn 0: xong. Giai đoạn 1 (mục tiêu và task cơ bản, giao diện Life Planner): **đã triển khai, đang chờ người dùng duyệt**. Chưa được làm Giai đoạn 2 khi chưa có lời duyệt.
-- Commit mới nhất: `d9a2882`, đã đẩy lên `main`. Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
-- Sheet thật đang có dữ liệu thử để người dùng xem giao diện (mục 5).
+- Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). **Đang làm Giai đoạn 2**: tiến độ theo chỉ số, lọc theo kỳ, task lặp, cảnh báo trễ hạn và tiến độ chậm, cộng thêm tab Task và nút "Thêm task đầy đủ" (người dùng yêu cầu).
+- Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
+- Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
+- Mặt trời mặt cười: người dùng chốt **giữ**.
 
 ## 2. Việc chờ người dùng trả lời
-1. Duyệt Giai đoạn 1 với giao diện mới.
-2. Mặt trời trong khung chào có mặt cười, SPEC ghi "không dùng mascot": giữ hay bỏ? (`App.views.sun` trong `src/js/views/today.js`)
-3. Tab Task (SPEC mục 5) chưa xếp vào giai đoạn nào ở mục 8: làm ở giai đoạn nào?
-4. Có cần nút "Thêm task đầy đủ" mở form ngay không (hiện chỉ có ô thêm nhanh)?
-5. Xóa dữ liệu thử trong Sheet lúc nào.
-
-Duyệt xong thì: ghi ngày xong GĐ1 vào bảng trong `docs/TIEN-DO.md`, commit, rồi bắt đầu Giai đoạn 2 theo SPEC mục 8.
+- (chưa có)
 
 ## 3. Kiến trúc (chỉ điều không tự thấy ngay trong code)
 - Phương án B: web tĩnh trên GitHub Pages, gọi Web App Apps Script (`apps-script/Code.gs`, tên "Muc tieu API", bản "Ban 1"). Gọi bằng POST `text/plain`, mã bí mật nằm trong body. Thao tác: `ping`, `loadAll`, `batch`.

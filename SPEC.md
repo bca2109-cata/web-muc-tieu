@@ -75,7 +75,7 @@ Tab chưa làm tới thì vẫn hiện trên thanh tab, kèm nhãn "Sắp có".
 
 Yêu cầu trải nghiệm:
 - Trên điện thoại dùng thanh tab cố định ở đáy màn hình. Tick task bằng một chạm, có hiệu ứng nhẹ.
-- Thêm task nhanh chỉ cần gõ tên rồi Enter, các trường khác lấy giá trị mặc định (hạn = hôm nay, ưu tiên = Trung bình).
+- Thêm task nhanh chỉ cần gõ tên rồi Enter, các trường khác lấy giá trị mặc định (hạn = hôm nay, ưu tiên = Trung bình). Cạnh ô thêm nhanh có nút "Thêm task đầy đủ" mở ngay form đủ trường.
 - Thao tác phải có cập nhật lạc quan: giao diện đổi ngay, lưu xuống Sheet ở nền. Lưu lỗi thì báo và cho thử lại.
 - Có trạng thái rỗng thân thiện, ví dụ "Chưa có mục tiêu cho quý này. Tạo mục tiêu đầu tiên?".
 
@@ -139,7 +139,7 @@ Tên web: **LIFE PLANNER**. Chi tiết đầy đủ (vai trò từng màu, cỡ 
 - Màu tiến độ: đạt dùng `--ok`, gần đạt dùng `--pr`, cần chú ý dùng `--warn`.
 - **Ma trận 4 ô** (quan trọng = ưu tiên Cao; khẩn cấp = trễ hạn, hạn hôm nay hoặc ngày mai): Khẩn cấp `--q1` (xử lý ngay lập tức), Lên lịch `--q2` (lập kế hoạch, đặt thời hạn rõ ràng), Xử lý sau `--q3` (giao người khác hoặc xử lý nhanh), Xem xét `--q4` (cắt giảm hoặc bỏ nếu không phục vụ mục tiêu). Dưới tên mỗi ô ghi cách xử lý. Mỗi task tô màu theo ô của nó (vạch trái, ô icon, nhãn).
 - Icon SVG nét tròn (stroke 2, lưới 24), có icon cạnh mọi nhãn và nút. Mỗi task có một icon riêng. **Không dùng emoji.**
-- Trang trí bằng **12 loại hoa** vẽ SVG (cúc, anh đào, tulip, hồng, hướng dương, oải hương, lưu ly, sứ, cánh bướm, chuông, cẩm tú cầu, cành lá), băng dính washi trên thẻ mục tiêu, giấy note dán nghiêng cho Top 3. Không dùng mascot.
+- Trang trí bằng **12 loại hoa** vẽ SVG (cúc, anh đào, tulip, hồng, hướng dương, oải hương, lưu ly, sứ, cánh bướm, chuông, cẩm tú cầu, cành lá), băng dính washi trên thẻ mục tiêu, giấy note dán nghiêng cho Top 3. Không dùng mascot (ngoại lệ đã duyệt: mặt trời có mặt cười trong khung chào).
 - Hình nền chọn được: **Hoa bay nhẹ, màu mờ** (mặc định) hoặc **Trơn**. Lưu lựa chọn trên từng thiết bị.
 - Tick xong một việc: hoa bung ra từ chỗ tick kèm một câu động viên. Mục tiêu vừa đạt 100%: hoa bung nhiều hơn. Người dùng bật "giảm chuyển động" trong máy thì chỉ hiện câu động viên.
 - Bo góc: 22px cho thẻ, 14px cho ô nhập, 99px cho nút tròn, pill và thanh tiến độ.
@@ -153,7 +153,7 @@ Tên web: **LIFE PLANNER**. Chi tiết đầy đủ (vai trò từng màu, cỡ 
 |---|---|---|
 | **0** | Đề xuất phương án triển khai (mục 6.2) và cấu trúc thư mục | Tôi chọn phương án |
 | **1** | Kết nối Sheet, CRUD Mục tiêu + Task, tab Hôm nay và Mục tiêu, tiến độ theo task | Dùng được trên máy tính và điện thoại |
-| **2** | Tiến độ theo chỉ số, lọc theo kỳ, task lặp lại, cảnh báo trễ hạn và tiến độ chậm | |
+| **2** | Tiến độ theo chỉ số, lọc theo kỳ, task lặp lại, cảnh báo trễ hạn và tiến độ chậm, tab Task, nút "Thêm task đầy đủ" | |
 | **3** | Thói quen, streak, tab Thói quen | |
 | **4** | Tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA | |
 
