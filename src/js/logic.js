@@ -15,8 +15,8 @@ App.C = {
   MISC: 'Việc lặt vặt',
   TOP3_MAX: 3,
   COLUMNS: {
-    Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at'],
-    Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at'],
+    Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
+    Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon'],
     Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
     HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
     Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at']
@@ -47,7 +47,7 @@ App.util = {
   },
   // Lớp CSS cho nhóm, ví dụ "g-Công-việc"
   groupClass: function (group) { return 'g-' + String(group || '').replace(/\s+/g, '-'); },
-  // Bọc các con số trong chuỗi bằng font mono
+  // Bọc các con số trong chuỗi để hiện chữ số đậm, thẳng hàng
   numify: function (s) { return App.util.esc(s).replace(/\d+([\/.:-]\d+)*%?/g, '<span class="num">$&</span>'); },
   isTrue: function (v) { return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1'; }
 };
@@ -208,14 +208,93 @@ App.logic = {
     });
   },
 
+  /* Ma trận 4 ô. Quan trọng = ưu tiên Cao. Gấp = trễ hạn, hạn hôm nay hoặc ngày mai.
+     1 Làm ngay, 2 Lên lịch, 3 Làm nhanh, 4 Để sau */
+  quadrant: function (t, today) {
+    var imp = t.priority === 'Cao';
+    var urg = !!t.due_date && t.due_date <= App.date.addDays(today, 1);
+    return imp && urg ? 1 : imp ? 2 : urg ? 3 : 4;
+  },
+  QUADRANTS: {
+    1: { label: 'Làm ngay', icon: 'flame', hint: 'Gấp và quan trọng' },
+    2: { label: 'Lên lịch', icon: 'calendar', hint: 'Quan trọng, chưa gấp' },
+    3: { label: 'Làm nhanh', icon: 'bolt', hint: 'Gấp, không quan trọng' },
+    4: { label: 'Để sau', icon: 'hourglass', hint: 'Không gấp, không quan trọng' }
+  },
+
+  // Mức quan trọng của mục tiêu: 1 đến 3 trái tim, để trống thì coi là 2
+  importance: function (g) {
+    var n = parseInt(g && g.importance, 10);
+    return n >= 1 && n <= 3 ? n : 2;
+  },
+
+  // Nhãn thời gian còn lại của mục tiêu: { text, kind: hot | warm | calm | plain }
+  goalDeadline: function (g, today) {
+    if (g.status === 'Hoàn thành') return { text: 'Hoàn thành', kind: 'calm' };
+    if (g.status === 'Tạm dừng') return { text: 'Tạm dừng', kind: 'plain' };
+    if (!App.date.isValid(g.end_date)) return null;
+    var d = App.date.diffDays(today, g.end_date);
+    if (d < 0) return { text: 'Quá hạn ' + (-d) + ' ngày', kind: 'hot' };
+    if (d === 0) return { text: 'Hết hạn hôm nay', kind: 'hot' };
+    return { text: 'Còn ' + d + ' ngày', kind: d <= 3 ? 'hot' : d <= 10 ? 'warm' : 'calm' };
+  },
+
+  // Đoán icon theo tên việc. Từ khóa viết không dấu, khớp theo từ.
+  ICON_RULES: [
+    ['mail', ['email', 'mail', 'gui thu', 'hop thu']],
+    ['phone', ['goi dien', 'dien thoai', 'goi cho', 'call', 'nhan tin']],
+    ['users', ['hop', 'meeting', 'phong van', 'gap', 'hen']],
+    ['chart', ['bieu do', 'so lieu', 'kpi', 'doanh thu', 'thong ke', 'dashboard']],
+    ['doc', ['bao cao', 'tai lieu', 'hop dong', 'van ban', 'slide', 'ke hoach', 'de xuat', 'nhan xet']],
+    ['laptop', ['code', 'lap trinh', 'website', 'web', 'may tinh', 'phan mem', 'excel']],
+    ['book', ['doc sach', 'sach', 'doc', 'truyen']],
+    ['grad', ['hoc', 'khoa hoc', 'bai', 'on thi', 'thi', 'chung chi', 'kiem tra', 'tieng anh']],
+    ['pencil', ['viet', 'ghi chep', 'nhat ky', 'soan', 've']],
+    ['shoe', ['chay', 'chay bo', 'di bo', 'buoc']],
+    ['dumbbell', ['tap', 'gym', 'yoga', 'the duc', 'boi', 'dap xe']],
+    ['tooth', ['rang', 'nha khoa']],
+    ['pill', ['thuoc', 'kham', 'bac si', 'benh vien', 'vitamin', 'suc khoe']],
+    ['food', ['an', 'nau', 'com', 'bua', 'nha hang', 'an sang']],
+    ['drop', ['uong nuoc', 'nuoc']],
+    ['moon', ['ngu', 'nghi ngoi', 'thien']],
+    ['home', ['don nha', 'nha cua', 'giat', 'rua', 've sinh', 'lau']],
+    ['wallet', ['tien', 'thanh toan', 'hoa don', 'chuyen khoan', 'ngan hang', 'luong', 'bao hiem', 'dong phi']],
+    ['cart', ['mua', 'sieu thi', 'cho', 'dat hang']],
+    ['car', ['xe', 'oto', 'xang', 'bao duong']],
+    ['plane', ['du lich', 'may bay', 'khach san', 'chuyen bay']],
+    ['gift', ['qua', 'sinh nhat', 'tang', 'ky niem']],
+    ['music', ['nhac', 'dan', 'hat', 'piano', 'guitar']]
+  ],
+  TASK_ICONS: ['note', 'mail', 'phone', 'users', 'chart', 'doc', 'laptop', 'book', 'grad', 'pencil', 'shoe', 'dumbbell',
+    'tooth', 'pill', 'food', 'drop', 'moon', 'home', 'wallet', 'cart', 'car', 'plane', 'gift', 'music'],
+  plain: function (s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[đĐ]/g, 'd')
+      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  },
+  guessIcon: function (title) {
+    var words = ' ' + App.logic.plain(title) + ' ';
+    var rules = App.logic.ICON_RULES;
+    for (var i = 0; i < rules.length; i++) {
+      for (var j = 0; j < rules[i][1].length; j++) {
+        if (words.indexOf(' ' + rules[i][1][j] + ' ') >= 0) return rules[i][0];
+      }
+    }
+    return 'note';
+  },
+  iconOf: function (t) {
+    return App.logic.TASK_ICONS.indexOf(t.icon) >= 0 ? t.icon : App.logic.guessIcon(t.title);
+  },
+
   newTask: function (fields) {
     var now = App.util.now();
     var t = {
       id: App.util.uuid(), title: '', goal_id: '', due_date: App.date.today(), priority: 'Trung bình',
       status: 'Cần làm', is_top3: 'FALSE', top3_date: '', recurring_rule: '', parent_recurring_id: '',
-      done_at: '', note: '', created_at: now, updated_at: now
+      done_at: '', note: '', created_at: now, updated_at: now, icon: ''
     };
-    return Object.assign(t, fields || {});
+    Object.assign(t, fields || {});
+    if (!t.icon) t.icon = App.logic.guessIcon(t.title);
+    return t;
   },
 
   newGoal: function (fields) {
@@ -224,7 +303,7 @@ App.logic = {
     var g = {
       id: App.util.uuid(), name: '', group: 'Công việc', period_type: 'Tháng', period_value: pv,
       start_date: r.start, end_date: r.end, progress_mode: 'task', unit: '', target: '', actual: '',
-      status: 'Đang làm', note: '', created_at: now, updated_at: now
+      status: 'Đang làm', note: '', created_at: now, updated_at: now, importance: '2'
     };
     return Object.assign(g, fields || {});
   }

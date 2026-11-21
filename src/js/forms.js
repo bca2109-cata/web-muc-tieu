@@ -20,6 +20,24 @@ App.forms = (function () {
         '<span>' + esc(lab) + '</span></label>';
     }).join('') + '</div>';
   }
+  var ICON_NAMES = { note: 'Ghi chú', mail: 'Thư', phone: 'Điện thoại', users: 'Họp, gặp mặt', chart: 'Số liệu', doc: 'Tài liệu',
+    laptop: 'Máy tính', book: 'Sách', grad: 'Học', pencil: 'Viết', shoe: 'Chạy bộ', dumbbell: 'Tập luyện', tooth: 'Răng',
+    pill: 'Thuốc, khám bệnh', food: 'Ăn uống', drop: 'Uống nước', moon: 'Ngủ nghỉ', home: 'Việc nhà', wallet: 'Tiền',
+    cart: 'Mua sắm', car: 'Xe cộ', plane: 'Du lịch', gift: 'Quà tặng', music: 'Âm nhạc' };
+  function iconPicker(selected) {
+    return '<div class="icon-pick" role="radiogroup" aria-label="Icon của việc">' + App.logic.TASK_ICONS.map(function (n) {
+      return '<label title="' + ICON_NAMES[n] + '"><input type="radio" name="icon" value="' + n + '" aria-label="' + ICON_NAMES[n] + '"' + (n === selected ? ' checked' : '') + '><span>' + icon(n) + '</span></label>';
+    }).join('') + '</div>';
+  }
+  var IMPORTANCE = ['Bình thường', 'Quan trọng', 'Rất quan trọng'];
+  function heartPicker(selected) {
+    return '<div class="seg" role="radiogroup" aria-label="Mức quan trọng">' + [1, 2, 3].map(function (n) {
+      var h = '';
+      for (var i = 1; i <= 3; i++) h += icon('heart', 'ic14' + (i <= n ? ' fill' : ''));
+      return '<label><input type="radio" name="importance" value="' + n + '"' + (n === selected ? ' checked' : '') + '>' +
+        '<span><span class="hearts">' + h + '</span>' + IMPORTANCE[n - 1] + '</span></label>';
+    }).join('') + '</div>';
+  }
   function val(form, name) { var el = form.elements[name]; return el ? String(el.value).trim() : ''; }
 
   /* ---------- Task ---------- */
@@ -34,22 +52,33 @@ App.forms = (function () {
     var top = App.logic.isTop3Today(t, today);
 
     var body = '<form data-form="task" novalidate>' +
-      '<label class="field"><span>Tên việc</span><input class="input" name="title" maxlength="200" required autofocus value="' + esc(t.title) + '"></label>' +
+      '<label class="field"><span>' + icon('text', 'ic14') + 'Tên việc</span><input class="input" name="title" maxlength="200" required autofocus value="' + esc(t.title) + '"></label>' +
       '<p class="form-error" hidden data-err="title">Hãy nhập tên việc.</p>' +
-      '<label class="field"><span>Mục tiêu</span><select class="select" name="goal_id">' + options(goalOpts, t.goal_id) + '</select></label>' +
-      '<label class="field"><span>Hạn chót</span><input class="input" type="date" name="due_date" value="' + esc(t.due_date) + '"></label>' +
-      '<div class="field"><span>Mức ưu tiên</span>' + seg('priority', App.C.PRIORITY, t.priority) + '</div>' +
-      '<div class="field"><span>Trạng thái</span>' + seg('status', App.C.TASK_STATUS, t.status) + '</div>' +
-      '<label class="field"><span>Ghi chú</span><textarea class="textarea" name="note" maxlength="500">' + esc(t.note) + '</textarea></label>' +
-      '<label class="check-line"><input type="checkbox" name="top3"' + (top ? ' checked' : '') + '> Top 3 hôm nay</label>' +
+      '<div class="field"><span>' + icon('sparkle', 'ic14') + 'Icon <small class="muted">(tự đoán theo tên, bấm để đổi)</small></span>' + iconPicker(App.logic.iconOf(t)) + '</div>' +
+      '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu</span><select class="select" name="goal_id">' + options(goalOpts, t.goal_id) + '</select></label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Hạn chót</span><input class="input" type="date" name="due_date" value="' + esc(t.due_date) + '"></label>' +
+      '<div class="field"><span>' + icon('up', 'ic14') + 'Mức ưu tiên</span>' + seg('priority', App.C.PRIORITY, t.priority) + '</div>' +
+      '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.TASK_STATUS, t.status) + '</div>' +
+      '<label class="field"><span>' + icon('text', 'ic14') + 'Ghi chú</span><textarea class="textarea" name="note" maxlength="500">' + esc(t.note) + '</textarea></label>' +
+      '<label class="check-line"><input type="checkbox" name="top3"' + (top ? ' checked' : '') + '>' + icon('star', 'ic18') + 'Top 3 hôm nay</label>' +
       '<p class="form-error" hidden data-err="top3">Top 3 hôm nay đã đủ 3 việc. Bỏ bớt một việc trước.</p>' +
       '<div class="modal-foot">' +
-      (isNew ? '' : '<button type="button" class="btn btn-danger" data-act="delete">' + icon('trash', 'icon-sm') + 'Xóa</button>') +
-      '<span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button>' +
-      '<button type="submit" class="btn btn-primary">' + (isNew ? 'Thêm' : 'Lưu') + '</button></div></form>';
+      (isNew ? '' : '<button type="button" class="btn btn-danger" data-act="delete">' + icon('trash', 'ic18') + 'Xóa</button>') +
+      '<span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Hủy</button>' +
+      '<button type="submit" class="btn btn-primary">' + icon(isNew ? 'plus' : 'check', 'ic18') + (isNew ? 'Thêm' : 'Lưu') + '</button></div></form>';
 
     var m = App.ui.openModal({ title: isNew ? 'Thêm việc' : 'Sửa việc', body: body });
     var form = m.querySelector('form');
+
+    // Chưa tự chọn icon thì đổi icon theo tên đang gõ
+    var iconTouched = !isNew && App.logic.TASK_ICONS.indexOf(t.icon) >= 0 && t.icon !== App.logic.guessIcon(t.title);
+    form.querySelector('.icon-pick').addEventListener('change', function () { iconTouched = true; });
+    form.elements.title.addEventListener('input', function () {
+      if (iconTouched) return;
+      var g = App.logic.guessIcon(form.elements.title.value);
+      var r = form.querySelector('input[name="icon"][value="' + g + '"]');
+      if (r) r.checked = true;
+    });
 
     m.querySelector('[data-act="delete"]') && m.querySelector('[data-act="delete"]').addEventListener('click', function () {
       App.ui.ask('Xóa việc', 'Xóa việc "' + t.title + '"? Không hoàn tác được.', [
@@ -74,15 +103,18 @@ App.forms = (function () {
       var due = val(form, 'due_date');
       var row = Object.assign({}, t, {
         title: title, goal_id: val(form, 'goal_id'), due_date: App.date.isValid(due) ? due : '',
-        priority: val(form, 'priority') || 'Trung bình', status: val(form, 'status') || 'Cần làm', note: val(form, 'note')
+        priority: val(form, 'priority') || 'Trung bình', status: val(form, 'status') || 'Cần làm', note: val(form, 'note'),
+        icon: val(form, 'icon') || App.logic.guessIcon(title)
       });
+      var justDone = row.status === App.C.DONE && t.status !== App.C.DONE;
       if (row.status === App.C.DONE && !row.done_at) row.done_at = today;
       if (row.status !== App.C.DONE) row.done_at = '';
       if (wantTop) { row.is_top3 = 'TRUE'; row.top3_date = today; }
       else if (top) { row.is_top3 = 'FALSE'; row.top3_date = ''; }
       store().upsert('Tasks', row);
       App.ui.closeModal();
-      App.ui.toast(isNew ? 'Đã thêm việc.' : 'Đã lưu thay đổi.');
+      if (justDone) App.app.celebrate(t, null);
+      else App.ui.toast(isNew ? 'Đã thêm việc.' : 'Đã lưu thay đổi.');
     });
   }
 
@@ -99,21 +131,22 @@ App.forms = (function () {
     }
 
     var body = '<form data-form="goal" novalidate>' +
-      '<label class="field"><span>Tên mục tiêu</span><input class="input" name="name" maxlength="200" required autofocus value="' + esc(g.name) + '"></label>' +
+      '<label class="field"><span>' + icon('target', 'ic14') + 'Tên mục tiêu</span><input class="input" name="name" maxlength="200" required autofocus value="' + esc(g.name) + '"></label>' +
       '<p class="form-error" hidden data-err="name">Hãy nhập tên mục tiêu.</p>' +
-      '<div class="field"><span>Nhóm</span>' + seg('group', App.C.GROUPS, g.group) + '</div>' +
+      '<div class="field"><span>' + icon('tag', 'ic14') + 'Nhóm</span>' + seg('group', App.C.GROUPS, g.group) + '</div>' +
+      '<div class="field"><span>' + icon('heart', 'ic14') + 'Mức quan trọng</span>' + heartPicker(App.logic.importance(g)) + '</div>' +
       '<div class="row2">' +
-      '<label class="field"><span>Loại kỳ</span><select class="select" name="period_type">' + options(App.C.PERIOD_TYPES, g.period_type) + '</select></label>' +
-      '<label class="field"><span>Kỳ</span><select class="select" name="period_value">' + periodOpts(g.period_type, g.period_value) + '</select></label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Loại kỳ</span><select class="select" name="period_type">' + options(App.C.PERIOD_TYPES, g.period_type) + '</select></label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Kỳ</span><select class="select" name="period_value">' + periodOpts(g.period_type, g.period_value) + '</select></label>' +
       '</div><div class="row2">' +
-      '<label class="field"><span>Ngày bắt đầu</span><input class="input" type="date" name="start_date" value="' + esc(g.start_date) + '"></label>' +
-      '<label class="field"><span>Ngày kết thúc</span><input class="input" type="date" name="end_date" value="' + esc(g.end_date) + '"></label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Ngày bắt đầu</span><input class="input" type="date" name="start_date" value="' + esc(g.start_date) + '"></label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Ngày kết thúc</span><input class="input" type="date" name="end_date" value="' + esc(g.end_date) + '"></label>' +
       '</div>' +
       '<p class="form-error" hidden data-err="dates">Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.</p>' +
-      '<div class="field"><span>Trạng thái</span>' + seg('status', App.C.GOAL_STATUS, g.status) + '</div>' +
-      '<label class="field"><span>Ghi chú</span><textarea class="textarea" name="note" maxlength="1000">' + esc(g.note) + '</textarea></label>' +
-      '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button>' +
-      '<button type="submit" class="btn btn-primary">' + (isNew ? 'Tạo mục tiêu' : 'Lưu') + '</button></div></form>';
+      '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.GOAL_STATUS, g.status) + '</div>' +
+      '<label class="field"><span>' + icon('text', 'ic14') + 'Ghi chú</span><textarea class="textarea" name="note" maxlength="1000">' + esc(g.note) + '</textarea></label>' +
+      '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Hủy</button>' +
+      '<button type="submit" class="btn btn-primary">' + icon(isNew ? 'plus' : 'check', 'ic18') + (isNew ? 'Tạo mục tiêu' : 'Lưu') + '</button></div></form>';
 
     var m = App.ui.openModal({ title: isNew ? 'Thêm mục tiêu' : 'Sửa mục tiêu', body: body });
     var form = m.querySelector('form');
@@ -146,6 +179,7 @@ App.forms = (function () {
       var row = Object.assign({}, g, {
         name: name, group: val(form, 'group') || 'Công việc', period_type: typeSel.value, period_value: valSel.value,
         start_date: start, end_date: end, status: val(form, 'status') || 'Đang làm', note: val(form, 'note'),
+        importance: val(form, 'importance') || '2',
         progress_mode: g.progress_mode || 'task'
       });
       store().upsert('Goals', row);
@@ -185,15 +219,15 @@ App.forms = (function () {
     var mock = App.api.mode === 'mock';
     var body = mock
       ? '<p>Đang dùng <strong>dữ liệu mẫu</strong> lưu trên trình duyệt này, chưa kết nối Google Sheet.</p>' +
-        '<div class="modal-foot"><button type="button" class="btn btn-danger" data-act="reset">Khôi phục dữ liệu mẫu</button>' +
-        '<span class="spacer"></span><button type="button" class="btn" data-close>Đóng</button></div>'
+        '<div class="modal-foot"><button type="button" class="btn btn-danger" data-act="reset">' + icon('refresh', 'ic18') + 'Khôi phục dữ liệu mẫu</button>' +
+        '<span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Đóng</button></div>'
       : (reason ? '<p class="form-error" style="margin:0 0 12px">' + esc(reason) + '</p>' : '') +
         '<p>Dán mã bí mật lấy từ Apps Script. Mỗi thiết bị chỉ cần nhập một lần.</p>' +
-        '<form data-form="settings" novalidate><label class="field"><span>Mã bí mật</span>' +
+        '<form data-form="settings" novalidate><label class="field"><span>' + icon('key', 'ic14') + 'Mã bí mật</span>' +
         '<input class="input num" name="token" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(App.settings.getToken()) + '"></label>' +
         '<p class="form-error" hidden data-err="token"></p>' +
-        '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Đóng</button>' +
-        '<button type="submit" class="btn btn-primary">Lưu và kết nối</button></div></form>';
+        '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Đóng</button>' +
+        '<button type="submit" class="btn btn-primary">' + icon('cloud', 'ic18') + 'Lưu và kết nối</button></div></form>';
 
     var m = App.ui.openModal({ title: mock ? 'Cài đặt' : 'Kết nối Google Sheet', body: body });
 
@@ -223,7 +257,7 @@ App.forms = (function () {
         App.ui.toast('Đã kết nối Google Sheet.');
         App.app.reload();
       }, function (e2) {
-        btn.disabled = false; btn.textContent = 'Lưu và kết nối';
+        btn.disabled = false; btn.innerHTML = icon('cloud', 'ic18') + 'Lưu và kết nối';
         err.textContent = e2.message || 'Không kết nối được.'; err.hidden = false;
       });
     });

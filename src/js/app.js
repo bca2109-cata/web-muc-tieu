@@ -3,13 +3,17 @@ var App = window.App || (window.App = {});
 
 App.app = (function () {
   var view = document.getElementById('view');
-  var ui = { groupFilter: '', flashId: null };
+  var ui = { groupFilter: '', flashId: null, todayView: readPref('lp_today_view', 'matrix') };
+  function readPref(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+  function writePref(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* bỏ qua */ } }
   var loaded = false;
   var loadError = null;
   var flashTimer = null;
 
   function route() {
     var h = location.hash || '#/hom-nay';
+    var s = /^#\/sap-co\/(task|thoi-quen|tong-ket)$/.exec(h);
+    if (s) return { tab: s[1], soon: true };
     var m = /^#\/muc-tieu\/(.+)$/.exec(h);
     if (m) return { tab: 'goals', goalId: decodeURIComponent(m[1]) };
     if (h.indexOf('#/muc-tieu') === 0) return { tab: 'goals' };
@@ -41,6 +45,7 @@ App.app = (function () {
       a.classList.toggle('is-active', on);
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
+    if (r.soon) { view.innerHTML = App.views.soon(r.tab); return; }
     if (!loaded) {
       view.innerHTML = loadError
         ? '<div class="card empty"><p>Không tải được dữ liệu. ' + App.util.esc(loadError) + '</p>' +
@@ -51,7 +56,8 @@ App.app = (function () {
     var snap = snapshotInputs();
     var state = App.store.get();
     var html;
-    if (r.tab === 'goals' && r.goalId) html = App.views.goalDetail(state, ui, r.goalId);
+    if (r.soon) html = App.views.soon(r.tab);
+    else if (r.tab === 'goals' && r.goalId) html = App.views.goalDetail(state, ui, r.goalId);
     else if (r.tab === 'goals') html = App.views.goals(state, ui);
     else html = App.views.today(state, ui);
     view.innerHTML = html;
@@ -61,11 +67,34 @@ App.app = (function () {
   function findTask(id) { return App.store.get().tasks.find(function (t) { return t.id === id; }); }
   function findGoal(id) { return App.store.get().goals.find(function (g) { return g.id === id; }); }
 
+  // Hoa bung và câu động viên. oldTask: task trước khi đổi sang Xong, el: nút vừa bấm
+  function celebrate(oldTask, el) {
+    var x = window.innerWidth / 2, y = window.innerHeight / 2;
+    if (el && el.getBoundingClientRect) {
+      var r = el.getBoundingClientRect();
+      if (r.width) { x = r.left + r.width / 2; y = r.top + r.height / 2; }
+    }
+    var state = App.store.get();
+    var g = oldTask.goal_id ? findGoal(oldTask.goal_id) : null;
+    if (g) {
+      var before = App.logic.goalProgress(g, state.tasks.map(function (t) { return t.id === oldTask.id ? oldTask : t; })).pct;
+      var after = App.logic.goalProgress(g, state.tasks).pct;
+      if (before < 100 && after >= 100) {
+        App.flowers.burst(window.innerWidth / 2, window.innerHeight / 2, true);
+        App.ui.toast('Mục tiêu "' + g.name + '" đạt 100%! Cả vườn hoa nở cho bạn.', { cheer: true, duration: 4000 });
+        return;
+      }
+    }
+    App.flowers.burst(x, y, false);
+    App.ui.toast(App.flowers.cheerText(), { cheer: true, duration: 2600 });
+  }
+
   // Một chạm: Xong <-> Cần làm
-  function toggleTask(id) {
+  function toggleTask(id, el) {
     var t = findTask(id);
     if (!t) return;
     var done = t.status === App.C.DONE;
+    var rect = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
     ui.flashId = done ? null : id;
     clearTimeout(flashTimer);
     flashTimer = setTimeout(function () { ui.flashId = null; }, 400);
@@ -73,6 +102,8 @@ App.app = (function () {
       status: done ? 'Cần làm' : App.C.DONE,
       done_at: done ? '' : App.date.today()
     }));
+    // Nút cũ đã bị vẽ lại, nên truyền vị trí đã đo trước đó
+    if (!done) celebrate(t, rect ? { getBoundingClientRect: function () { return rect; } } : null);
   }
 
   function toggleTop3(id) {
@@ -118,7 +149,8 @@ App.app = (function () {
     if (!el) return;
     var id = el.getAttribute('data-id');
     switch (el.getAttribute('data-action')) {
-      case 'toggle-task': toggleTask(id); break;
+      case 'toggle-task': toggleTask(id, el); break;
+      case 'today-view': ui.todayView = el.getAttribute('data-view'); writePref('lp_today_view', ui.todayView); render(); break;
       case 'toggle-top3': toggleTop3(id); break;
       case 'open-task': var t = findTask(id); if (t) App.forms.openTask(t); break;
       case 'open-goal': go('#/muc-tieu/' + encodeURIComponent(id)); break;
@@ -139,9 +171,35 @@ App.app = (function () {
 
   document.getElementById('btn-settings').addEventListener('click', function () { App.forms.openSettings(); });
 
+  // Chọn hình nền: hoa bay nhẹ hoặc trơn
+  var bgBtn = document.getElementById('btn-bg'), bgPop = document.getElementById('bg-pop');
+  function syncBg() {
+    var mode = App.flowers.getBg();
+    bgPop.querySelectorAll('[data-bg]').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-bg') === mode);
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-bg') === mode));
+    });
+  }
+  function closeBg() { bgPop.hidden = true; bgBtn.setAttribute('aria-expanded', 'false'); }
+  bgBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    bgPop.hidden = !bgPop.hidden;
+    bgBtn.setAttribute('aria-expanded', String(!bgPop.hidden));
+    syncBg();
+  });
+  bgPop.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var b = e.target.closest('[data-bg]');
+    if (!b) return;
+    App.flowers.setBg(b.getAttribute('data-bg'));
+    syncBg();
+  });
+  document.addEventListener('click', function () { if (!bgPop.hidden) closeBg(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !bgPop.hidden) { closeBg(); bgBtn.focus(); } });
+
   var syncEl = document.getElementById('sync');
   App.store.onStatus(function (s) {
-    syncEl.textContent = s.text;
+    syncEl.innerHTML = App.ui.icon(s.kind === 'error' ? 'cloudoff' : 'cloud', 'ic14') + '<span>' + App.util.esc(s.text) + '</span>';
     syncEl.classList.toggle('is-error', s.kind === 'error');
     syncEl.title = s.error || '';
   });
@@ -177,13 +235,15 @@ App.app = (function () {
   }
 
   function start() {
+    App.flowers.install();
+    App.flowers.applyBg();
     if (App.api.mode === 'mock') document.getElementById('banner').hidden = false;
     if (App.store.loadCache()) { loaded = true; render(); }
     else render();
     reload();
   }
 
-  return { start: start, go: go, render: render, reload: reload, top3Count: top3Count };
+  return { start: start, go: go, render: render, reload: reload, top3Count: top3Count, celebrate: celebrate };
 })();
 
 App.app.start();

@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Life Planner - xem trước lần 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+:root{
+  --bg:#fff7fa; --surface:#ffffff; --ink:#3b2235; --muted:#7a5c70; --line:#f6dce8;
+  --accent:#d6336c; --accent-soft:#ffd6e7; --accent-deep:#a8204f;
+  --pink:#ffd6e7; --peach:#ffe1c7; --butter:#fff1b8; --mint:#cff3e2; --sky:#d6e9ff; --lilac:#e8ddff;
+  /* Nhóm */
+  --work:#3f6fc9; --work-bg:#dcebff; --study:#7d55cc; --study-bg:#ede5ff; --health:#2a8a5f; --health-bg:#d8f5e7;
+  /* Ma trận 4 ô */
+  --q1:#d9364f; --q1-bg:#ffe0e5;   /* Gấp + quan trọng: làm ngay */
+  --q2:#9a6a00; --q2-bg:#fff1b8;   /* Quan trọng, chưa gấp: lên lịch */
+  --q3:#b0369c; --q3-bg:#fbe0f6;   /* Gấp, không quan trọng: làm nhanh */
+  --q4:#4f6f80; --q4-bg:#e3eef3;   /* Không gấp, không quan trọng: để sau */
+  /* Độ gấp của mục tiêu */
+  --hot:#d9364f; --hot-bg:#ffe0e5; --warm:#c4610f; --warm-bg:#ffe8d1; --calm:#2a8a5f; --calm-bg:#dcf5e9;
+  --ok:#2a8a5f; --pr:#a86b00; --warn:#d9364f;
+  --font:'Nunito',system-ui,sans-serif; --display:'Baloo 2','Nunito',system-ui,sans-serif;
+  --shadow:0 4px 0 var(--line),0 10px 24px rgba(214,51,108,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;
+  background-image:radial-gradient(var(--line) 1.4px,transparent 1.4px);background-size:22px 22px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.2}
+.num{font-variant-numeric:tabular-nums;font-weight:800}
+.icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic14{width:14px;height:14px;stroke-width:2.4}
+.flower{flex:none}
+.wrap{max-width:1160px;margin:0 auto;padding:16px 16px 110px;position:relative}
+.deco{position:absolute;pointer-events:none}
+
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.5px}
+.logo span{color:var(--accent)}
+.sp{flex:1}
+.round{width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+
+.tabbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:5;display:flex;justify-content:space-around;padding:8px;border-radius:24px;background:var(--surface);box-shadow:0 6px 24px rgba(59,34,53,.12)}
+.tb{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:800;color:var(--muted);padding:4px 8px;border-radius:16px}
+.tb.on{background:var(--accent-soft);color:var(--accent)}
+.tb .soon{position:absolute;top:-6px;right:-4px;font-size:9px;padding:0 5px;border-radius:99px;background:var(--butter);color:var(--q2)}
+@media(min-width:900px){.tabbar{position:static;margin:0 0 18px;justify-content:flex-start;gap:6px;box-shadow:none;background:transparent;padding:0}.tb{flex-direction:row;gap:8px;font-size:15px;padding:8px 16px;background:var(--surface);border:2px solid var(--line)}.tb.on{border-color:var(--accent-soft)}}
+
+.cols{display:grid;gap:22px}
+@media(min-width:900px){.cols{grid-template-columns:430px 1fr;align-items:start}}
+
+.hello{position:relative;overflow:hidden;border-radius:28px;padding:20px;background:linear-gradient(135deg,#ffd6e7 0%,#ffe1c7 55%,#fff1b8 100%);box-shadow:var(--shadow)}
+.hello h1{font-size:28px;font-weight:800}
+.hello p{margin:2px 0 0;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
+.hello .stats{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;font-size:13px;font-weight:800;background:rgba(255,255,255,.8)}
+
+.add{display:flex;gap:8px;margin:16px 0}
+.add .in{flex:1;min-width:0;height:50px;border-radius:99px;border:2px dashed #f2b8cf;background:var(--surface);display:flex;align-items:center;gap:8px;padding:0 16px;color:var(--muted)}
+.add button{width:50px;height:50px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 4px 0 var(--accent-deep)}
+
+.sec-title{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:700;margin:20px 0 10px}
+.badge{font-family:var(--font);font-size:12px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--surface);border:2px solid var(--line);color:var(--muted)}
+.seg{margin-left:auto;display:inline-flex;padding:3px;border-radius:99px;background:var(--surface);border:2px solid var(--line);font-family:var(--font);font-size:13px;font-weight:800}
+.seg span{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;color:var(--muted)}
+.seg .on{background:var(--ink);color:#fff}
+
+/* Ma trận */
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.q{border-radius:20px;padding:12px;min-height:128px;position:relative}
+.q h3{font-size:15px;display:flex;align-items:center;gap:6px}
+.q small{display:block;font-size:12px;font-weight:700;opacity:.85;margin:-2px 0 6px}
+.q ul{list-style:none;margin:0;padding:0;font-size:13px;font-weight:700;display:grid;gap:5px}
+.q li{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.75);border-radius:10px;padding:4px 8px;color:var(--ink)}
+.q .n{position:absolute;top:10px;right:12px;font-family:var(--display);font-weight:800;font-size:20px}
+.q1{background:var(--q1-bg);color:var(--q1)}.q2{background:var(--q2-bg);color:var(--q2)}.q3{background:var(--q3-bg);color:var(--q3)}.q4{background:var(--q4-bg);color:var(--q4)}
+.axis{display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:var(--muted);margin:6px 4px 0}
+
+/* Top 3 */
+.notes{display:grid;gap:12px}
+.note{position:relative;display:flex;gap:12px;align-items:center;padding:14px 14px 14px 12px;border-radius:18px;box-shadow:0 3px 0 rgba(59,34,53,.06)}
+.note:nth-child(1){background:var(--butter);transform:rotate(-.6deg)}
+.note:nth-child(2){background:var(--mint);transform:rotate(.5deg)}
+.note .pin{position:absolute;top:-8px;right:18px}
+.rank{width:30px;height:30px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-weight:800;font-family:var(--display);color:var(--accent);flex:none}
+
+/* Task */
+.list{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+.task{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:2px dotted var(--line);position:relative}
+.task:first-child{border-top:0}
+.task .bar{position:absolute;left:0;top:10px;bottom:10px;width:5px;border-radius:0 6px 6px 0}
+.ticon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none}
+.ticon .icon{width:20px;height:20px}
+.t{flex:1;min-width:0;font-weight:700}
+.task.done .t{color:var(--muted);text-decoration:line-through;text-decoration-color:#e3a9c2;text-decoration-thickness:2px}
+.meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px 2px 7px;border-radius:99px;font-size:12px;font-weight:800;white-space:nowrap}
+.tick{width:32px;height:32px;border-radius:50%;border:2.5px solid #e3a9c2;background:var(--surface);flex:none;display:grid;place-items:center;color:transparent;position:relative}
+.tick.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.tq1{background:var(--q1-bg);color:var(--q1)}.tq2{background:var(--q2-bg);color:var(--q2)}.tq3{background:var(--q3-bg);color:var(--q3)}.tq4{background:var(--q4-bg);color:var(--q4)}
+.tw{background:var(--work-bg);color:var(--work)}.ts{background:var(--study-bg);color:var(--study)}.th{background:var(--health-bg);color:var(--health)}
+.tplain{background:#f7eef3;color:var(--muted)}
+.thot{background:var(--hot-bg);color:var(--hot)}.twarm{background:var(--warm-bg);color:var(--warm)}.tcalm{background:var(--calm-bg);color:var(--calm)}
+.actions{display:flex;gap:4px;color:var(--muted)}
+.actions span{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+
+/* Ăn mừng */
+.cheer{position:relative;margin-top:14px;border-radius:22px;padding:14px 16px;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}
+.cheer .burst{position:relative;width:56px;height:56px;flex:none}
+.cheer .burst svg{position:absolute}
+.cheer b{font-family:var(--display);font-size:18px;color:var(--accent)}
+
+/* Mục tiêu */
+.goals-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.goals-head h2{font-size:26px;flex:1;display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 18px;border-radius:99px;border:0;font:inherit;font-weight:800;background:var(--accent);color:#fff;box-shadow:0 4px 0 var(--accent-deep)}
+.filters{display:flex;gap:8px;overflow-x:auto;margin:12px 0 16px;padding-bottom:4px}
+.fl{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:99px;border:2px solid var(--line);background:var(--surface);font-weight:800;font-size:14px;color:var(--muted)}
+.fl.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.grid{display:grid;gap:18px}
+@media(min-width:620px){.grid{grid-template-columns:repeat(2,1fr)}}
+.goal{position:relative;background:var(--surface);border-radius:22px;padding:20px 18px 16px;box-shadow:var(--shadow)}
+.goal .tape{position:absolute;top:-9px;left:22px;width:70px;height:20px;border-radius:3px;opacity:.85;transform:rotate(-4deg)}
+.goal .corner{position:absolute;right:-8px;top:-12px}
+.work .tape{background:repeating-linear-gradient(45deg,var(--work-bg) 0 6px,#c6dcff 6px 12px)}
+.study .tape{background:repeating-linear-gradient(45deg,var(--study-bg) 0 6px,#ddd0ff 6px 12px)}
+.health .tape{background:repeating-linear-gradient(45deg,var(--health-bg) 0 6px,#c2eed8 6px 12px)}
+.goal-row{display:flex;gap:12px;align-items:flex-start}
+.sticker{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;flex:none;transform:rotate(-4deg)}
+.sticker .icon{width:26px;height:26px}
+.work .sticker{background:var(--work-bg);color:var(--work)}.study .sticker{background:var(--study-bg);color:var(--study)}.health .sticker{background:var(--health-bg);color:var(--health)}
+.goal h3{font-size:18px;font-weight:700;margin:2px 0 6px}
+.hearts{display:inline-flex;align-items:center;gap:1px;color:var(--hot)}
+.hearts .icon{width:15px;height:15px;stroke-width:2.2}
+.hearts .icon.fill{fill:currentColor}
+.prog{display:flex;align-items:center;gap:10px;margin-top:14px}
+.track{flex:1;height:14px;border-radius:99px;background:#fbe9f0;overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px;background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.35) 0 6px,transparent 6px 12px)}
+.pct{font-family:var(--display);font-weight:800;font-size:22px;min-width:58px;text-align:right}
+.lv-ok i{background-color:#5cc49a}.lv-ok .pct{color:var(--ok)}
+.lv-pr i{background-color:#f2b84b}.lv-pr .pct{color:var(--pr)}
+.lv-warn i{background-color:#ff8fa3}.lv-warn .pct{color:var(--warn)}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:13px;color:var(--muted);font-weight:700}
+.foot span{display:inline-flex;align-items:center;gap:4px}
+
+.soon-card{margin-top:18px;border-radius:22px;padding:22px;background:var(--surface);box-shadow:var(--shadow);text-align:center;color:var(--muted);font-weight:700}
+.soon-card h3{color:var(--ink);font-size:20px;margin:8px 0 2px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Hoa cúc: cánh theo màu chữ (color), nhụy vàng -->
+    <symbol id="daisy" viewBox="0 0 24 24">
+      <g fill="currentColor"><ellipse cx="12" cy="5.5" rx="3" ry="4"/><ellipse cx="12" cy="5.5" rx="3" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="5.5" rx="3" ry="4" transform="rotate(120 12 12)"/><ellipse cx="12" cy="5.5" rx="3" ry="4" transform="rotate(180 12 12)"/><ellipse cx="12" cy="5.5" rx="3" ry="4" transform="rotate(240 12 12)"/><ellipse cx="12" cy="5.5" rx="3" ry="4" transform="rotate(300 12 12)"/></g>
+      <circle cx="12" cy="12" r="3.4" fill="#ffd56b" stroke="#f2a33a" stroke-width="1"/>
+    </symbol>
+    <!-- Hoa anh đào -->
+    <symbol id="sakura" viewBox="0 0 24 24">
+      <g fill="currentColor"><path id="pt" d="M12 12C9 9.5 8.6 4.5 10.6 3.2L12 4.8l1.4-1.6C15.4 4.5 15 9.5 12 12z"/><use href="#pt" transform="rotate(72 12 12)"/><use href="#pt" transform="rotate(144 12 12)"/><use href="#pt" transform="rotate(216 12 12)"/><use href="#pt" transform="rotate(288 12 12)"/></g>
+      <circle cx="12" cy="12" r="1.8" fill="#fff" opacity=".9"/>
+    </symbol>
+    <!-- Hoa tulip -->
+    <symbol id="tulip" viewBox="0 0 24 24">
+      <path d="M12 13v9" stroke="#3fae7a" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 19c-3 0-5-2-5.5-4 2.5 0 4.5 1.5 5.5 4zM12 18c2.5-.3 4.3-2 4.8-3.6-2.3 0-4.2 1.3-4.8 3.6z" fill="#7fd1a8"/>
+      <path d="M7 4.5l2.5 3 2.5-4 2.5 4 2.5-3V9a5 5 0 0 1-10 0z" fill="currentColor"/>
+    </symbol>
+    <!-- Cành lá -->
+    <symbol id="sprig" viewBox="0 0 24 24">
+      <path d="M4 20C9 15 14 10 20 4" stroke="#3fae7a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <g fill="#a6e3c4"><ellipse cx="9" cy="13" rx="3.2" ry="1.6" transform="rotate(-60 9 13)"/><ellipse cx="13" cy="9.5" rx="3.2" ry="1.6" transform="rotate(30 13 9.5)"/><ellipse cx="15.5" cy="6" rx="3" ry="1.5" transform="rotate(-60 15.5 6)"/><ellipse cx="8" cy="17.5" rx="3" ry="1.5" transform="rotate(30 8 17.5)"/></g>
+    </symbol>
+    <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-9.6-9.2A5 5 0 0 1 12 6.2a5 5 0 0 1 9.6 5.1c-2.1 4.6-9.6 9.2-9.6 9.2z"/></symbol>
+    <!-- Icon nét -->
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 2 1 3 3 3 3s1-3 0-7z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V5M16 20v-7M21 20H3"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 7h6"/></symbol>
+    <symbol id="i-shoe" viewBox="0 0 24 24"><path d="M3 16h18v1.5A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5zM3 16V7l4 1 2 3 6 1.5c3 .8 6 1.8 6 3.5"/><path d="M8.5 10.5 10 9M10.5 11.3 12 9.8"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16V11l2-5h10l2 5v5M3 16h18v3h-3v-1H6v1H3zM5 11h14"/><circle cx="7.5" cy="13.5" r="1"/><circle cx="16.5" cy="13.5" r="1"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h11L21 8H6.2"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></symbol>
+    <symbol id="i-tooth" viewBox="0 0 24 24"><path d="M7 4c2 0 3 1 5 1s3-1 5-1c2.5 0 3.5 2.5 3 5-.6 3-1.6 4-2 7-.4 3-1 4-2 4-1.5 0-1.5-5-4-5s-2.5 5-4 5c-1 0-1.6-1-2-4-.4-3-1.4-4-2-7-.5-2.5.5-5 3-5z"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></symbol>
+    <symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <svg class="deco flower" style="right:4px;top:66px;color:#ffb3cf" width="26" height="26"><use href="#sakura"/></svg>
+  <svg class="deco flower" style="left:-2px;top:420px;color:#c9b6ff" width="22" height="22"><use href="#daisy"/></svg>
+
+  <div class="top">
+    <div class="logo">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+        <rect x="5" y="4" width="24" height="27" rx="6" fill="#ffd6e7" stroke="#d6336c" stroke-width="2"/>
+        <path d="M10 4v-1.5M15 4v-1.5M20 4v-1.5M25 4v-1.5" stroke="#d6336c" stroke-width="2" stroke-linecap="round"/>
+        <use href="#daisy" x="9" y="10" width="16" height="16" style="color:#ff8fb3"/>
+      </svg>
+      LIFE <span>PLANNER</span>
+      <svg class="flower" width="20" height="20" style="color:#ffcf6b"><use href="#tulip"/></svg>
+    </div>
+    <div class="sp"></div>
+    <div class="round"><svg class="icon"><use href="#i-moon"/></svg></div>
+  </div>
+
+  <nav class="tabbar">
+    <span class="tb on"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a2 2 0 0 1-2 2h-3v-6H9v6H6a2 2 0 0 1-2-2z"/></svg>Hôm nay</span>
+    <span class="tb"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3"/></svg>Mục tiêu</span>
+    <span class="tb"><svg class="icon"><use href="#i-list"/></svg>Task<span class="soon">Sắp có</span></span>
+    <span class="tb"><svg class="icon"><use href="#heart"/></svg>Thói quen<span class="soon">Sắp có</span></span>
+    <span class="tb"><svg class="icon"><use href="#i-chart"/></svg>Tổng kết<span class="soon">Sắp có</span></span>
+  </nav>
+
+  <div class="cols">
+    <section>
+      <div class="hello">
+        <svg class="deco" style="right:-4px;top:-6px" width="118" height="118" viewBox="0 0 120 120" aria-hidden="true">
+          <g stroke="#f2a33a" stroke-width="5" stroke-linecap="round"><path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l8 8M89 89l8 8M23 97l8-8M89 31l8-8"/></g>
+          <circle cx="60" cy="60" r="28" fill="#ffd56b" stroke="#f2a33a" stroke-width="4"/>
+          <circle cx="51" cy="57" r="3" fill="#3b2235"/><circle cx="69" cy="57" r="3" fill="#3b2235"/>
+          <path d="M52 67q8 7 16 0" stroke="#3b2235" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="45" cy="66" r="4" fill="#ff9fb8" opacity=".8"/><circle cx="75" cy="66" r="4" fill="#ff9fb8" opacity=".8"/>
+        </svg>
+        <svg class="deco flower" style="left:-10px;bottom:-12px;color:#ff9fc0" width="54" height="54"><use href="#daisy"/></svg>
+        <svg class="deco flower" style="left:34px;bottom:-14px;color:#c9b6ff" width="30" height="30"><use href="#sakura"/></svg>
+        <h1>Chào buổi sáng!</h1>
+        <p><svg class="icon ic14"><use href="#i-cal"/></svg>Thứ Bảy, <span class="num">21/11/2026</span></p>
+        <div class="stats">
+          <span class="chip"><svg class="icon ic14" style="color:#f2a33a"><use href="#i-star"/></svg><span class="num">2/3</span> Top 3</span>
+          <span class="chip" style="color:var(--q1)"><svg class="icon ic14"><use href="#i-flame"/></svg><span class="num">2</span> làm ngay</span>
+          <span class="chip" style="color:var(--ok)"><svg class="icon ic14"><use href="#i-check"/></svg><span class="num">4</span> đã xong</span>
+        </div>
+      </div>
+
+      <div class="add">
+        <div class="in"><svg class="icon" style="width:20px;height:20px"><use href="#i-pencil"/></svg>Hôm nay mình sẽ làm gì nè?</div>
+        <button aria-label="Thêm"><svg class="icon"><use href="#i-plus"/></svg></button>
+      </div>
+
+      <h2 class="sec-title"><svg class="flower" width="22" height="22" style="color:#ffcf6b"><use href="#daisy"/></svg>Việc hôm nay
+        <span class="seg"><span><svg class="icon ic14"><use href="#i-list"/></svg>Danh sách</span><span class="on"><svg class="icon ic14"><use href="#i-grid"/></svg>Ma trận</span></span></h2>
+      <div class="matrix">
+        <div class="q q1"><span class="n num">2</span><h3><svg class="icon ic14"><use href="#i-flame"/></svg>Làm ngay</h3><small>Gấp và quan trọng</small>
+          <ul><li><svg class="icon ic14"><use href="#i-mail"/></svg>Gửi KPI nháp</li><li><svg class="icon ic14"><use href="#i-book"/></svg>Kiểm tra Excel</li></ul></div>
+        <div class="q q2"><span class="n num">2</span><h3><svg class="icon ic14"><use href="#i-cal"/></svg>Lên lịch</h3><small>Quan trọng, chưa gấp</small>
+          <ul><li><svg class="icon ic14"><use href="#i-pencil"/></svg>Viết đề xuất</li><li><svg class="icon ic14"><use href="#i-car"/></svg>Bảo hiểm xe</li></ul></div>
+        <div class="q q3"><span class="n num">1</span><h3><svg class="icon ic14"><use href="#i-bolt"/></svg>Làm nhanh</h3><small>Gấp, không quan trọng</small>
+          <ul><li><svg class="icon ic14"><use href="#i-cart"/></svg>Mua giấy in</li></ul></div>
+        <div class="q q4"><span class="n num">2</span><h3><svg class="icon ic14"><use href="#i-hourglass"/></svg>Để sau</h3><small>Không gấp, không quan trọng</small>
+          <ul><li><svg class="icon ic14"><use href="#i-tooth"/></svg>Đặt lịch khám răng</li><li><svg class="icon ic14"><use href="#i-shoe"/></svg>Chạy 5 km</li></ul></div>
+      </div>
+
+      <h2 class="sec-title"><svg class="flower" width="22" height="22" style="color:#ffb3cf"><use href="#sakura"/></svg>Top 3 hôm nay <span class="badge num">2/3</span></h2>
+      <div class="notes">
+        <div class="note"><svg class="pin flower" width="26" height="26" style="color:#ff8fb3"><use href="#tulip"/></svg><span class="rank">1</span>
+          <span class="ticon tq1"><svg class="icon"><use href="#i-book"/></svg></span>
+          <div class="t">Làm bài kiểm tra cuối khóa Excel
+            <div class="meta"><span class="tag tq1"><svg class="icon ic14"><use href="#i-flame"/></svg>Làm ngay</span><span class="tag ts"><svg class="icon ic14"><use href="#i-tag"/></svg>Học tập</span></div></div>
+          <span class="tick"></span></div>
+        <div class="note"><svg class="pin flower" width="24" height="24" style="color:#c9b6ff"><use href="#daisy"/></svg><span class="rank">2</span>
+          <span class="ticon tq2"><svg class="icon"><use href="#i-chart"/></svg></span>
+          <div class="t">Vẽ biểu đồ so sánh các quý
+            <div class="meta"><span class="tag tq2"><svg class="icon ic14"><use href="#i-star"/></svg>Lên lịch</span><span class="tag tw"><svg class="icon ic14"><use href="#i-tag"/></svg>Công việc</span></div></div>
+          <span class="tick on"><svg class="icon" style="width:16px;height:16px;stroke-width:3"><use href="#i-check"/></svg></span></div>
+      </div>
+
+      <h2 class="sec-title"><svg class="flower" width="22" height="22"><use href="#sprig"/></svg>Danh sách <span class="badge num">3</span></h2>
+      <div class="list">
+        <div class="task"><span class="bar" style="background:var(--q1)"></span><span class="tick"></span>
+          <span class="ticon tq1"><svg class="icon"><use href="#i-mail"/></svg></span>
+          <div class="t">Gửi bảng KPI nháp cho anh Minh
+            <div class="meta"><span class="tag tq1"><svg class="icon ic14"><use href="#i-clock"/></svg>Trễ <span class="num">1</span> ngày</span><span class="tag tq1"><svg class="icon ic14"><use href="#i-star"/></svg>Cao</span><span class="tag tw"><svg class="icon ic14"><use href="#i-tag"/></svg>Công việc</span></div></div>
+          <span class="actions"><span><svg class="icon" style="width:18px;height:18px"><use href="#i-star"/></svg></span></span></div>
+        <div class="task"><span class="bar" style="background:var(--q3)"></span><span class="tick"></span>
+          <span class="ticon tq3"><svg class="icon"><use href="#i-cart"/></svg></span>
+          <div class="t">Mua giấy in cho phòng
+            <div class="meta"><span class="tag tq3"><svg class="icon ic14"><use href="#i-clock"/></svg>Hôm nay</span><span class="tag tplain"><svg class="icon ic14"><use href="#i-tag"/></svg>Việc lặt vặt</span></div></div>
+          <span class="actions"><span><svg class="icon" style="width:18px;height:18px"><use href="#i-star"/></svg></span></span></div>
+        <div class="task done"><span class="tick on"><svg class="icon" style="width:16px;height:16px;stroke-width:3"><use href="#i-check"/></svg></span>
+          <span class="ticon th"><svg class="icon"><use href="#i-shoe"/></svg></span>
+          <div class="t">Chạy 3 km buổi sáng</div></div>
+      </div>
+
+      <div class="cheer">
+        <div class="burst">
+          <svg class="flower" style="left:0;top:4px;color:#ff9fc0" width="22" height="22"><use href="#sakura"/></svg>
+          <svg class="flower" style="right:0;top:0;color:#ffcf6b" width="20" height="20"><use href="#daisy"/></svg>
+          <svg class="flower" style="left:16px;bottom:0;color:#c9b6ff" width="26" height="26"><use href="#tulip"/></svg>
+        </div>
+        <div><b>Giỏi quá!</b><br><span style="color:var(--muted);font-weight:700">Xong thêm một việc rồi, hoa nở cho bạn nè.</span></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="goals-head">
+        <h2><svg class="flower" width="28" height="28" style="color:#ff8fb3"><use href="#tulip"/></svg>Mục tiêu của mình</h2>
+        <span class="btn"><svg class="icon"><use href="#i-plus"/></svg>Thêm mục tiêu</span>
+      </div>
+      <div class="filters">
+        <span class="fl on"><svg class="icon ic14"><use href="#i-grid"/></svg>Tất cả</span>
+        <span class="fl" style="color:var(--work)"><svg class="icon ic14" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>Công việc</span>
+        <span class="fl" style="color:var(--study)"><svg class="icon ic14"><use href="#i-book"/></svg>Học tập</span>
+        <span class="fl" style="color:var(--health)"><svg class="icon ic14"><use href="#heart"/></svg>Sức khỏe</span>
+      </div>
+
+      <div class="grid">
+        <article class="goal work"><span class="tape"></span><svg class="corner flower" width="34" height="34" style="color:#ffb3cf"><use href="#sakura"/></svg>
+          <div class="goal-row"><span class="sticker"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/></svg></span>
+            <div><h3>Hoàn thành báo cáo KPI quý</h3>
+              <div class="meta"><span class="tag tw"><svg class="icon ic14"><use href="#i-cal"/></svg>Q4/<span class="num">2026</span></span><span class="tag thot"><svg class="icon ic14"><use href="#i-clock"/></svg>Còn <span class="num">3</span> ngày</span>
+                <span class="hearts"><svg class="icon fill"><use href="#heart"/></svg><svg class="icon fill"><use href="#heart"/></svg><svg class="icon fill"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-warn"><div class="track"><i style="width:40%"></i></div><span class="pct num">40%</span></div>
+          <div class="foot"><span><svg class="icon ic14"><use href="#i-check"/></svg><span class="num">2/5</span> task xong</span><span style="color:var(--hot)"><svg class="icon ic14"><use href="#i-flame"/></svg>Cần tăng tốc</span></div>
+        </article>
+
+        <article class="goal study"><span class="tape"></span>
+          <div class="goal-row"><span class="sticker"><svg class="icon"><use href="#i-book"/></svg></span>
+            <div><h3>Học xong khóa Excel nâng cao</h3>
+              <div class="meta"><span class="tag ts"><svg class="icon ic14"><use href="#i-cal"/></svg>Tháng <span class="num">11/2026</span></span><span class="tag twarm"><svg class="icon ic14"><use href="#i-clock"/></svg>Còn <span class="num">9</span> ngày</span>
+                <span class="hearts"><svg class="icon fill"><use href="#heart"/></svg><svg class="icon fill"><use href="#heart"/></svg><svg class="icon"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-pr"><div class="track"><i style="width:80%"></i></div><span class="pct num">80%</span></div>
+          <div class="foot"><span><svg class="icon ic14"><use href="#i-check"/></svg><span class="num">4/5</span> task xong</span><span style="color:var(--pr)"><svg class="icon ic14"><use href="#i-star"/></svg>Sắp tới đích</span></div>
+        </article>
+
+        <article class="goal health"><span class="tape"></span><svg class="corner flower" width="36" height="36" style="color:#ffcf6b"><use href="#daisy"/></svg>
+          <div class="goal-row"><span class="sticker"><svg class="icon"><use href="#i-book"/></svg></span>
+            <div><h3>Đọc xong 2 cuốn sách</h3>
+              <div class="meta"><span class="tag th"><svg class="icon ic14"><use href="#i-cal"/></svg>Tháng <span class="num">11/2026</span></span><span class="tag tcalm"><svg class="icon ic14"><use href="#i-clock"/></svg>Còn <span class="num">9</span> ngày</span>
+                <span class="hearts"><svg class="icon fill"><use href="#heart"/></svg><svg class="icon"><use href="#heart"/></svg><svg class="icon"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-ok"><div class="track"><i style="width:100%"></i></div><span class="pct num">100%</span></div>
+          <div class="foot"><span><svg class="icon ic14"><use href="#i-check"/></svg><span class="num">2/2</span> task xong</span><span style="color:var(--ok)"><svg class="flower" width="16" height="16" style="color:#ff9fc0"><use href="#sakura"/></svg>Đạt rồi, giỏi quá!</span></div>
+        </article>
+
+        <article class="goal health"><span class="tape"></span>
+          <div class="goal-row"><span class="sticker"><svg class="icon"><use href="#i-shoe"/></svg></span>
+            <div><h3>Chạy bộ đều đặn</h3>
+              <div class="meta"><span class="tag th"><svg class="icon ic14"><use href="#i-cal"/></svg>Tuần <span class="num">47</span></span><span class="tag thot"><svg class="icon ic14"><use href="#i-clock"/></svg>Còn <span class="num">1</span> ngày</span>
+                <span class="hearts"><svg class="icon fill"><use href="#heart"/></svg><svg class="icon fill"><use href="#heart"/></svg><svg class="icon"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-warn"><div class="track"><i style="width:33%"></i></div><span class="pct num">33%</span></div>
+          <div class="foot"><span><svg class="icon ic14"><use href="#i-check"/></svg><span class="num">1/3</span> task xong</span><span style="color:var(--hot)"><svg class="icon ic14"><use href="#i-flame"/></svg>Cần tăng tốc</span></div>
+        </article>
+      </div>
+
+      <div class="soon-card">
+        <svg class="flower" width="40" height="40" style="color:#ffb3cf"><use href="#tulip"/></svg><svg class="flower" width="34" height="34" style="color:#c9b6ff"><use href="#daisy"/></svg><svg class="flower" width="40" height="40" style="color:#ffcf6b"><use href="#tulip"/></svg>
+        <h3>Tab Thói quen sắp có</h3>
+        Khu vườn này đang được trồng, ghé lại sau nhé.
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

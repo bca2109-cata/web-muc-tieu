@@ -5,8 +5,8 @@
  */
 
 var SHEETS = {
-  Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at'],
-  Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at'],
+  Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
+  Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon'],
   Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
   HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
   Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at']
@@ -27,6 +27,15 @@ function caiDat() {
     if (head.join('') === '') {
       sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold');
       sh.setFrozenRows(1);
+    } else {
+      // Cột mới thêm sau này: ghi vào cuối, không đụng tới cột cũ
+      var have = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+      cols.forEach(function (c) {
+        if (have.indexOf(c) < 0) {
+          have.push(c);
+          sh.getRange(1, have.length).setValue(c).setFontWeight('bold');
+        }
+      });
     }
   });
   var props = PropertiesService.getScriptProperties();

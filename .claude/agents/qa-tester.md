@@ -21,7 +21,7 @@ Bạn là người kiểm thử độc lập. Bạn không viết tính năng v�
    - Có cuộn ngang không.
    - Chữ có bị tràn hoặc che không.
    - Có chữ `undefined`, `NaN` hay `Infinity` không.
-   - Số có dùng font mono không.
+   - Số có dùng Nunito đậm, chữ số thẳng hàng (`tabular-nums`) không.
    - Có emoji không.
 6. Kiểm phép tính: % tiến độ, streak, số task trễ hạn. Tự tính lại bằng tay trên dữ liệu mẫu rồi so với số trên màn hình.
 

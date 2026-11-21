@@ -5,27 +5,28 @@ App.mockData = function (today) {
   var D = App.date, P = App.period, uuid = App.util.uuid;
   var stamp = D.addDays(today, -7) + ' 08:00:00';
 
-  function goal(name, group, type, status) {
+  function goal(name, group, type, status, importance) {
     var pv = P.valueOf(type, today), r = P.range(type, pv);
     return {
       id: uuid(), name: name, group: group, period_type: type, period_value: pv,
       start_date: r.start, end_date: r.end, progress_mode: 'task', unit: '', target: '', actual: '',
-      status: status || 'Đang làm', note: '', created_at: stamp, updated_at: stamp
+      status: status || 'Đang làm', note: '', created_at: stamp, updated_at: stamp, importance: String(importance || 2)
     };
   }
-  var g1 = goal('Hoàn thành báo cáo KPI quý', 'Công việc', 'Quý');
+  var g1 = goal('Hoàn thành báo cáo KPI quý', 'Công việc', 'Quý', null, 3);
   g1.note = 'Nộp cho trưởng phòng trước ngày cuối quý.';
   var g2 = goal('Học xong khóa Excel nâng cao', 'Học tập', 'Tháng');
   var g3 = goal('Chạy bộ đều đặn', 'Sức khỏe', 'Tuần');
-  var g4 = goal('Đọc xong 2 cuốn sách', 'Sức khỏe', 'Tháng', 'Hoàn thành');
-  var g5 = goal('Ra mắt dự án web cá nhân', 'Công việc', 'Năm', 'Tạm dừng');
+  var g4 = goal('Đọc xong 2 cuốn sách', 'Sức khỏe', 'Tháng', 'Hoàn thành', 1);
+  var g5 = goal('Ra mắt dự án web cá nhân', 'Công việc', 'Năm', 'Tạm dừng', 1);
 
   function task(title, g, dueOffset, priority, status, extra) {
     var t = {
       id: uuid(), title: title, goal_id: g ? g.id : '', due_date: dueOffset == null ? '' : D.addDays(today, dueOffset),
       priority: priority || 'Trung bình', status: status || 'Cần làm', is_top3: 'FALSE', top3_date: '',
-      recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp
+      recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp, icon: ''
     };
+    t.icon = App.logic.guessIcon(title);
     if (t.status === 'Xong') t.done_at = t.due_date || D.addDays(today, -1);
     return Object.assign(t, extra || {});
   }
@@ -48,7 +49,8 @@ App.mockData = function (today) {
     task('Đọc "Đắc nhân tâm"', g4, -4, 'Thấp', 'Xong'),
     task('Mua giấy in cho phòng', null, 0, 'Thấp'),
     task('Gia hạn bảo hiểm xe', null, 1, 'Cao'),
-    task('Đặt lịch khám răng', null, null, 'Trung bình')
+    task('Đặt lịch khám răng', null, null, 'Trung bình'),
+    task('Chuẩn bị slide họp tổng kết quý', g1, 5, 'Cao')
   ];
 
   return { goals: [g1, g2, g3, g4, g5], tasks: tasks, habits: [], habitLogs: [], reviews: [] };

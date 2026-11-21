@@ -31,7 +31,7 @@ Nếu thư mục `cai-dat-agents/` còn tồn tại:
 - Cập nhật `docs/TIEN-DO.md` sau mỗi giai đoạn.
 
 ## Giao diện
-Dùng đúng bộ màu, font và quy tắc ở mục 7 của SPEC. Không dùng emoji. Mọi con số hiển thị bằng font mono.
+Dùng đúng bộ màu, font và quy tắc ở mục 7 của SPEC và `DESIGN.md`. Không dùng emoji. Mọi con số dùng Nunito đậm, chữ số thẳng hàng (`tabular-nums`).
 
 ## Cấu trúc thư mục
 Đã duyệt ở Giai đoạn 0 (21/11/2026). Phương án B: GitHub Pages + Apps Script làm cầu nối.

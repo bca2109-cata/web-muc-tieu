@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Life Planner - xem trước giao diện</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+:root{
+  /* Nền và chữ */
+  --bg:#fff7fa; --surface:#ffffff; --ink:#3b2235; --muted:#7a5c70; --line:#f6dce8;
+  /* Màu chính */
+  --accent:#d6336c; --accent-soft:#ffd6e7; --accent-ink:#ffffff;
+  /* Bảng pastel */
+  --pink:#ffd6e7; --peach:#ffe1c7; --butter:#fff1b8; --mint:#cff3e2; --sky:#d6e9ff; --lilac:#e8ddff;
+  /* Nhóm mục tiêu: màu đậm (chữ, viền) + nền */
+  --work:#4f7fd9; --work-bg:#dcebff;
+  --study:#8a63d2; --study-bg:#ede5ff;
+  --health:#2f9e6f; --health-bg:#d8f5e7;
+  /* Mức quan trọng và khẩn cấp */
+  --hot:#d9364f; --hot-bg:#ffe0e5;      /* trễ hạn, rất quan trọng */
+  --warm:#c4610f; --warm-bg:#ffe8d1;    /* sắp đến hạn, quan trọng */
+  --calm:#2f9e6f; --calm-bg:#dcf5e9;    /* còn thong thả */
+  --ok:#2f9e6f; --pr:#b7791f; --warn:#d9364f;
+  --font:'Nunito',system-ui,sans-serif;
+  --display:'Baloo 2','Nunito',system-ui,sans-serif;
+  --r-card:22px; --r-btn:14px; --r-pill:99px;
+  --shadow:0 4px 0 var(--line), 0 10px 24px rgba(214,51,108,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;
+  background-image:radial-gradient(var(--line) 1.4px,transparent 1.4px);background-size:22px 22px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.2}
+.num{font-variant-numeric:tabular-nums;font-weight:800}
+.icon{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.wrap{max-width:1120px;margin:0 auto;padding:16px 16px 100px;position:relative}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:.5px}
+.logo span{color:var(--accent)}
+.top .sp{flex:1}
+.round{width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+
+.cols{display:grid;gap:22px}
+@media(min-width:900px){.cols{grid-template-columns:400px 1fr;align-items:start}}
+
+/* Thẻ chào */
+.hello{position:relative;overflow:hidden;border-radius:28px;padding:20px 20px 18px;
+  background:linear-gradient(135deg,#ffd6e7 0%,#ffe1c7 55%,#fff1b8 100%);box-shadow:var(--shadow)}
+.hello h1{font-size:28px;font-weight:800}
+.hello p{margin:2px 0 0;color:var(--muted);font-weight:700}
+.hello .sun{position:absolute;right:-6px;top:-8px;width:120px;height:120px}
+.hello .stats{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:var(--r-pill);font-size:13px;font-weight:800;background:rgba(255,255,255,.75)}
+
+.add{display:flex;gap:8px;margin:16px 0}
+.add input{flex:1;min-width:0;height:50px;border-radius:var(--r-pill);border:2px dashed #f2b8cf;background:var(--surface);padding:0 18px;font:inherit;color:var(--ink)}
+.add button{width:50px;height:50px;border-radius:50%;border:0;background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:0 4px 0 #a8204f}
+
+.sec-title{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:700;margin:20px 0 10px}
+.sec-title .badge{font-family:var(--font);font-size:12px;font-weight:800;padding:2px 9px;border-radius:99px;background:var(--surface);border:2px solid var(--line);color:var(--muted)}
+
+/* Top 3 kiểu giấy nhớ */
+.notes{display:grid;gap:12px}
+.note{position:relative;display:flex;gap:12px;align-items:center;padding:14px 14px 14px 12px;border-radius:18px;box-shadow:0 3px 0 rgba(59,34,53,.06)}
+.note:nth-child(1){background:var(--butter);transform:rotate(-.6deg)}
+.note:nth-child(2){background:var(--mint);transform:rotate(.5deg)}
+.note:nth-child(3){background:var(--sky);transform:rotate(-.3deg)}
+.note .pin{position:absolute;top:-7px;left:50%;width:46px;height:14px;margin-left:-23px;border-radius:3px;background:rgba(255,255,255,.7);transform:rotate(-3deg)}
+.rank{width:30px;height:30px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-weight:800;font-family:var(--display);color:var(--accent);flex:none}
+.note .t{flex:1;min-width:0;font-weight:700}
+.note .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+/* Ô tick */
+.tick{width:30px;height:30px;border-radius:50%;border:2.5px solid #e3a9c2;background:var(--surface);flex:none;display:grid;place-items:center;color:transparent}
+.tick.on{background:var(--ok);border-color:var(--ok);color:#fff}
+
+/* Danh sách task */
+.list{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--shadow);overflow:hidden}
+.task{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:2px dotted var(--line);position:relative}
+.task:first-child{border-top:0}
+.task .bar{position:absolute;left:0;top:10px;bottom:10px;width:5px;border-radius:0 6px 6px 0}
+.task .t{flex:1;min-width:0;font-weight:700}
+.task.done .t{color:var(--muted);text-decoration:line-through;text-decoration-color:#e3a9c2;text-decoration-thickness:2px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:800;white-space:nowrap}
+.tag .icon{width:14px;height:14px;stroke-width:2.4}
+.t-hot{background:var(--hot-bg);color:var(--hot)}
+.t-warm{background:var(--warm-bg);color:var(--warm)}
+.t-calm{background:var(--calm-bg);color:var(--calm)}
+.t-work{background:var(--work-bg);color:var(--work)}
+.t-study{background:var(--study-bg);color:var(--study)}
+.t-health{background:var(--health-bg);color:var(--health)}
+.t-plain{background:#f7eef3;color:var(--muted)}
+
+/* Thẻ mục tiêu */
+.goals-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.goals-head h2{font-size:26px;flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 18px;border-radius:var(--r-pill);border:0;font:inherit;font-weight:800;background:var(--accent);color:#fff;box-shadow:0 4px 0 #a8204f}
+.filters{display:flex;gap:8px;overflow-x:auto;margin:12px 0 16px;padding-bottom:4px}
+.f{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:99px;border:2px solid var(--line);background:var(--surface);font-weight:800;font-size:14px;color:var(--muted)}
+.f.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.grid{display:grid;gap:16px}
+@media(min-width:620px){.grid{grid-template-columns:repeat(2,1fr)}}
+.goal{position:relative;background:var(--surface);border-radius:var(--r-card);padding:20px 18px 16px;box-shadow:var(--shadow);overflow:visible}
+.goal .tape{position:absolute;top:-9px;left:22px;width:70px;height:20px;border-radius:3px;opacity:.85;transform:rotate(-4deg)}
+.goal.work .tape{background:repeating-linear-gradient(45deg,var(--work-bg) 0 6px,#c6dcff 6px 12px)}
+.goal.study .tape{background:repeating-linear-gradient(45deg,var(--study-bg) 0 6px,#ddd0ff 6px 12px)}
+.goal.health .tape{background:repeating-linear-gradient(45deg,var(--health-bg) 0 6px,#c2eed8 6px 12px)}
+.goal-row{display:flex;gap:12px;align-items:flex-start}
+.sticker{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;flex:none;transform:rotate(-4deg)}
+.sticker .icon{width:26px;height:26px}
+.work .sticker{background:var(--work-bg);color:var(--work)}
+.study .sticker{background:var(--study-bg);color:var(--study)}
+.health .sticker{background:var(--health-bg);color:var(--health)}
+.goal h3{font-size:18px;font-weight:700;margin:2px 0 6px}
+.hearts{display:inline-flex;gap:1px;color:var(--hot)}
+.hearts .icon{width:15px;height:15px;stroke-width:2.2}
+.hearts .icon.fill{fill:currentColor}
+.prog{display:flex;align-items:center;gap:10px;margin-top:14px}
+.track{flex:1;height:14px;border-radius:99px;background:#fbe9f0;overflow:hidden;position:relative}
+.track i{display:block;height:100%;border-radius:99px;background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.35) 0 6px,transparent 6px 12px)}
+.pct{font-family:var(--display);font-weight:800;font-size:22px;min-width:58px;text-align:right}
+.lv-ok i{background-color:#5cc49a}.lv-ok .pct{color:var(--ok)}
+.lv-pr i{background-color:#f2b84b}.lv-pr .pct{color:var(--pr)}
+.lv-warn i{background-color:#ff8fa3}.lv-warn .pct{color:var(--warn)}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:13px;color:var(--muted);font-weight:700}
+
+/* Họa tiết */
+.deco{position:absolute;pointer-events:none}
+.legend{margin-top:22px;background:var(--surface);border-radius:var(--r-card);padding:16px 18px;box-shadow:var(--shadow)}
+.legend h3{font-size:17px;margin-bottom:10px}
+.legend .row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+
+.tabbar{position:fixed;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-around;padding:8px;border-radius:24px;background:var(--surface);box-shadow:0 6px 24px rgba(59,34,53,.12)}
+.tb{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:800;color:var(--muted);padding:4px 10px;border-radius:16px}
+.tb.on{background:var(--accent-soft);color:var(--accent)}
+@media(min-width:900px){.tabbar{position:static;margin:0 0 18px;justify-content:flex-start;gap:6px;box-shadow:none;background:transparent;padding:0}.tb{flex-direction:row;gap:8px;font-size:15px;padding:8px 16px;background:var(--surface);border:2px solid var(--line)}.tb.on{border-color:var(--accent-soft)}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="sparkle" viewBox="0 0 24 24"><path d="M12 2c1 6 4 9 10 10-6 1-9 4-10 10-1-6-4-9-10-10 6-1 9-4 10-10z"/></symbol>
+    <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-9.6-9.2A5 5 0 0 1 12 6.2a5 5 0 0 1 9.6 5.1c-2.1 4.6-9.6 9.2-9.6 9.2z"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <!-- họa tiết nền -->
+  <svg class="deco" style="right:6px;top:70px;width:22px;height:22px;fill:#ffb3cf" viewBox="0 0 24 24"><use href="#sparkle"/></svg>
+  <svg class="deco" style="left:4px;top:330px;width:16px;height:16px;fill:#b9a3f5" viewBox="0 0 24 24"><use href="#sparkle"/></svg>
+
+  <div class="top">
+    <div class="logo">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+        <rect x="5" y="4" width="24" height="27" rx="6" fill="#ffd6e7" stroke="#d6336c" stroke-width="2"/>
+        <path d="M10 4v-1.5M15 4v-1.5M20 4v-1.5M25 4v-1.5" stroke="#d6336c" stroke-width="2" stroke-linecap="round"/>
+        <path d="M17 24s-5-3-6.2-6a3.1 3.1 0 0 1 6.2-1.5 3.1 3.1 0 0 1 6.2 1.5C22 21 17 24 17 24z" fill="#d6336c"/>
+      </svg>
+      LIFE <span>PLANNER</span>
+    </div>
+    <div class="sp"></div>
+    <div class="round"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></div>
+  </div>
+
+  <nav class="tabbar">
+    <span class="tb on"><svg class="icon" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a2 2 0 0 1-2 2h-3v-6H9v6H6a2 2 0 0 1-2-2z"/></svg>Hôm nay</span>
+    <span class="tb"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3"/></svg>Mục tiêu</span>
+    <span class="tb"><svg class="icon" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>Task</span>
+    <span class="tb"><svg class="icon" viewBox="0 0 24 24"><use href="#heart"/></svg>Thói quen</span>
+    <span class="tb"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Tổng kết</span>
+  </nav>
+
+  <div class="cols">
+    <!-- CỘT HÔM NAY -->
+    <section>
+      <div class="hello">
+        <svg class="sun" viewBox="0 0 120 120" aria-hidden="true">
+          <g stroke="#f2a33a" stroke-width="5" stroke-linecap="round">
+            <path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l8 8M89 89l8 8M23 97l8-8M89 31l8-8"/>
+          </g>
+          <circle cx="60" cy="60" r="28" fill="#ffd56b" stroke="#f2a33a" stroke-width="4"/>
+          <circle cx="51" cy="57" r="3" fill="#3b2235"/><circle cx="69" cy="57" r="3" fill="#3b2235"/>
+          <path d="M52 67q8 7 16 0" stroke="#3b2235" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="45" cy="66" r="4" fill="#ff9fb8" opacity=".8"/><circle cx="75" cy="66" r="4" fill="#ff9fb8" opacity=".8"/>
+        </svg>
+        <h1>Chào buổi sáng!</h1>
+        <p>Thứ Bảy, <span class="num">21/11/2026</span></p>
+        <div class="stats">
+          <span class="chip"><span class="num">2/3</span> việc Top 3</span>
+          <span class="chip" style="color:var(--hot)"><span class="num">1</span> việc trễ hạn</span>
+          <span class="chip" style="color:var(--ok)"><span class="num">4</span> việc đã xong</span>
+        </div>
+      </div>
+
+      <div class="add">
+        <input placeholder="Hôm nay mình sẽ làm gì nè?">
+        <button aria-label="Thêm"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+
+      <h2 class="sec-title"><svg width="20" height="20" viewBox="0 0 24 24" fill="#f2b84b"><use href="#sparkle"/></svg>Top 3 hôm nay <span class="badge num">2/3</span></h2>
+      <div class="notes">
+        <div class="note"><span class="pin"></span><span class="rank">1</span>
+          <div class="t">Làm bài kiểm tra cuối khóa Excel
+            <div class="meta"><span class="tag t-hot"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 2 1 3 3 3 3s1-3 0-7z"/></svg>Gấp và quan trọng</span><span class="tag t-study">Học tập</span></div></div>
+          <span class="tick"></span></div>
+        <div class="note"><span class="pin"></span><span class="rank">2</span>
+          <div class="t">Vẽ biểu đồ so sánh các quý
+            <div class="meta"><span class="tag t-warm">Hạn hôm nay</span><span class="tag t-work">Công việc</span></div></div>
+          <span class="tick on"><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke-width:3"><path d="M5 12.5 9.5 17 19 7"/></svg></span></div>
+      </div>
+
+      <h2 class="sec-title" style="color:var(--hot)">Trễ hạn <span class="badge num">1</span></h2>
+      <div class="list">
+        <div class="task"><span class="bar" style="background:var(--hot)"></span><span class="tick"></span>
+          <div class="t">Gửi bảng KPI nháp cho anh Minh
+            <div class="meta"><span class="tag t-hot">Trễ <span class="num">1</span> ngày</span><span class="tag t-hot">Quan trọng</span><span class="tag t-work">Công việc</span></div></div></div>
+      </div>
+
+      <h2 class="sec-title">Việc hôm nay <span class="badge num">3</span></h2>
+      <div class="list">
+        <div class="task"><span class="bar" style="background:var(--warm)"></span><span class="tick"></span>
+          <div class="t">Gia hạn bảo hiểm xe
+            <div class="meta"><span class="tag t-warm">Quan trọng</span><span class="tag t-plain">Việc lặt vặt</span></div></div></div>
+        <div class="task"><span class="bar" style="background:var(--calm)"></span><span class="tick"></span>
+          <div class="t">Chạy 3 km buổi tối
+            <div class="meta"><span class="tag t-calm">Thong thả</span><span class="tag t-health">Sức khỏe</span></div></div></div>
+        <div class="task done"><span class="tick on"><svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke-width:3"><path d="M5 12.5 9.5 17 19 7"/></svg></span>
+          <div class="t">Họp chốt số liệu với kế toán</div></div>
+      </div>
+    </section>
+
+    <!-- CỘT MỤC TIÊU -->
+    <section>
+      <div class="goals-head">
+        <h2>Mục tiêu của mình</h2>
+        <span class="btn"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Thêm mục tiêu</span>
+      </div>
+      <div class="filters">
+        <span class="f on">Tất cả</span><span class="f" style="color:var(--work)">Công việc</span><span class="f" style="color:var(--study)">Học tập</span><span class="f" style="color:var(--health)">Sức khỏe</span>
+      </div>
+
+      <div class="grid">
+        <article class="goal work"><span class="tape"></span>
+          <div class="goal-row"><span class="sticker"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/></svg></span>
+            <div><h3>Hoàn thành báo cáo KPI quý</h3>
+              <div class="meta"><span class="tag t-work">Q4/<span class="num">2026</span></span><span class="tag t-hot">Còn <span class="num">3</span> ngày</span>
+                <span class="hearts" title="Rất quan trọng"><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-warn"><div class="track"><i style="width:40%"></i></div><span class="pct num">40%</span></div>
+          <div class="foot"><span><span class="num">2/5</span> task xong</span><span style="color:var(--hot)">Cần tăng tốc</span></div>
+        </article>
+
+        <article class="goal study"><span class="tape"></span>
+          <div class="goal-row"><span class="sticker"><svg class="icon" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 7h6"/></svg></span>
+            <div><h3>Học xong khóa Excel nâng cao</h3>
+              <div class="meta"><span class="tag t-study">Tháng <span class="num">11/2026</span></span><span class="tag t-warm">Còn <span class="num">9</span> ngày</span>
+                <span class="hearts"><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon" viewBox="0 0 24 24"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-pr"><div class="track"><i style="width:80%"></i></div><span class="pct num">80%</span></div>
+          <div class="foot"><span><span class="num">4/5</span> task xong</span><span style="color:var(--pr)">Sắp tới đích</span></div>
+        </article>
+
+        <article class="goal health"><span class="tape"></span>
+          <div class="goal-row"><span class="sticker"><svg class="icon" viewBox="0 0 24 24"><path d="M5 19c0-8 6-14 15-14 0 9-6 15-14 15"/><path d="M5 19 13 11"/></svg></span>
+            <div><h3>Đọc xong 2 cuốn sách</h3>
+              <div class="meta"><span class="tag t-health">Tháng <span class="num">11/2026</span></span><span class="tag t-calm">Còn <span class="num">9</span> ngày</span>
+                <span class="hearts"><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon" viewBox="0 0 24 24"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-ok"><div class="track"><i style="width:100%"></i></div><span class="pct num">100%</span></div>
+          <div class="foot"><span><span class="num">2/2</span> task xong</span><span style="color:var(--ok)">Đạt rồi, giỏi quá!</span></div>
+        </article>
+
+        <article class="goal health"><span class="tape"></span>
+          <div class="goal-row"><span class="sticker"><svg class="icon" viewBox="0 0 24 24"><use href="#heart"/></svg></span>
+            <div><h3>Chạy bộ đều đặn</h3>
+              <div class="meta"><span class="tag t-health">Tuần <span class="num">47</span></span><span class="tag t-warm">Còn <span class="num">1</span> ngày</span>
+                <span class="hearts"><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon" viewBox="0 0 24 24"><use href="#heart"/></svg></span></div></div></div>
+          <div class="prog lv-warn"><div class="track"><i style="width:33%"></i></div><span class="pct num">33%</span></div>
+          <div class="foot"><span><span class="num">1/3</span> task xong</span><span style="color:var(--hot)">Cần tăng tốc</span></div>
+        </article>
+      </div>
+
+      <div class="legend">
+        <h3>Đọc màu nhanh</h3>
+        <div class="row"><b style="width:110px">Khẩn cấp</b><span class="tag t-hot">Trễ hạn / còn ≤ <span class="num">3</span> ngày</span><span class="tag t-warm">Còn ≤ <span class="num">7</span> ngày</span><span class="tag t-calm">Thong thả</span></div>
+        <div class="row"><b style="width:110px">Quan trọng</b><span class="hearts"><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg><svg class="icon fill" viewBox="0 0 24 24"><use href="#heart"/></svg></span> rất quan trọng, 1 tim là bình thường</div>
+        <div class="row"><b style="width:110px">Nhóm</b><span class="tag t-work">Công việc</span><span class="tag t-study">Học tập</span><span class="tag t-health">Sức khỏe</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

@@ -35,7 +35,8 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 ## 4. Tính năng
 
 ### 4.1 Mục tiêu
-- Các trường: tên, nhóm, kỳ (loại kỳ + giá trị kỳ, ví dụ Quý – 2027-Q1), ngày bắt đầu, ngày kết thúc, ghi chú, trạng thái (Đang làm / Hoàn thành / Tạm dừng).
+- Các trường: tên, nhóm, kỳ (loại kỳ + giá trị kỳ, ví dụ Quý – 2027-Q1), ngày bắt đầu, ngày kết thúc, ghi chú, trạng thái (Đang làm / Hoàn thành / Tạm dừng), **mức quan trọng** (1 đến 3, hiện bằng trái tim).
+- Thẻ mục tiêu hiện nhãn "Còn N ngày" đến ngày kết thúc, tô màu theo độ gấp.
 - **Cách tính tiến độ, chọn riêng cho từng mục tiêu:**
   - **Theo task:** % = số task đã xong / tổng số task gắn với mục tiêu.
   - **Theo chỉ số:** tự nhập đơn vị (giờ, km, cuốn…), target và giá trị thực tế. % = thực tế / target. Có nút "+ cập nhật" để cộng thêm nhanh, ví dụ +1 giờ.
@@ -43,7 +44,7 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 - Khi tiến độ theo thời gian vượt xa tiến độ thực tế thì cảnh báo. Ví dụ đã qua 60% thời gian của kỳ mà mục tiêu mới đạt 30%.
 
 ### 4.2 Task
-- Các trường: tên, mục tiêu liên kết (có thể để trống, coi là "Việc lặt vặt"), hạn chót, mức ưu tiên (Cao / Trung bình / Thấp), trạng thái (Cần làm / Đang làm / Xong), ghi chú ngắn, cờ "Top 3 hôm nay".
+- Các trường: tên, mục tiêu liên kết (có thể để trống, coi là "Việc lặt vặt"), hạn chót, mức ưu tiên (Cao / Trung bình / Thấp), trạng thái (Cần làm / Đang làm / Xong), ghi chú ngắn, cờ "Top 3 hôm nay", **icon** (tự đoán theo tên việc, sửa được).
 - **Task lặp lại:** hằng ngày, hoặc các thứ cố định trong tuần (ví dụ thứ 2-4-6). Task lặp phải tự sinh ra vào đúng ngày.
 - Task trễ hạn tô màu cảnh báo. Task đến hạn hôm nay hoặc ngày mai thì hiện nhãn "Sắp đến hạn".
 - **Chỉ nhắc ngay trong web.** Không cần thông báo đẩy, email hay Telegram.
@@ -64,11 +65,13 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 
 | Tab | Nội dung chính |
 |---|---|
-| **Hôm nay** (mặc định) | Khối Top 3, task hôm nay và task trễ hạn, thói quen cần làm hôm nay, nút thêm task nhanh |
+| **Hôm nay** (mặc định) | Khối Top 3, task hôm nay và task trễ hạn, thói quen cần làm hôm nay, nút thêm task nhanh. Chuyển qua lại giữa dạng **Danh sách** và **Ma trận 4 ô** (ma trận gồm mọi việc chưa xong, trừ việc đã ở Top 3 để không lặp lại) |
 | **Mục tiêu** | Lọc theo kỳ (Năm / Quý / Tháng / Tuần) và theo nhóm. Mỗi thẻ mục tiêu có thanh %, bấm vào thì mở chi tiết và danh sách task |
 | **Task** | Danh sách đủ bộ lọc (trạng thái, ưu tiên, mục tiêu, hạn), sắp xếp theo hạn hoặc ưu tiên |
 | **Thói quen** | Lưới tick và streak |
 | **Tổng kết** | Chỉ số, biểu đồ, review |
+
+Tab chưa làm tới thì vẫn hiện trên thanh tab, kèm nhãn "Sắp có".
 
 Yêu cầu trải nghiệm:
 - Trên điện thoại dùng thanh tab cố định ở đáy màn hình. Tick task bằng một chạm, có hiệu ứng nhẹ.
@@ -79,12 +82,12 @@ Yêu cầu trải nghiệm:
 ## 6. Kỹ thuật
 
 ### 6.1 Lưu dữ liệu: Google Sheets làm database
-Mỗi bảng là một sheet. Dòng 1 là header. Mỗi dòng có `id` (UUID), `created_at`, `updated_at`.
+Mỗi bảng là một sheet. Dòng 1 là header. Mỗi dòng có `id` (UUID), `created_at`, `updated_at`. Cột thêm sau Giai đoạn 1 (`importance`, `icon`) nằm ở cuối sheet, sau `updated_at`.
 
 | Sheet | Cột |
 |---|---|
-| `Goals` | id, name, group, period_type, period_value, start_date, end_date, progress_mode (task/metric/habit), unit, target, actual, status, note |
-| `Tasks` | id, title, goal_id, due_date, priority, status, is_top3, top3_date, recurring_rule, parent_recurring_id, done_at, note |
+| `Goals` | id, name, group, period_type, period_value, start_date, end_date, progress_mode (task/metric/habit), unit, target, actual, status, note, importance |
+| `Tasks` | id, title, goal_id, due_date, priority, status, is_top3, top3_date, recurring_rule, parent_recurring_id, done_at, note, icon |
 | `Habits` | id, name, goal_id, frequency, active |
 | `HabitLogs` | id, habit_id, date, done |
 | `Reviews` | id, period_type, period_value, good, bad, next |
@@ -110,32 +113,39 @@ Ràng buộc: không cài gì trên máy công ty, có link mở được trên 
 
   Bản giả giúp mở giao diện ngay trên máy để kiểm thử tự động mà không cần deploy.
 
-## 7. Giao diện: phong cách hồng pastel
+## 7. Giao diện: Life Planner, hồng pastel nhiều hoa
 
-Dùng đúng bộ màu và font dưới đây, không tự đổi mã màu. Mọi màu phải gọi qua biến CSS.
+Tên web: **LIFE PLANNER**. Chi tiết đầy đủ (vai trò từng màu, cỡ chữ, thành phần) ở `DESIGN.md`. Mọi màu phải gọi qua biến CSS, không viết thẳng mã màu trong giao diện (trừ hình hoa và mặt trời trang trí vẽ bằng SVG).
 
 ```css
 :root{
-  --bg:#fff6f9; --surface:#ffffff; --ink:#1c0d17; --muted:#5f4153; --line:#f4dbe6; --soft:#fde9f1;
-  --accent:#c93d7f; --accent-ink:#ffffff; --ok:#3f9d6b; --pr:#9a5f0f; --pr-bg:#fff2d9; --warn:#c2570c;
-  --gA:#8e9cf2; --gB:#5cc4b4; --gS:#8ccf9a;   /* Công việc / Học tập / Sức khỏe */
-  --w0:#fde3ee; --w1:#ee7fb0;
-  --font:'Be Vietnam Pro',system-ui,sans-serif;
-  --mono:'IBM Plex Mono',ui-monospace,monospace;
-}
-:root[data-theme="dark"]{
-  --bg:#1d1220; --surface:#2a1a2e; --ink:#fff4f9; --muted:#dfc3d3; --line:#3f2943; --soft:#33213a;
-  --accent:#ff9fcb; --accent-ink:#2a1a2e; --ok:#7fd9a3; --pr:#f3c27a; --pr-bg:#3a2d1c; --warn:#f59a5a;
-  --gA:#9fabff; --gB:#6fd6c5; --gS:#9fdcab; --w0:#3d2542; --w1:#d86a9e;
+  --bg:#fffafc; --surface:#ffffff; --ink:#3b2235; --muted:#7a5c70; --line:#f8e3ec;
+  --accent:#d6336c; --accent-soft:#ffe0ec; --accent-deep:#a8204f; --accent-ink:#ffffff;
+  --butter:#fff1b8; --mint:#d6f5e6; --sky:#dcecff;
+  --work:#2c58aa; --work-bg:#dcebff; --study:#6a40b5; --study-bg:#ede5ff; --health:#1e7149; --health-bg:#d8f5e7;
+  --q1:#b42339; --q1-bg:#ffe0e5; --q1-bar:#e5485f;   /* Làm ngay: gấp + quan trọng */
+  --q2:#7a5300; --q2-bg:#fff1b8; --q2-bar:#e8b400;   /* Lên lịch: quan trọng, chưa gấp */
+  --q3:#a3470a; --q3-bg:#ffdcc4; --q3-bar:#f08a4b;   /* Làm nhanh: gấp, không quan trọng */
+  --q4:#3d5a69; --q4-bg:#e3eef3; --q4-bar:#8fb0c0;   /* Để sau */
+  --hot:#b42339; --hot-bg:#ffe0e5; --warm:#994705; --warm-bg:#ffe8d1; --calm:#1e7149; --calm-bg:#dcf5e9;
+  --ok:#1e7149; --ok-bar:#5cc49a; --pr:#855600; --pr-bar:#f2b84b; --warn:#b42339; --warn-bar:#ff8fa3;
+  --font:'Nunito',system-ui,sans-serif;
+  --display:'Baloo 2','Nunito',system-ui,sans-serif;
 }
 ```
 
+- Font: **Baloo 2** cho tiêu đề và chữ LIFE PLANNER, **Nunito** cho chữ thường. Mọi con số dùng Nunito đậm kèm `font-variant-numeric:tabular-nums` (chữ số thẳng hàng).
+- Mỗi màu và mỗi icon chỉ mang **một nghĩa**: đỏ là gấp, ngôi sao là Top 3, trái tim hồng là mức quan trọng của mục tiêu.
 - Màu tiến độ: đạt dùng `--ok`, gần đạt dùng `--pr`, cần chú ý dùng `--warn`.
-- Font: Be Vietnam Pro cho chữ, IBM Plex Mono cho **mọi con số** (%, ngày, giờ, streak), kèm `font-variant-numeric:tabular-nums`.
-- Bo góc: 18px cho thẻ, 9px cho nút và ô nhập, 99px cho pill và thanh tiến độ.
-- Icon SVG nét mảnh (stroke 1.8, lưới 24). **Không dùng emoji.**
-- Có chế độ tối theo cài đặt hệ thống và nút chuyển tay.
-- Mobile-first với một ngưỡng 620px. Không được có cuộn ngang ở bề rộng 390px.
+- **Ma trận 4 ô** (quan trọng = ưu tiên Cao; gấp = trễ hạn, hạn hôm nay hoặc ngày mai): Làm ngay `--q1`, Lên lịch `--q2`, Làm nhanh `--q3`, Để sau `--q4`. Mỗi task tô màu theo ô của nó (vạch trái, ô icon, nhãn).
+- Icon SVG nét tròn (stroke 2, lưới 24), có icon cạnh mọi nhãn và nút. Mỗi task có một icon riêng. **Không dùng emoji.**
+- Trang trí bằng **12 loại hoa** vẽ SVG (cúc, anh đào, tulip, hồng, hướng dương, oải hương, lưu ly, sứ, cánh bướm, chuông, cẩm tú cầu, cành lá), băng dính washi trên thẻ mục tiêu, giấy note dán nghiêng cho Top 3. Không dùng mascot.
+- Hình nền chọn được: **Hoa bay nhẹ, màu mờ** (mặc định) hoặc **Trơn**. Lưu lựa chọn trên từng thiết bị.
+- Tick xong một việc: hoa bung ra từ chỗ tick kèm một câu động viên. Mục tiêu vừa đạt 100%: hoa bung nhiều hơn. Người dùng bật "giảm chuyển động" trong máy thì chỉ hiện câu động viên.
+- Bo góc: 22px cho thẻ, 14px cho ô nhập, 99px cho nút tròn, pill và thanh tiến độ.
+- Vùng bấm tối thiểu 44px. Chữ trên nền màu đạt độ tương phản tối thiểu 4.5:1.
+- Có chế độ tối theo cài đặt hệ thống và nút chuyển tay (làm ở Giai đoạn 4, bộ màu tối ghi trong `DESIGN.md`).
+- Mobile-first, ngưỡng 620px và 900px. Không được có cuộn ngang ở bề rộng 390px.
 
 ## 8. Lộ trình
 
