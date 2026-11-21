@@ -53,6 +53,7 @@ App.comp = (function () {
   // Nhãn hạn của task: "Trễ 2 ngày", "Hôm nay", "Ngày mai", hoặc ngày dd/mm/yyyy
   function dueTag(t, today) {
     if (!t.due_date) return tag('tplain', 'clock', 'Chưa có hạn');
+    if (L.isMissed(t, today)) return tag('tplain', 'refresh', 'Bỏ lỡ <span class="num">' + D.fmt(t.due_date) + '</span>', 'Lần lặp đã qua ngày, vẫn tính vào % mục tiêu');
     if (L.isOverdue(t, today)) return tag('tq1', 'clock', 'Trễ <span class="num">' + D.diffDays(t.due_date, today) + '</span> ngày');
     if (t.due_date === today) return tag('tplain', 'clock', 'Hôm nay');
     if (t.due_date === D.addDays(today, 1)) return tag('tplain', 'clock', 'Ngày mai');
@@ -83,6 +84,7 @@ App.comp = (function () {
     if (t.priority === 'Cao') meta.push(tag('tpri', 'up', 'Cao'));
     else if (t.priority === 'Thấp') meta.push(tag('tplain', 'down', 'Thấp'));
     if (t.status === 'Đang làm') meta.push(tag('tplain', 'play', 'Đang làm'));
+    if (t.parent_recurring_id) meta.push(tag('tplain', 'refresh', 'Lặp lại'));
     if (!ctx.hideGoal) {
       var g = t.goal_id ? ctx.goalsById[t.goal_id] : null;
       meta.push(g ? tag(groupMeta(g.group).cls + ' goal-tag', groupMeta(g.group).icon, esc(g.name)) : tag('tplain', 'tag', esc(App.C.MISC)));
@@ -138,36 +140,48 @@ App.comp = (function () {
     return out + '</div>';
   }
 
-  function goalStatusLine(g, p) {
-    if (!p.total) return '<span class="muted">' + icon('sparkle', 'ic14') + 'Thêm task để bắt đầu</span>';
+  function goalStatusLine(g, p, slow) {
+    if (slow) return '<span class="lv-text-warn" title="Đã qua ' + slow.time + '% thời gian, mới đạt ' + slow.pct + '%">' + icon('alert', 'ic14') + 'Chậm tiến độ</span>';
+    if (!p.total) return '<span class="muted">' + icon('sparkle', 'ic14') + (p.mode === 'metric' ? 'Đặt chỉ tiêu để bắt đầu' : 'Thêm task để bắt đầu') + '</span>';
     var lv = L.level(p.pct);
     if (lv === 'ok') return '<span class="lv-text-ok">' + fl('sakura', 16, 1) + 'Đạt rồi, giỏi quá!</span>';
     if (lv === 'pr') return '<span class="lv-text-pr">' + icon('flag', 'ic14') + 'Sắp tới đích</span>';
     return '<span class="lv-text-warn">' + icon('alert', 'ic14') + 'Cần tăng tốc</span>';
   }
 
+  // Số đã làm trên tổng: "3/8 task xong" hoặc "12/50 km"
+  function progressCount(p) {
+    if (p.mode === 'metric') {
+      return icon('chart', 'ic14') + '<span><span class="num">' + L.fmtVi(p.done) + '/' + L.fmtVi(p.total) + '</span>' + (p.unit ? ' ' + esc(p.unit) : '') + '</span>';
+    }
+    return icon('check', 'ic14') + (p.total ? '<span><span class="num">' + p.done + '/' + p.total + '</span> task xong</span>' : '<span>Chưa có task</span>');
+  }
+
   function goalCard(g, tasks, today) {
     var p = L.goalProgress(g, tasks), m = groupMeta(g.group), f = App.flowers.pick(g.id);
+    var slow = L.slowInfo(g, tasks, today);
     return '<button type="button" class="goal g-' + m.key + '" data-action="open-goal" data-id="' + esc(g.id) + '">' +
       '<span class="tape" aria-hidden="true"></span>' + (f.tone % 2 ? fl(f.name, 34, f.tone, 'corner') : '') +
       '<span class="goal-row"><span class="sticker">' + icon(m.icon) + '</span><span class="goal-main">' +
       '<span class="goal-name">' + esc(g.name) + '</span>' +
       '<span class="meta">' + periodTag(g) + deadlineTag(g, today) + hearts(g) + '</span></span></span>' +
       progressBar(p.pct) +
-      '<span class="goal-foot"><span>' + icon('check', 'ic14') + (p.total ? '<span><span class="num">' + p.done + '/' + p.total + '</span> task xong</span>' : '<span>Chưa có task</span>') + '</span>' +
-      goalStatusLine(g, p) + '</span></button>';
+      '<span class="goal-foot"><span>' + progressCount(p) + '</span>' +
+      goalStatusLine(g, p, slow) + '</span></button>';
   }
 
   function quickAdd(id, placeholder, goalId) {
     return '<form class="quick-add" data-form="quick-add"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') + '>' +
       '<label class="qa-field" for="' + id + '">' + icon('pencil') + '<span class="sr-only">Tên việc mới</span>' +
       '<input id="' + id + '" name="title" autocomplete="off" maxlength="200" placeholder="' + esc(placeholder) + '"></label>' +
-      '<button type="submit" class="fab" aria-label="Thêm việc">' + icon('plus') + '</button></form>';
+      '<button type="submit" class="fab" aria-label="Thêm việc">' + icon('plus') + '</button>' +
+      '<button type="button" class="btn btn-soft qa-full" data-action="new-task"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') +
+      ' title="Mở form đủ trường: hạn, ưu tiên, mục tiêu, lặp lại">' + icon('edit', 'ic18') + 'Thêm đầy đủ</button></form>';
   }
 
   return {
     tag: tag, groupMeta: groupMeta, progressBar: progressBar, groupTag: groupTag, periodTag: periodTag, deadlineTag: deadlineTag,
     hearts: hearts, taskRow: taskRow, tickButton: tickButton, starButton: starButton, dueTag: dueTag, quadTag: quadTag, taskList: taskList, topNote: topNote, matrix: matrix, goalCard: goalCard,
-    goalStatusLine: goalStatusLine, quickAdd: quickAdd
+    goalStatusLine: goalStatusLine, progressCount: progressCount, quickAdd: quickAdd
   };
 })();

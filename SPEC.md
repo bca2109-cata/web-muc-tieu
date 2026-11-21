@@ -46,6 +46,8 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 ### 4.2 Task
 - Các trường: tên, mục tiêu liên kết (có thể để trống, coi là "Việc lặt vặt"), hạn chót, mức ưu tiên (Cao / Trung bình / Thấp), trạng thái (Cần làm / Đang làm / Xong), ghi chú ngắn, cờ "Top 3 hôm nay", **icon** (tự đoán theo tên việc, sửa được).
 - **Task lặp lại:** hằng ngày, hoặc các thứ cố định trong tuần (ví dụ thứ 2-4-6). Task lặp phải tự sinh ra vào đúng ngày.
+  - Cách lưu (chốt GĐ2): việc mẫu có `recurring_rule` ("Hằng ngày" hoặc "Hằng tuần: T2, T4, T6", CN là chủ nhật) và `parent_recurring_id` trống. Mỗi lần lặp là một task riêng, `id` = id việc mẫu + "-" + ngày, `parent_recurring_id` = id việc mẫu. Sinh bù tối đa 30 ngày. Lần bỏ lỡ chỉ tính vào % mục tiêu, không hiện Quá hạn, không tự vào Top 3.
+  - Cảnh báo tiến độ chậm (chốt GĐ2): mục tiêu Đang làm, hôm nay trong kỳ, đã qua ít nhất 10% thời gian, và % đạt dưới một nửa % thời gian đã qua.
 - Task trễ hạn tô màu cảnh báo. Task đến hạn hôm nay hoặc ngày mai thì hiện nhãn "Sắp đến hạn".
 - **Chỉ nhắc ngay trong web.** Không cần thông báo đẩy, email hay Telegram.
 

@@ -164,26 +164,121 @@ App.period = (function () {
 })();
 
 App.logic = {
-  // Tiến độ theo task: số task xong / tổng task gắn với mục tiêu
+  /* Tiến độ của mục tiêu.
+     Theo task: số task xong / tổng task gắn với mục tiêu (không tính việc lặp mẫu, có tính mọi lần lặp đã sinh).
+     Theo chỉ số: thực tế / target. */
   goalProgress: function (goal, tasks) {
-    var mine = tasks.filter(function (t) { return t.goal_id === goal.id; });
+    if (goal.progress_mode === 'metric') {
+      var target = App.logic.num(goal.target), actual = App.logic.num(goal.actual);
+      return { mode: 'metric', done: actual, total: target, unit: goal.unit || '',
+        pct: target > 0 ? Math.min(100, Math.max(0, Math.round(actual / target * 100))) : 0 };
+    }
+    var mine = tasks.filter(function (t) { return t.goal_id === goal.id && !App.logic.isTemplate(t); });
     var done = mine.filter(function (t) { return t.status === App.C.DONE; }).length;
     var total = mine.length;
     var pct = total ? Math.round(done / total * 100) : 0;
-    return { done: done, total: total, pct: pct };
+    return { mode: 'task', done: done, total: total, pct: pct };
   },
+  // Đọc số từ Sheet (có thể là chữ, có dấu phẩy thập phân)
+  num: function (v) {
+    var n = parseFloat(String(v == null ? '' : v).replace(',', '.'));
+    return isFinite(n) ? n : 0;
+  },
+  // Viết số gọn: 12, 2.5 (không đuôi .0)
+  fmtNum: function (n) { return String(Math.round(n * 100) / 100); },
+  // Số để hiển thị: dấu phẩy thập phân kiểu Việt Nam (lưu vẫn dùng dấu chấm)
+  fmtVi: function (n) { return App.logic.fmtNum(n).replace('.', ','); },
+  // % thời gian của kỳ đã qua (tính cả hôm nay)
+  timePct: function (g, today) {
+    var D = App.date;
+    if (!D.isValid(g.start_date) || !D.isValid(g.end_date) || g.end_date < g.start_date) return 0;
+    if (today < g.start_date) return 0;
+    if (today > g.end_date) return 100;
+    return Math.round((D.diffDays(g.start_date, today) + 1) / (D.diffDays(g.start_date, g.end_date) + 1) * 100);
+  },
+  /* Chậm tiến độ: mục tiêu đang làm, đang trong kỳ, đã qua ít nhất 10% thời gian,
+     và % đạt được thấp hơn một nửa % thời gian đã qua */
+  slowInfo: function (g, tasks, today) {
+    if (g.status !== 'Đang làm' || !g.start_date || today < g.start_date || today > g.end_date) return null;
+    var time = App.logic.timePct(g, today), p = App.logic.goalProgress(g, tasks);
+    if (time < 10 || p.pct >= 100 || p.pct >= time / 2) return null;
+    return { time: time, pct: p.pct };
+  },
+
+  /* Task lặp. Việc mẫu: có recurring_rule, không có parent_recurring_id, không hiện trong danh sách và không tính %.
+     Mỗi ngày khớp quy tắc sinh một lần lặp (id = id mẫu + ngày, nên 2 máy cùng sinh không bị trùng).
+     Quy tắc lưu bằng chữ: "Hằng ngày" hoặc "Hằng tuần: T2, T4, T6" (CN là Chủ nhật). */
+  WEEKDAY_CODES: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+  RECUR_BACKFILL_DAYS: 30,
+  isTemplate: function (t) { return !!t.recurring_rule && !t.parent_recurring_id; },
+  // Lần lặp của ngày đã qua mà chưa làm: chỉ tính vào %, không coi là trễ hạn
+  isMissed: function (t, today) { return !!t.parent_recurring_id && t.status !== App.C.DONE && !!t.due_date && t.due_date < today; },
+  parseRule: function (rule) {
+    var r = String(rule || '').trim();
+    if (!r) return null;
+    if (/^hằng ngày$/i.test(r)) return { daily: true, days: [0, 1, 2, 3, 4, 5, 6] };
+    var codes = App.logic.WEEKDAY_CODES, days = [];
+    r.replace(/^hằng tuần:\s*/i, '').split(/[,\s]+/).forEach(function (c) {
+      var i = codes.indexOf(c.toUpperCase());
+      if (i >= 0 && days.indexOf(i) < 0) days.push(i);
+    });
+    return days.length ? { daily: false, days: days.sort() } : null;
+  },
+  makeRule: function (days) {
+    if (!days.length) return '';
+    if (days.length === 7) return 'Hằng ngày';
+    var codes = App.logic.WEEKDAY_CODES;
+    // Thứ 2 trước, Chủ nhật cuối
+    return 'Hằng tuần: ' + days.slice().sort(function (a, b) { return ((a + 6) % 7) - ((b + 6) % 7); })
+      .map(function (d) { return codes[d]; }).join(', ');
+  },
+  ruleLabel: function (rule) {
+    var p = App.logic.parseRule(rule);
+    if (!p) return '';
+    if (p.daily) return 'Hằng ngày';
+    var days = p.days.slice().sort(function (a, b) { return ((a + 6) % 7) - ((b + 6) % 7); });
+    var wk = days.filter(function (d) { return d; }).map(function (d) { return String(d + 1); });
+    return (wk.length ? 'Thứ ' + wk.join(', ') : '') + (days.indexOf(0) >= 0 ? (wk.length ? ', ' : '') + 'Chủ nhật' : '');
+  },
+  ruleMatches: function (rule, date) {
+    var p = App.logic.parseRule(rule), d = App.date.parse(date);
+    return !!p && !!d && p.days.indexOf(d.getUTCDay()) >= 0;
+  },
+  // Các lần lặp cần sinh thêm: từ ngày bắt đầu của mẫu (tối đa 30 ngày gần nhất) đến hôm nay
+  recurringToCreate: function (tasks, today) {
+    var L = App.logic, D = App.date, have = {}, out = [];
+    tasks.forEach(function (t) { have[t.id] = true; });
+    var floor = D.addDays(today, 1 - L.RECUR_BACKFILL_DAYS);
+    tasks.filter(L.isTemplate).forEach(function (tpl) {
+      var start = D.isValid(tpl.due_date) ? tpl.due_date : String(tpl.created_at || '').slice(0, 10);
+      if (!D.isValid(start)) start = today;
+      if (start < floor) start = floor;
+      for (var d = start; d <= today; d = D.addDays(d, 1)) {
+        var id = tpl.id + '-' + d;
+        if (have[id] || !L.ruleMatches(tpl.recurring_rule, d)) continue;
+        have[id] = true;
+        out.push(L.newTask({
+          id: id, title: tpl.title, goal_id: tpl.goal_id, due_date: d, priority: tpl.priority, icon: tpl.icon,
+          parent_recurring_id: tpl.id
+        }));
+      }
+    });
+    return out;
+  },
+
   // ≥ 100% đạt, 80–99% gần đạt, < 80% cần chú ý
   level: function (pct) { return pct >= 100 ? 'ok' : pct >= 80 ? 'pr' : 'warn'; },
   levelLabel: function (pct) { return pct >= 100 ? 'Đạt' : pct >= 80 ? 'Gần đạt' : 'Cần chú ý'; },
 
   isDone: function (t) { return t.status === App.C.DONE; },
-  isOverdue: function (t, today) { return !!t.due_date && t.due_date < today && t.status !== App.C.DONE; },
+  // Lần lặp đã qua ngày không tính là trễ hạn (xem isMissed)
+  isOverdue: function (t, today) { return !!t.due_date && t.due_date < today && t.status !== App.C.DONE && !t.parent_recurring_id; },
   // Đến hạn hôm nay hoặc ngày mai
   isDueSoon: function (t, today) {
     return !!t.due_date && t.status !== App.C.DONE &&
       (t.due_date === today || t.due_date === App.date.addDays(today, 1));
   },
-  isTop3Today: function (t, today) { return App.util.isTrue(t.is_top3) && t.top3_date === today; },
+  isTop3Today: function (t, today) { return App.util.isTrue(t.is_top3) && t.top3_date === today && !App.logic.isMissed(t, today); },
 
   /* Danh sách việc hôm nay (bảng và biểu đồ): việc chưa xong có hạn đến ngày mai (gồm trễ hạn) hoặc nằm trong Top 3,
      cộng việc đã xong hôm nay. Chưa xong xếp trước, rồi theo hạn sớm nhất, rồi theo ưu tiên. */
@@ -236,7 +331,7 @@ App.logic = {
   // Top 3 hôm trước chưa xong thì giữ lại sang hôm nay
   top3CarryOver: function (tasks, today) {
     return tasks.filter(function (t) {
-      return App.util.isTrue(t.is_top3) && t.top3_date && t.top3_date < today && t.status !== App.C.DONE;
+      return App.util.isTrue(t.is_top3) && t.top3_date && t.top3_date < today && t.status !== App.C.DONE && !App.logic.isMissed(t, today);
     });
   },
 

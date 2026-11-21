@@ -9,11 +9,14 @@ App.views.today = function (state, ui) {
   state.goals.forEach(function (g) { goalsById[g.id] = g; });
   var ctx = { today: today, goalsById: goalsById, flashId: ui.flashId };
 
-  var top3 = L.sortTasks(state.tasks.filter(function (t) { return L.isTop3Today(t, today); }));
-  var work = L.workList(state.tasks, today);
-  var upcoming = L.upcoming(state.tasks, today);
+  // Lần lặp của ngày đã qua mà chưa làm chỉ tính vào % mục tiêu, không hiện ở đây
+  var tasks = state.tasks.filter(function (t) { return !L.isMissed(t, today); });
+  var top3 = L.sortTasks(tasks.filter(function (t) { return L.isTop3Today(t, today); }));
+  var work = L.workList(tasks, today);
+  var upcoming = L.upcoming(tasks, today);
+  var slowGoals = state.goals.filter(function (g) { return L.slowInfo(g, state.tasks, today); });
   // Ma trận: mọi việc chưa xong, cộng việc vừa xong hôm nay, trừ việc đã ở Top 3
-  var forMatrix = state.tasks.filter(function (t) {
+  var forMatrix = tasks.filter(function (t) {
     return !L.isTop3Today(t, today) && (!L.isDone(t) || t.done_at === today);
   });
 
@@ -24,6 +27,15 @@ App.views.today = function (state, ui) {
   html += '<section class="hello">' + App.views.sun() + fl('daisy', 44, 2, 'hello-f1') + fl('sakura', 26, 8, 'hello-f2') +
     '<h1>' + hello + '</h1><p>' + icon('calendar', 'ic14') + D.weekday(today) + ', <span class="num">' + D.fmt(today) + '</span></p></section>';
 
+  if (slowGoals.length) {
+    html += '<section class="card slow-card" aria-labelledby="slow-title"><h2 id="slow-title" class="slow-h">' + icon('alert', 'ic18') +
+      '<span><span class="num">' + slowGoals.length + '</span> mục tiêu đang chậm tiến độ</span></h2><ul>' +
+      slowGoals.map(function (g) {
+        var si = L.slowInfo(g, state.tasks, today);
+        return '<li><button type="button" class="slow-row" data-action="open-goal" data-id="' + App.util.esc(g.id) + '"><span class="slow-name">' + App.util.esc(g.name) + '</span>' +
+          '<span class="slow-fig">đạt <span class="num">' + si.pct + '%</span>, đã qua <span class="num">' + si.time + '%</span> thời gian</span>' + icon('back', 'ic14 flip') + '</button></li>';
+      }).join('') + '</ul></section>';
+  }
   html += App.views.overview(L.dayStats(work, today));
   html += C.quickAdd('quick-add-today', 'Hôm nay mình sẽ làm gì nè?');
 
@@ -158,11 +170,10 @@ App.views.emptyCard = function (title, sub, button) {
 App.views.soon = function (name) {
   var fl = App.flowers.html, icon = App.ui.icon;
   var INFO = {
-    task: { title: 'Task', icon: 'list', when: 'Danh sách đủ bộ lọc theo trạng thái, ưu tiên, mục tiêu và hạn.' },
     'thoi-quen': { title: 'Thói quen', icon: 'calcheck', when: 'Lưới tick theo ngày và chuỗi ngày liên tiếp. Làm ở Giai đoạn 3.' },
     'tong-ket': { title: 'Tổng kết', icon: 'barchart', when: 'Chỉ số, biểu đồ và ghi chú review. Làm ở Giai đoạn 4.' }
   };
-  var x = INFO[name] || INFO.task;
+  var x = INFO[name] || INFO['thoi-quen'];
   return '<div class="card soon-card">' +
     '<div class="soon-flowers">' + fl('tulip', 44, 1) + fl('hydrangea', 38, 9) + fl('sunflower', 40, 4) + fl('lavender', 44, 3) + fl('tulip', 44, 6) + '</div>' +
     '<h1>' + icon(x.icon) + 'Tab ' + x.title + ' sắp có</h1>' +

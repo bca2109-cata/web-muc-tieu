@@ -3,7 +3,10 @@ var App = window.App || (window.App = {});
 
 App.app = (function () {
   var view = document.getElementById('view');
-  var ui = { groupFilter: '', flashId: null, todayView: readPref('lp_today_view', 'matrix') };
+  var ui = {
+    groupFilter: '', periodType: '', periodValue: '', flashId: null, todayView: readPref('lp_today_view', 'matrix'),
+    taskFilter: { status: 'open', priority: '', goal: '', due: '' }, taskSort: 'due'
+  };
   function readPref(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
   function writePref(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* bỏ qua */ } }
   var loaded = false;
@@ -12,11 +15,12 @@ App.app = (function () {
 
   function route() {
     var h = location.hash || '#/hom-nay';
-    var s = /^#\/sap-co\/(task|thoi-quen|tong-ket)$/.exec(h);
+    var s = /^#\/sap-co\/(thoi-quen|tong-ket)$/.exec(h);
     if (s) return { tab: s[1], soon: true };
     var m = /^#\/muc-tieu\/(.+)$/.exec(h);
     if (m) return { tab: 'goals', goalId: decodeURIComponent(m[1]) };
     if (h.indexOf('#/muc-tieu') === 0) return { tab: 'goals' };
+    if (h.indexOf('#/task') === 0) return { tab: 'task' };
     return { tab: 'today' };
   }
   function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
@@ -54,11 +58,17 @@ App.app = (function () {
       return;
     }
     var snap = snapshotInputs();
-    var state = App.store.get();
+    // Việc lặp mẫu không hiện trong danh sách: tách riêng ra state.templates
+    var raw = App.store.get();
+    var state = Object.assign({}, raw, {
+      tasks: raw.tasks.filter(function (t) { return !App.logic.isTemplate(t); }),
+      templates: raw.tasks.filter(App.logic.isTemplate)
+    });
     var html;
     if (r.soon) html = App.views.soon(r.tab);
     else if (r.tab === 'goals' && r.goalId) html = App.views.goalDetail(state, ui, r.goalId);
     else if (r.tab === 'goals') html = App.views.goals(state, ui);
+    else if (r.tab === 'task') html = App.views.tasks(state, ui);
     else html = App.views.today(state, ui);
     view.innerHTML = html;
     restoreInputs(snap);
@@ -132,6 +142,33 @@ App.app = (function () {
     if (el) { el.value = ''; el.focus(); }
   }
 
+  // Sinh các lần lặp còn thiếu (đến hôm nay)
+  function generateRecurring() {
+    var list = App.logic.recurringToCreate(App.store.get().tasks, App.date.today());
+    if (!list.length) return;
+    App.store.batch(list.map(function (t) { return { type: 'upsert', table: 'Tasks', row: t }; }));
+  }
+
+  // Mục tiêu theo chỉ số: cộng nhanh vào giá trị thực tế
+  function addMetric(id) {
+    var g = findGoal(id);
+    if (!g) return;
+    App.forms.addMetric(g, function (n) {
+      var tasks = App.store.get().tasks;
+      var before = App.logic.goalProgress(g, tasks).pct;
+      var row = Object.assign({}, g, { actual: App.logic.fmtNum(Math.max(0, App.logic.num(g.actual) + n)) });
+      App.store.upsert('Goals', row);
+      var after = App.logic.goalProgress(row, tasks).pct;
+      if (before < 100 && after >= 100) {
+        App.flowers.burst(window.innerWidth / 2, window.innerHeight / 2, true);
+        App.ui.toast('Mục tiêu "' + g.name + '" đạt 100%! Cả vườn hoa nở cho bạn.', { cheer: true, duration: 4000 });
+      } else {
+        var delta = App.logic.num(row.actual) - App.logic.num(g.actual);
+        App.ui.toast((delta < 0 ? 'Đã trừ ' : 'Đã cộng ') + App.logic.fmtVi(Math.abs(delta)) + (g.unit ? ' ' + g.unit : '') + '. Hiện đạt ' + App.logic.fmtVi(App.logic.num(row.actual)) + (g.unit ? ' ' + g.unit : '') + '.');
+      }
+    });
+  }
+
   // Top 3 hôm trước chưa xong: chuyển sang hôm nay
   function carryOverTop3() {
     var today = App.date.today();
@@ -150,7 +187,8 @@ App.app = (function () {
     var today = App.date.today();
     if (readPref('lp_top3_auto', '') === today) return;
     var room = App.C.TOP3_MAX - top3Count();
-    var list = App.logic.top3Suggest(App.store.get().tasks, today, room);
+    var tasks = App.store.get().tasks.filter(function (t) { return !App.logic.isTemplate(t) && !App.logic.isMissed(t, today); });
+    var list = App.logic.top3Suggest(tasks, today, room);
     // Chưa có việc nào để điền thì chưa đánh dấu, lần mở sau trong ngày thử lại
     if (room > 0 && !list.length) return;
     writePref('lp_top3_auto', today);
@@ -170,13 +208,33 @@ App.app = (function () {
       case 'toggle-top3': toggleTop3(id); break;
       case 'open-task': var t = findTask(id); if (t) App.forms.openTask(t); break;
       case 'open-goal': go('#/muc-tieu/' + encodeURIComponent(id)); break;
-      case 'new-goal': App.forms.openGoal(null, el.getAttribute('data-group') ? { group: el.getAttribute('data-group') } : null); break;
+      case 'new-goal':
+        var gd = {};
+        if (el.getAttribute('data-group')) gd.group = el.getAttribute('data-group');
+        // Tạo từ trang trống của một kỳ thì điền sẵn kỳ đó
+        var pr = el.getAttribute('data-ptype') && App.period.range(el.getAttribute('data-ptype'), el.getAttribute('data-pvalue'));
+        if (pr) { gd.period_type = el.getAttribute('data-ptype'); gd.period_value = el.getAttribute('data-pvalue'); gd.start_date = pr.start; gd.end_date = pr.end; }
+        App.forms.openGoal(null, gd); break;
       case 'edit-goal': var g = findGoal(id); if (g) App.forms.openGoal(g); break;
       case 'delete-goal': var g2 = findGoal(id); if (g2) App.forms.deleteGoal(g2); break;
       case 'filter-group': ui.groupFilter = el.getAttribute('data-group') || ''; render(); break;
+      case 'filter-period':
+        ui.periodType = el.getAttribute('data-type') || '';
+        ui.periodValue = App.C.PERIOD_TYPES.indexOf(ui.periodType) >= 0 ? App.period.valueOf(ui.periodType, App.date.today()) : '';
+        render(); break;
+      case 'new-task': App.forms.openTask(null, el.getAttribute('data-goal') ? { goal_id: el.getAttribute('data-goal') } : null); break;
+      case 'metric-add': addMetric(id); break;
+      case 'task-sort': ui.taskSort = el.getAttribute('data-sort'); render(); break;
+      case 'task-reset': ui.taskFilter = { status: 'open', priority: '', goal: '', due: '' }; render(); break;
       case 'go': go(el.getAttribute('data-href')); break;
       case 'reload': reload(); break;
     }
+  });
+  // Ô chọn lọc (kỳ của mục tiêu, bộ lọc tab Task)
+  view.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.name === 'period-value') { ui.periodValue = el.value; render(); }
+    else if (el.getAttribute && el.getAttribute('data-filter')) { ui.taskFilter[el.getAttribute('data-filter')] = el.value; render(); }
   });
   view.addEventListener('submit', function (e) {
     var form = e.target.closest('[data-form="quick-add"]');
@@ -232,6 +290,7 @@ App.app = (function () {
     if (!loaded) render();
     return App.store.load().then(function () {
       loaded = true;
+      generateRecurring();
       carryOverTop3();
       autoFillTop3();
       render();
@@ -260,7 +319,7 @@ App.app = (function () {
     reload();
   }
 
-  return { start: start, go: go, render: render, reload: reload, top3Count: top3Count, celebrate: celebrate };
+  return { start: start, go: go, render: render, reload: reload, top3Count: top3Count, celebrate: celebrate, generateRecurring: generateRecurring };
 })();
 
 App.app.start();

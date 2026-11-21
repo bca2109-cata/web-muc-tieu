@@ -68,26 +68,55 @@ App.forms = (function () {
       return { value: g.id, label: g.name + (g.status !== 'Đang làm' ? ' (' + g.status + ')' : '') };
     }));
     var top = App.logic.isTop3Today(t, today);
+    var L = App.logic, isTpl = L.isTemplate(t);
+    // Chỉ chọn lặp lại khi tạo việc mới hoặc sửa việc lặp mẫu
+    var canRepeat = isNew || isTpl;
+    var rule = L.parseRule(t.recurring_rule);
+    var repeat = !rule ? 'none' : rule.daily ? 'daily' : 'weekly';
+    var DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+    var repeatBlock = canRepeat
+      ? '<div class="field"><span>' + icon('refresh', 'ic14') + 'Lặp lại</span>' +
+        seg('repeat', [{ key: 'none', label: 'Không lặp' }, { key: 'daily', label: 'Hằng ngày' }, { key: 'weekly', label: 'Theo thứ' }], repeat) +
+        '<div class="weekdays" data-weekdays' + (repeat === 'weekly' ? '' : ' hidden') + ' role="group" aria-label="Các thứ trong tuần">' +
+        DAY_ORDER.map(function (d) {
+          var on = rule && !rule.daily && rule.days.indexOf(d) >= 0;
+          return '<label><input type="checkbox" name="wd" value="' + d + '"' + (on ? ' checked' : '') + '><span>' + (d === 0 ? 'CN' : 'T<span class="num">' + (d + 1) + '</span>') + '</span></label>';
+        }).join('') + '</div>' +
+        '<p class="form-error" hidden data-err="wd">Chọn ít nhất một thứ.</p>' +
+        '<small class="muted repeat-note"' + (repeat === 'none' ? ' hidden' : '') + '>Mỗi ngày khớp sẽ tự có một việc mới, hạn đúng ngày đó. Ngày bỏ lỡ vẫn tính vào % mục tiêu.</small></div>'
+      : (t.parent_recurring_id ? '<p class="info-line">' + icon('refresh', 'ic14') + 'Đây là một lần của việc lặp lại. Muốn đổi lịch lặp thì vào tab Task, mục Việc lặp lại.</p>' : '');
 
     var body = '<form data-form="task" novalidate>' +
       '<label class="field"><span>' + icon('text', 'ic14') + 'Tên việc</span><input class="input" name="title" maxlength="200" required autofocus value="' + esc(t.title) + '"></label>' +
       '<p class="form-error" hidden data-err="title">Hãy nhập tên việc.</p>' +
       '<div class="field"><span>' + icon('sparkle', 'ic14') + 'Icon <small class="muted">(tự đoán theo tên, bấm để đổi)</small></span>' + iconPicker(App.logic.iconOf(t)) + '</div>' +
       '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu</span><select class="select" name="goal_id">' + options(goalOpts, t.goal_id) + '</select></label>' +
-      '<label class="field"><span>' + icon('calendar', 'ic14') + 'Hạn chót</span>' + dateInput('due_date', t.due_date) + '</label>' +
+      '<label class="field"><span>' + icon('calendar', 'ic14') + '<span data-due-label>' + (repeat === 'none' ? 'Hạn chót' : 'Bắt đầu lặp từ') + '</span></span>' + dateInput('due_date', t.due_date) + '</label>' +
+      repeatBlock +
       '<div class="field"><span>' + icon('up', 'ic14') + 'Mức ưu tiên</span>' + seg('priority', App.C.PRIORITY, t.priority) + '</div>' +
       '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.TASK_STATUS, t.status) + '</div>' +
       '<label class="field"><span>' + icon('text', 'ic14') + 'Ghi chú</span><textarea class="textarea" name="note" maxlength="500">' + esc(t.note) + '</textarea></label>' +
-      '<label class="check-line"><input type="checkbox" name="top3"' + (top ? ' checked' : '') + '>' + icon('star', 'ic18') + 'Top 3 hôm nay</label>' +
+      '<label class="check-line" data-top3-line' + (repeat === 'none' ? '' : ' hidden') + '><input type="checkbox" name="top3"' + (top ? ' checked' : '') + '>' + icon('star', 'ic18') + 'Top 3 hôm nay</label>' +
       '<p class="form-error" hidden data-err="top3">Top 3 hôm nay đã đủ 3 việc. Bỏ bớt một việc trước.</p>' +
       '<div class="modal-foot">' +
       (isNew ? '' : '<button type="button" class="btn btn-danger" data-act="delete">' + icon('trash', 'ic18') + 'Xóa</button>') +
       '<span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Hủy</button>' +
       '<button type="submit" class="btn btn-primary">' + icon(isNew ? 'plus' : 'check', 'ic18') + (isNew ? 'Thêm' : 'Lưu') + '</button></div></form>';
 
-    var m = App.ui.openModal({ title: isNew ? 'Thêm việc' : 'Sửa việc', body: body });
+    var m = App.ui.openModal({ title: isNew ? 'Thêm việc' : isTpl ? 'Sửa việc lặp lại' : 'Sửa việc', body: body });
     var form = m.querySelector('form');
     bindDates(form);
+
+    // Đổi kiểu lặp thì hiện hoặc ẩn các thứ, đổi nhãn ngày
+    function syncRepeat() {
+      if (!canRepeat) return;
+      var r = val(form, 'repeat') || 'none';
+      form.querySelector('[data-weekdays]').hidden = r !== 'weekly';
+      form.querySelector('.repeat-note').hidden = r === 'none';
+      form.querySelector('[data-top3-line]').hidden = r !== 'none';
+      form.querySelector('[data-due-label]').textContent = r === 'none' ? 'Hạn chót' : 'Bắt đầu lặp từ';
+    }
+    if (canRepeat) form.addEventListener('change', function (e) { if (e.target.name === 'repeat') syncRepeat(); });
 
     // Chưa tự chọn icon thì đổi icon theo tên đang gõ
     var iconTouched = !isNew && App.logic.TASK_ICONS.indexOf(t.icon) >= 0 && t.icon !== App.logic.guessIcon(t.title);
@@ -100,7 +129,9 @@ App.forms = (function () {
     });
 
     m.querySelector('[data-act="delete"]') && m.querySelector('[data-act="delete"]').addEventListener('click', function () {
-      App.ui.ask('Xóa việc', 'Xóa việc "' + t.title + '"? Không hoàn tác được.', [
+      App.ui.ask(isTpl ? 'Xóa việc lặp lại' : 'Xóa việc', isTpl
+        ? 'Ngừng lặp và xóa "' + t.title + '"? Các lần đã sinh trước đó vẫn được giữ. Không hoàn tác được.'
+        : 'Xóa việc "' + t.title + '"? Không hoàn tác được.', [
         { label: 'Xóa việc', value: 'yes', kind: 'danger' }, { label: 'Hủy', value: null }
       ]).then(function (v) {
         if (v !== 'yes') return;
@@ -114,7 +145,14 @@ App.forms = (function () {
       var title = val(form, 'title');
       form.querySelector('[data-err="title"]').hidden = !!title;
       if (!title) { form.elements.title.focus(); return; }
-      var wantTop = form.elements.top3.checked;
+      var repeatKind = canRepeat ? (val(form, 'repeat') || 'none') : 'none';
+      var days = [];
+      if (repeatKind === 'daily') days = [0, 1, 2, 3, 4, 5, 6];
+      if (repeatKind === 'weekly') {
+        Array.prototype.forEach.call(form.querySelectorAll('input[name="wd"]:checked'), function (c) { days.push(+c.value); });
+      }
+      if (repeatKind === 'weekly' && !days.length) { form.querySelector('[data-err="wd"]').hidden = false; return; }
+      var wantTop = repeatKind === 'none' && form.elements.top3.checked;
       if (wantTop && !top && App.app.top3Count() >= App.C.TOP3_MAX) {
         form.querySelector('[data-err="top3"]').hidden = false;
         return;
@@ -125,6 +163,17 @@ App.forms = (function () {
         priority: val(form, 'priority') || 'Trung bình', status: val(form, 'status') || 'Cần làm', note: val(form, 'note'),
         icon: val(form, 'icon') || App.logic.guessIcon(title)
       });
+      if (repeatKind !== 'none') {
+        // Việc lặp mẫu: không có trạng thái riêng, không vào Top 3, ngày = ngày bắt đầu lặp
+        Object.assign(row, { recurring_rule: L.makeRule(days), status: 'Cần làm', done_at: '', is_top3: 'FALSE', top3_date: '',
+          due_date: row.due_date || today });
+        store().upsert('Tasks', row);
+        App.ui.closeModal();
+        App.app.generateRecurring();
+        App.ui.toast(isNew ? 'Đã tạo việc lặp lại: ' + L.ruleLabel(row.recurring_rule) + '.' : 'Đã lưu việc lặp lại. Thay đổi áp dụng cho các lần sau.');
+        return;
+      }
+      if (isTpl) row.recurring_rule = '';
       var justDone = row.status === App.C.DONE && t.status !== App.C.DONE;
       if (row.status === App.C.DONE && !row.done_at) row.done_at = today;
       if (row.status !== App.C.DONE) row.done_at = '';
@@ -163,6 +212,14 @@ App.forms = (function () {
       '</div>' +
       '<p class="form-error" hidden data-err="dates">Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.</p>' +
       '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.GOAL_STATUS, g.status) + '</div>' +
+      '<div class="field"><span>' + icon('barchart', 'ic14') + 'Cách tính tiến độ</span>' +
+      seg('progress_mode', [{ key: 'task', label: 'Theo task' }, { key: 'metric', label: 'Theo chỉ số' }], g.progress_mode === 'metric' ? 'metric' : 'task') + '</div>' +
+      '<div class="metric-fields" data-metric' + (g.progress_mode === 'metric' ? '' : ' hidden') + '>' +
+      '<label class="field"><span>' + icon('tag', 'ic14') + 'Đơn vị</span><input class="input" name="unit" maxlength="20" placeholder="giờ, km, cuốn…" value="' + esc(g.unit) + '"></label>' +
+      '<div class="row2">' +
+      '<label class="field"><span>' + icon('flag', 'ic14') + 'Chỉ tiêu</span><input class="input num" name="target" inputmode="decimal" value="' + esc(g.target) + '"></label>' +
+      '<label class="field"><span>' + icon('check', 'ic14') + 'Đã đạt</span><input class="input num" name="actual" inputmode="decimal" value="' + esc(g.actual || (g.progress_mode === 'metric' ? '' : '0')) + '"></label>' +
+      '</div><p class="form-error" hidden data-err="target">Chỉ tiêu phải là số lớn hơn 0. Đã đạt phải là số.</p></div>' +
       '<label class="field"><span>' + icon('text', 'ic14') + 'Ghi chú</span><textarea class="textarea" name="note" maxlength="1000">' + esc(g.note) + '</textarea></label>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Hủy</button>' +
       '<button type="submit" class="btn btn-primary">' + icon(isNew ? 'plus' : 'check', 'ic18') + (isNew ? 'Tạo mục tiêu' : 'Lưu') + '</button></div></form>';
@@ -183,6 +240,9 @@ App.forms = (function () {
       fillDates();
     });
     valSel.addEventListener('change', fillDates);
+    form.addEventListener('change', function (e) {
+      if (e.target.name === 'progress_mode') form.querySelector('[data-metric]').hidden = e.target.value !== 'metric';
+    });
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -196,16 +256,48 @@ App.forms = (function () {
       var badDates = start > end;
       form.querySelector('[data-err="dates"]').hidden = !badDates;
       if (badDates) return;
+      var mode = val(form, 'progress_mode') === 'metric' ? 'metric' : 'task';
+      var tgt = val(form, 'target').replace(',', '.'), act = val(form, 'actual').replace(',', '.') || '0';
+      var badMetric = mode === 'metric' && (!(+tgt > 0) || !isFinite(+act));
+      form.querySelector('[data-err="target"]').hidden = !badMetric;
+      if (badMetric) { form.elements.target.focus(); return; }
       var row = Object.assign({}, g, {
         name: name, group: val(form, 'group') || 'Công việc', period_type: typeSel.value, period_value: valSel.value,
         start_date: start, end_date: end, status: val(form, 'status') || 'Đang làm', note: val(form, 'note'),
         importance: val(form, 'importance') || '2',
-        progress_mode: g.progress_mode || 'task'
+        progress_mode: mode,
+        unit: mode === 'metric' ? val(form, 'unit') : g.unit,
+        target: mode === 'metric' ? App.logic.fmtNum(+tgt) : g.target,
+        actual: mode === 'metric' ? App.logic.fmtNum(+act) : g.actual
       });
       store().upsert('Goals', row);
       App.ui.closeModal();
       App.ui.toast(isNew ? 'Đã tạo mục tiêu.' : 'Đã lưu thay đổi.');
       if (isNew) App.app.go('#/muc-tieu/' + row.id);
+    });
+  }
+
+  // Cộng nhanh vào chỉ số của mục tiêu. onAdd(n) nhận số đã nhập
+  function addMetric(goal, onAdd) {
+    var L = App.logic;
+    var body = '<form data-form="metric" novalidate>' +
+      '<p class="muted">Hiện đạt <span class="num">' + L.fmtVi(L.num(goal.actual)) + '/' + L.fmtVi(L.num(goal.target)) + '</span>' + (goal.unit ? ' ' + esc(goal.unit) : '') + '.</p>' +
+      '<label class="field"><span>' + icon('plus', 'ic14') + 'Cộng thêm' + (goal.unit ? ' (' + esc(goal.unit) + ')' : '') + '</span>' +
+      '<input class="input num" name="amount" inputmode="decimal" value="1" autofocus></label>' +
+      '<p class="form-error" hidden data-err="amount">Nhập một số khác 0. Số âm để trừ bớt.</p>' +
+      '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Hủy</button>' +
+      '<button type="submit" class="btn btn-primary">' + icon('plus', 'ic18') + 'Cộng</button></div></form>';
+    var m = App.ui.openModal({ title: 'Cập nhật: ' + goal.name, body: body });
+    var form = m.querySelector('form');
+    form.elements.amount.select();
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = parseFloat(val(form, 'amount').replace(',', '.'));
+      var bad = !isFinite(n) || n === 0;
+      form.querySelector('[data-err="amount"]').hidden = !bad;
+      if (bad) { form.elements.amount.focus(); return; }
+      App.ui.closeModal();
+      onAdd(n);
     });
   }
 
@@ -283,5 +375,5 @@ App.forms = (function () {
     });
   }
 
-  return { openTask: openTask, openGoal: openGoal, deleteGoal: deleteGoal, openSettings: openSettings };
+  return { openTask: openTask, openGoal: openGoal, deleteGoal: deleteGoal, openSettings: openSettings, addMetric: addMetric };
 })();

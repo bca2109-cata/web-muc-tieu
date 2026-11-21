@@ -86,8 +86,35 @@
 - Tab Task làm ngay ở Giai đoạn 2. Thêm nút "Thêm task đầy đủ" mở form ngay.
 - Giữ dữ liệu thử trong Sheet để tiếp tục kiểm thử.
 
+### Quyết định cho Giai đoạn 2 (22/11/2026)
+- Task lặp sinh bù: ngày cũ chưa làm chỉ tính vào % mục tiêu (là chưa xong), không hiện ở Quá hạn, không tự lên Top 3. Tab Hôm nay chỉ hiện lần lặp của hôm nay.
+- Cảnh báo tiến độ chậm: khi % đạt được thấp hơn một nửa % thời gian đã qua của kỳ.
+- Tab Mục tiêu mặc định lọc "Đang diễn ra" (hôm nay nằm trong khoảng ngày của mục tiêu), chọn được Năm / Quý / Tháng / Tuần và kỳ cụ thể.
+- Mục tiêu theo chỉ số: nút "+ cập nhật" mở ô nhập số, mặc định 1.
+
+### Giai đoạn 2: đã làm (22/11/2026)
+- **Tiến độ theo chỉ số**: form mục tiêu có "Cách tính tiến độ" (Theo task / Theo chỉ số) với Đơn vị, Chỉ tiêu, Đã đạt. Thẻ hiện "12/50 km". Trang chi tiết có nút "Cập nhật {đơn vị}" mở ô nhập số (mặc định 1, số âm để trừ). Đủ 100% thì có hiệu ứng mừng.
+- **Lọc theo kỳ** ở tab Mục tiêu: Đang diễn ra (mặc định) / Năm / Quý / Tháng / Tuần / Tất cả, chọn loại kỳ thì có thêm ô chọn kỳ cụ thể. Ô trống thì nút "Tạo mục tiêu" điền sẵn kỳ.
+- **Task lặp lại**: form task có "Lặp lại" (Không lặp / Hằng ngày / Theo thứ). Việc mẫu lưu luật ở cột `recurring_rule` dạng chữ ("Hằng ngày", "Hằng tuần: T2, T4, T6"). Mỗi lần mở web tự sinh các lần lặp đến hôm nay (bù tối đa 30 ngày), mã lần lặp = mã việc mẫu + ngày nên mở trên nhiều máy không bị trùng. Lần lặp bỏ lỡ chỉ tính vào %, xem được ở tab Task, lọc Hạn "Lần lặp bỏ lỡ".
+- **Cảnh báo tiến độ chậm**: mục tiêu Đang làm, đang trong kỳ, đã qua ít nhất 10% thời gian và % đạt dưới một nửa % thời gian đã qua. Hiện chữ "Chậm tiến độ" trên thẻ, ghi chú trên trang chi tiết, và khối cảnh báo ở tab Hôm nay. Mốc 10% là để tránh báo ngay những ngày đầu kỳ.
+- **Tab Task**: bộ lọc Trạng thái / Ưu tiên / Mục tiêu / Hạn, sắp xếp theo hạn hoặc ưu tiên, nút Bỏ lọc, bảng việc, danh sách Việc lặp lại.
+- **Nút "Thêm đầy đủ"** cạnh ô thêm nhanh: mở form task đầy đủ.
+- Dữ liệu mẫu bản mock: thêm mục tiêu chỉ số "Chạy đủ 50 km trong tháng", 2 việc lặp (uống nước hằng ngày, yoga T2 T4 T6). Đổi khóa lưu mock thành `muctieu_mock_db_v2`.
+- Bộ kiểm thử `tests-qa/qa-lifeplanner.js` cập nhật theo: 235 PASS, 0 FAIL.
+
+### Kết quả kiểm tra Giai đoạn 2 (22/11/2026)
+- spec-reviewer: 10/13. qa-tester: ĐẠT, không lỗi Cao, 0 lỗi console ở 390px và 1280px.
+- Đã sửa (Trung bình): lần lặp bỏ lỡ không còn bị đếm vào Top 3 hay chuyển sang hôm sau; "Đã đạt" của mục tiêu chỉ số không xuống dưới 0, % hiển thị kẹp trong 0 đến 100; số trong luật lặp ("Thứ 2, 4, 6"), nhãn T2 đến T7 trong form và thông báo cộng chỉ số dùng kiểu số. Thêm: số thập phân hiện dấu phẩy (2,5), thông báo ghi đúng lượng thực đã cộng hoặc trừ.
+- Lỗi mức Thấp còn tồn:
+  - Nút ghi "Thêm đầy đủ" (SPEC ghi "Thêm task đầy đủ"), rút gọn để vừa điện thoại. Ở 390px chữ gợi ý trong ô thêm nhanh bị cắt ("Thêm việc,").
+  - Xóa tay một lần lặp đã sinh thì lần mở web sau nó được sinh lại (nếu còn trong 30 ngày).
+  - Trang chi tiết mục tiêu liệt kê cả lần lặp bỏ lỡ, có thể dài.
+  - Mục tiêu theo task chưa có task nào vẫn có thể bị báo "Chậm tiến độ".
+  - Cột đầu bảng task ghi "Ô" (ô ma trận) hơi khó hiểu.
+  - Chế độ tối chưa có (đúng lộ trình, Giai đoạn 4).
+
 ## Câu hỏi chờ người dùng
-- (chưa có)
+- Nhãn "Sắp đến hạn" (SPEC 4.2): việc hạn hôm nay hoặc ngày mai hiện đang ghi "Hôm nay" / "Ngày mai". Có đổi thành chữ "Sắp đến hạn" không? Hiện khối "Sắp đến hạn" ở tab Hôm nay là việc từ ngày kia đến 7 ngày.
 
 ## Lỗi mức Thấp của đợt đổi giao diện
 - Dữ liệu mẫu có việc "Họp chốt số liệu với phòng kế toán" đã Xong mà ngày xong ở tương lai (`mock-data.js`), nên giả lập sang ngày hôm sau sẽ thấy 1 việc xong sẵn. Chỉ ảnh hưởng bản mock.

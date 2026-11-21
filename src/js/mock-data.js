@@ -19,6 +19,9 @@ App.mockData = function (today) {
   var g3 = goal('Chạy bộ đều đặn', 'Sức khỏe', 'Tuần');
   var g4 = goal('Đọc xong 2 cuốn sách', 'Sức khỏe', 'Tháng', 'Hoàn thành', 1);
   var g5 = goal('Ra mắt dự án web cá nhân', 'Công việc', 'Năm', 'Tạm dừng', 1);
+  // Mục tiêu theo chỉ số
+  var g6 = goal('Chạy đủ 50 km trong tháng', 'Sức khỏe', 'Tháng', null, 2);
+  Object.assign(g6, { progress_mode: 'metric', unit: 'km', target: '50', actual: '12' });
 
   function task(title, g, dueOffset, priority, status, extra) {
     var t = {
@@ -27,7 +30,8 @@ App.mockData = function (today) {
       recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp, icon: ''
     };
     t.icon = App.logic.guessIcon(title);
-    if (t.status === 'Xong') t.done_at = t.due_date || D.addDays(today, -1);
+    // Ngày xong không ở tương lai
+    if (t.status === 'Xong') t.done_at = t.due_date && t.due_date <= today ? t.due_date : D.addDays(today, -1);
     return Object.assign(t, extra || {});
   }
 
@@ -50,8 +54,11 @@ App.mockData = function (today) {
     task('Mua giấy in cho phòng', null, 0, 'Thấp'),
     task('Gia hạn bảo hiểm xe', null, 1, 'Cao'),
     task('Đặt lịch khám răng', null, null, 'Trung bình'),
-    task('Chuẩn bị slide họp tổng kết quý', g1, 5, 'Cao')
+    task('Chuẩn bị slide họp tổng kết quý', g1, 5, 'Cao'),
+    // Việc lặp mẫu: lần lặp được app tự sinh khi mở
+    task('Uống đủ 2 lít nước', g3, -4, 'Thấp', 'Cần làm', { recurring_rule: 'Hằng ngày' }),
+    task('Tập yoga buổi tối', g3, -10, 'Trung bình', 'Cần làm', { recurring_rule: 'Hằng tuần: T2, T4, T6' })
   ];
 
-  return { goals: [g1, g2, g3, g4, g5], tasks: tasks, habits: [], habitLogs: [], reviews: [] };
+  return { goals: [g1, g2, g3, g4, g5, g6], tasks: tasks, habits: [], habitLogs: [], reviews: [] };
 };

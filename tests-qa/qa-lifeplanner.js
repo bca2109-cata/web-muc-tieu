@@ -22,7 +22,8 @@ async function pc(p, sel) {
   try { await p.click(sel, { timeout: 4000 }); }
   catch (e) { fails++; console.log('FAIL click thật không được: ' + sel + ' :: ' + e.message.split('\n')[0]); await p.evaluate(s => document.querySelector(s).click(), sel); }
 }
-const T = p => p.evaluate(() => JSON.parse(JSON.stringify(App.store.get().tasks)));
+// Việc hiện trên màn hình: bỏ việc lặp mẫu và lần lặp đã qua ngày mà chưa làm (GĐ2)
+const T = p => p.evaluate(() => { const td = App.date.today(); return JSON.parse(JSON.stringify(App.store.get().tasks.filter(t => !App.logic.isTemplate(t) && !App.logic.isMissed(t, td)))); });
 const G = p => p.evaluate(() => JSON.parse(JSON.stringify(App.store.get().goals)));
 function quad(t) {
   const imp = t.priority === 'Cao', urg = !!t.due_date && t.due_date <= addDays(TODAY, 1);
@@ -293,7 +294,8 @@ async function small(p, sel, min, label) {
   await pc(p, '.tab[data-tab="goals"]'); await p.waitForSelector('.goal-grid'); await p.waitForTimeout(300);
   await p.screenshot({ path: SS + '/lp-10-muctieu-390.png', fullPage: true });
   await layoutChecks(p, 'Mục tiêu 390');
-  const goals2 = await G(p); tasks = await T(p);
+  // % mục tiêu tính cả lần lặp đã bỏ lỡ (chỉ bỏ việc lặp mẫu)
+  const goals2 = await G(p); tasks = await p.evaluate(() => JSON.parse(JSON.stringify(App.store.get().tasks.filter(t => !App.logic.isTemplate(t)))));
   const cards = await p.evaluate(() => [...document.querySelectorAll('.goal-grid .goal')].map(c => ({
     id: c.dataset.id, name: c.querySelector('.goal-name').textContent, pct: c.querySelector('.pct').textContent.trim(),
     hearts: c.querySelectorAll('.hearts .fill').length, dl: [...c.querySelectorAll('.meta .tag')].map(x => x.textContent.trim() + '[' + x.className + ']'), foot: c.querySelector('.goal-foot').textContent.replace(/\s+/g, ' ').trim()
@@ -301,17 +303,19 @@ async function small(p, sel, min, label) {
   console.log(JSON.stringify(cards));
   for (const g of goals2) {
     const c = cards.find(x => x.id === g.id);
+    const metric = g.progress_mode === 'metric';
     const mine = tasks.filter(t => t.goal_id === g.id), done = mine.filter(t => t.status === 'Xong').length;
-    const pct = mine.length ? Math.round(done / mine.length * 100) : 0;
+    const pct = metric ? Math.round(+g.actual / +g.target * 100) : mine.length ? Math.round(done / mine.length * 100) : 0;
     ok('Thẻ "' + g.name + '": % = ' + pct, c && c.pct === pct + '%', c && c.pct);
     ok('  tim = ' + g.importance, c && c.hearts === +g.importance, c && '' + c.hearts);
     let exp;
     const d = Math.round((Date.parse(g.end_date) - Date.parse(TODAY)) / 86400000);
     if (g.status === 'Hoàn thành') exp = 'Hoàn thành'; else if (g.status === 'Tạm dừng') exp = 'Tạm dừng'; else exp = d < 0 ? 'Quá hạn ' + (-d) + ' ngày' : d === 0 ? 'Hết hạn hôm nay' : 'Còn ' + d + ' ngày';
     ok('  nhãn hạn = "' + exp + '"', c && c.dl.some(x => x.includes(exp)), c && c.dl.join(' / '));
-    ok('  foot đúng ' + done + '/' + mine.length, c && (mine.length ? c.foot.includes(done + '/' + mine.length) : /Chưa có task/.test(c.foot)), c && c.foot);
+    if (metric) ok('  foot chỉ số ' + g.actual + '/' + g.target, c && c.foot.includes(g.actual + '/' + g.target), c && c.foot);
+    else ok('  foot đúng ' + done + '/' + mine.length, c && (mine.length ? c.foot.includes(done + '/' + mine.length) : /Chưa có task/.test(c.foot)), c && c.foot);
   }
-  for (const [k, exp] of [['Công việc', 2], ['Học tập', 1], ['Sức khỏe', 2], ['', 5]]) {
+  for (const [k, exp] of [['Công việc', 2], ['Học tập', 1], ['Sức khỏe', 3], ['', 6]]) {
     await p.click(`[data-action="filter-group"][data-group="${k}"]`); await p.waitForTimeout(100);
     const n = await p.locator('.goal-grid .goal').count();
     ok('Lọc nhóm "' + (k || 'Tất cả') + '" -> ' + exp + ' thẻ', n === exp, '' + n);
@@ -380,12 +384,12 @@ async function small(p, sel, min, label) {
 
   // ===== G. Sắp có
   ({ ctx, p } = await mk(browser));
-  for (const [tab, h] of [['task', 'Task'], ['thoi-quen', 'Thói quen'], ['tong-ket', 'Tổng kết']]) {
+  for (const [tab, h] of [['thoi-quen', 'Thói quen'], ['tong-ket', 'Tổng kết']]) {
     await pc(p, `.tab[data-tab="${tab}"]`); await p.waitForSelector('.soon-card'); await p.waitForTimeout(150);
     const tx = await p.innerText('.soon-card');
     ok('Tab ' + h + ': "sắp có" + nút Về Hôm nay', /sắp có/i.test(tx) && await p.locator('.soon-card a[href="#/hom-nay"]').count() === 1, tx.replace(/\n/g, ' | '));
     ok('Tab ' + h + ' có nhãn "Sắp có" trên thanh tab', /Sắp có/.test(await p.locator(`.tab[data-tab="${tab}"]`).innerText()));
-    if (tab === 'task') await p.screenshot({ path: SS + '/lp-16-sapco-390.png', fullPage: true });
+    if (tab === 'thoi-quen') await p.screenshot({ path: SS + '/lp-16-sapco-390.png', fullPage: true });
     await layoutChecks(p, 'Sắp có ' + h);
     await p.click('.soon-card a[href="#/hom-nay"]'); await p.waitForTimeout(150);
     ok('  Nút về Hôm nay hoạt động', await p.locator('#top3-title').count() === 1);
@@ -417,9 +421,9 @@ async function small(p, sel, min, label) {
   await p.click('.goal-grid .goal'); await p.waitForSelector('.goal-detail'); await p.waitForTimeout(300);
   await p.screenshot({ path: SS + '/lp-23-chitiet-1280.png', fullPage: true });
   await layoutChecks(p, 'Chi tiết 1280');
-  await pc(p, '.tab[data-tab="task"]'); await p.waitForSelector('.soon-card');
-  await p.screenshot({ path: SS + '/lp-24-sapco-1280.png', fullPage: true });
-  await layoutChecks(p, 'Sắp có 1280');
+  await pc(p, '.tab[data-tab="task"]'); await p.waitForSelector('.task-filters');
+  await p.screenshot({ path: SS + '/lp-24-task-1280.png', fullPage: true });
+  await layoutChecks(p, 'Tab Task 1280');
   await ctx.close();
   ({ ctx, p } = await mk(browser));
   await p.fill('#quick-add-today', 'Một tên việc rất dài để thử xem ô ma trận có cắt bằng dấu ba chấm hay không nhé bạn ơi ' + 'x'.repeat(60)); await p.press('#quick-add-today', 'Enter'); await p.waitForTimeout(200);
