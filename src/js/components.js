@@ -55,6 +55,10 @@ App.comp = (function () {
     if (!t.due_date) return tag('tplain', 'clock', 'Chưa có hạn');
     if (L.isMissed(t, today)) return tag('tplain', 'refresh', 'Bỏ lỡ <span class="num">' + D.fmt(t.due_date) + '</span>', 'Lần lặp đã qua ngày, vẫn tính vào % mục tiêu');
     if (L.isOverdue(t, today)) return tag('tq1', 'clock', 'Trễ <span class="num">' + D.diffDays(t.due_date, today) + '</span> ngày');
+    if (L.isDueSoon(t, today)) {
+      var when = t.due_date === today ? 'hôm nay' : t.due_date === D.addDays(today, 1) ? 'ngày mai' : 'ngày kia';
+      return tag('twarm', 'clock', '<span class="soon-lbl">Sắp đến hạn: </span>' + when, 'Sắp đến hạn: ' + when);
+    }
     if (t.due_date === today) return tag('tplain', 'clock', 'Hôm nay');
     if (t.due_date === D.addDays(today, 1)) return tag('tplain', 'clock', 'Ngày mai');
     return tag('tplain', 'clock', '<span class="num">' + D.fmt(t.due_date) + '</span>');

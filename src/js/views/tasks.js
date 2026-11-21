@@ -4,7 +4,7 @@ App.views = App.views || {};
 
 App.views.tasks = function (state, ui) {
   var C = App.comp, L = App.logic, D = App.date, esc = App.util.esc, icon = App.ui.icon, fl = App.flowers.html;
-  var today = D.today(), week = D.addDays(today, 7);
+  var today = D.today();
   var f = ui.taskFilter, sort = ui.taskSort === 'priority' ? 'priority' : 'due';
   var goalsById = {};
   state.goals.forEach(function (g) { goalsById[g.id] = g; });
@@ -14,7 +14,7 @@ App.views.tasks = function (state, ui) {
     '': function () { return true; },
     overdue: function (t) { return L.isOverdue(t, today); },
     today: function (t) { return t.due_date === today; },
-    week: function (t) { return !!t.due_date && t.due_date >= today && t.due_date <= week; },
+    soon: function (t) { return L.isDueSoon(t, today); },
     none: function (t) { return !t.due_date; },
     missed: function (t) { return L.isMissed(t, today); }
   };
@@ -50,7 +50,7 @@ App.views.tasks = function (state, ui) {
     select('status', 'Trạng thái', 'flag', [['open', 'Chưa xong'], ['', 'Tất cả'], ['Cần làm', 'Cần làm'], ['Đang làm', 'Đang làm'], ['Xong', 'Xong']]) +
     select('priority', 'Ưu tiên', 'up', [['', 'Tất cả'], ['Cao', 'Cao'], ['Trung bình', 'Trung bình'], ['Thấp', 'Thấp']]) +
     select('goal', 'Mục tiêu', 'target', goalOpts) +
-    select('due', 'Hạn', 'calendar', [['', 'Tất cả'], ['overdue', 'Trễ hạn'], ['today', 'Hôm nay'], ['week', '7 ngày tới'], ['none', 'Chưa có hạn'], ['missed', 'Lần lặp bỏ lỡ']]) +
+    select('due', 'Hạn', 'calendar', [['', 'Tất cả'], ['overdue', 'Trễ hạn'], ['today', 'Hôm nay'], ['soon', 'Sắp đến hạn'], ['none', 'Chưa có hạn'], ['missed', 'Lần lặp bỏ lỡ']]) +
     '<div class="tf-foot"><span class="seg-switch" role="group" aria-label="Sắp xếp">' +
     '<button type="button" data-action="task-sort" data-sort="due" aria-pressed="' + (sort === 'due') + '"' + (sort === 'due' ? ' class="on"' : '') + '>' + icon('clock', 'ic14') + 'Theo hạn</button>' +
     '<button type="button" data-action="task-sort" data-sort="priority" aria-pressed="' + (sort === 'priority') + '"' + (sort === 'priority' ? ' class="on"' : '') + '>' + icon('up', 'ic14') + 'Theo ưu tiên</button>' +

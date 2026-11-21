@@ -3,7 +3,7 @@
 Đọc file này trước, rồi chỉ mở thêm file nào thật sự cần. Chi tiết yêu cầu ở `SPEC.md`, quy tắc giao diện ở `DESIGN.md`, lịch sử ở `docs/TIEN-DO.md`.
 
 ## 1. Đang ở đâu
-- Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). **Giai đoạn 2 đã làm xong, chờ duyệt**: tiến độ theo chỉ số, lọc theo kỳ, task lặp, cảnh báo trễ hạn và tiến độ chậm, cộng thêm tab Task và nút "Thêm task đầy đủ" (người dùng yêu cầu).
+- Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). Giai đoạn 2: xong (duyệt 22/11/2026). **Tiếp theo: Giai đoạn 3**: tiến độ theo chỉ số, lọc theo kỳ, task lặp, cảnh báo trễ hạn và tiến độ chậm, cộng thêm tab Task và nút "Thêm task đầy đủ" (người dùng yêu cầu).
 - Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
 - Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
 - Mặt trời mặt cười: người dùng chốt **giữ**.

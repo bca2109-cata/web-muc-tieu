@@ -102,6 +102,11 @@
 - Dữ liệu mẫu bản mock: thêm mục tiêu chỉ số "Chạy đủ 50 km trong tháng", 2 việc lặp (uống nước hằng ngày, yoga T2 T4 T6). Đổi khóa lưu mock thành `muctieu_mock_db_v2`.
 - Bộ kiểm thử `tests-qa/qa-lifeplanner.js` cập nhật theo: 235 PASS, 0 FAIL.
 
+### Duyệt Giai đoạn 2 (22/11/2026)
+- Người dùng: "Sắp đến hạn ở tất cả các tab = hôm nay + 2 ngày", "sửa xong lỗi thì auto duyệt". Đã sửa: `logic.isDueSoon` (mốc `SOON_DAYS = 2`) dùng chung cho nhãn trên việc ("Sắp đến hạn: hôm nay / ngày mai / ngày kia", tông cam), khối Sắp đến hạn ở tab Hôm nay và lọc Hạn "Sắp đến hạn" ở tab Task. Trong bảng trên điện thoại nhãn chỉ ghi "hôm nay / ngày mai / ngày kia" cho gọn. Độ khẩn cấp của ma trận giữ nguyên (hạn đến ngày mai).
+- Người dùng báo chưa thấy nút lọc Năm / Quý / Tháng / Tuần: trên web thật nút có hiện, do trình duyệt giữ bản cũ. Hướng dẫn bấm Ctrl+F5.
+- **Giai đoạn 2 xong, duyệt 22/11/2026.**
+
 ### Kết quả kiểm tra Giai đoạn 2 (22/11/2026)
 - spec-reviewer: 10/13. qa-tester: ĐẠT, không lỗi Cao, 0 lỗi console ở 390px và 1280px.
 - Đã sửa (Trung bình): lần lặp bỏ lỡ không còn bị đếm vào Top 3 hay chuyển sang hôm sau; "Đã đạt" của mục tiêu chỉ số không xuống dưới 0, % hiển thị kẹp trong 0 đến 100; số trong luật lặp ("Thứ 2, 4, 6"), nhãn T2 đến T7 trong form và thông báo cộng chỉ số dùng kiểu số. Thêm: số thập phân hiện dấu phẩy (2,5), thông báo ghi đúng lượng thực đã cộng hoặc trừ.
@@ -114,7 +119,7 @@
   - Chế độ tối chưa có (đúng lộ trình, Giai đoạn 4).
 
 ## Câu hỏi chờ người dùng
-- Nhãn "Sắp đến hạn" (SPEC 4.2): việc hạn hôm nay hoặc ngày mai hiện đang ghi "Hôm nay" / "Ngày mai". Có đổi thành chữ "Sắp đến hạn" không? Hiện khối "Sắp đến hạn" ở tab Hôm nay là việc từ ngày kia đến 7 ngày.
+- (chưa có)
 
 ## Lỗi mức Thấp của đợt đổi giao diện
 - Dữ liệu mẫu có việc "Họp chốt số liệu với phòng kế toán" đã Xong mà ngày xong ở tương lai (`mock-data.js`), nên giả lập sang ngày hôm sau sẽ thấy 1 việc xong sẵn. Chỉ ảnh hưởng bản mock.

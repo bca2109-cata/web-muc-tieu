@@ -68,8 +68,8 @@ App.views.today = function (state, ui) {
   html += '</section></div><div class="today-soon">';
   html += '<section class="block" aria-labelledby="soon-title"><h2 class="sec-title" id="soon-title">' + fl('tulip', 24, 6) +
     '<span>Sắp đến hạn</span><span class="badge num">' + upcoming.length + '</span></h2>' +
-    '<p class="hint">' + icon('calendar', 'ic14') + 'Việc chưa xong có hạn từ ngày kia đến <span class="num">7</span> ngày tới.</p>' +
-    (upcoming.length ? C.taskList(upcoming, ctx) : '<p class="muted soon-none">Tuần tới chưa có việc nào đến hạn.</p>') + '</section>';
+    '<p class="hint">' + icon('calendar', 'ic14') + 'Việc chưa xong có hạn từ hôm nay đến <span class="num">' + L.SOON_DAYS + '</span> ngày tới.</p>' +
+    (upcoming.length ? C.taskList(upcoming, ctx) : '<p class="muted soon-none">Chưa có việc nào sắp đến hạn.</p>') + '</section>';
 
   html += '</div></div>';
   return html;

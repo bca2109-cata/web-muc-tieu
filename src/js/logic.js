@@ -273,10 +273,11 @@ App.logic = {
   isDone: function (t) { return t.status === App.C.DONE; },
   // Lần lặp đã qua ngày không tính là trễ hạn (xem isMissed)
   isOverdue: function (t, today) { return !!t.due_date && t.due_date < today && t.status !== App.C.DONE && !t.parent_recurring_id; },
-  // Đến hạn hôm nay hoặc ngày mai
+  // Sắp đến hạn: chưa xong, hạn từ hôm nay đến hôm nay + SOON_DAYS (dùng chung cho mọi tab)
+  SOON_DAYS: 2,
   isDueSoon: function (t, today) {
     return !!t.due_date && t.status !== App.C.DONE &&
-      (t.due_date === today || t.due_date === App.date.addDays(today, 1));
+      t.due_date >= today && t.due_date <= App.date.addDays(today, App.logic.SOON_DAYS);
   },
   isTop3Today: function (t, today) { return App.util.isTrue(t.is_top3) && t.top3_date === today && !App.logic.isMissed(t, today); },
 
@@ -310,10 +311,10 @@ App.logic = {
     });
     return s;
   },
-  // Việc sắp đến hạn: chưa xong, hạn từ ngày kia đến 7 ngày tới (đến ngày mai đã nằm trong bảng hôm nay)
+  // Việc sắp đến hạn (xem isDueSoon), hạn sớm trước rồi ưu tiên cao trước
   upcoming: function (tasks, today) {
-    var L = App.logic, from = App.date.addDays(today, 2), to = App.date.addDays(today, 7);
-    return tasks.filter(function (t) { return !L.isDone(t) && !!t.due_date && t.due_date >= from && t.due_date <= to; })
+    var L = App.logic;
+    return tasks.filter(function (t) { return L.isDueSoon(t, today); })
       .sort(function (a, b) { return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : L.priorityRank(a.priority) - L.priorityRank(b.priority); });
   },
   // Gợi ý điền Top 3 còn trống: việc trễ hạn trước, rồi việc ô Khẩn cấp

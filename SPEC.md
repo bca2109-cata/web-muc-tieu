@@ -48,7 +48,7 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 - **Task lặp lại:** hằng ngày, hoặc các thứ cố định trong tuần (ví dụ thứ 2-4-6). Task lặp phải tự sinh ra vào đúng ngày.
   - Cách lưu (chốt GĐ2): việc mẫu có `recurring_rule` ("Hằng ngày" hoặc "Hằng tuần: T2, T4, T6", CN là chủ nhật) và `parent_recurring_id` trống. Mỗi lần lặp là một task riêng, `id` = id việc mẫu + "-" + ngày, `parent_recurring_id` = id việc mẫu. Sinh bù tối đa 30 ngày. Lần bỏ lỡ chỉ tính vào % mục tiêu, không hiện Quá hạn, không tự vào Top 3.
   - Cảnh báo tiến độ chậm (chốt GĐ2): mục tiêu Đang làm, hôm nay trong kỳ, đã qua ít nhất 10% thời gian, và % đạt dưới một nửa % thời gian đã qua.
-- Task trễ hạn tô màu cảnh báo. Task đến hạn hôm nay hoặc ngày mai thì hiện nhãn "Sắp đến hạn".
+- Task trễ hạn tô màu cảnh báo. Task chưa xong có hạn từ hôm nay đến hôm nay + 2 ngày thì hiện nhãn "Sắp đến hạn" (dùng chung mốc này ở mọi tab, chốt 22/11/2026).
 - **Chỉ nhắc ngay trong web.** Không cần thông báo đẩy, email hay Telegram.
 
 ### 4.3 Thói quen (habit)
@@ -67,7 +67,7 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 
 | Tab | Nội dung chính |
 |---|---|
-| **Hôm nay** (mặc định) | **Biểu đồ tổng quan**: số việc đã xong trên tổng và 3 thanh tỷ trọng của danh sách việc hôm nay (tình trạng Xong / Đang làm / Cần làm; mức ưu tiên Cao / Trung bình / Thấp; độ khẩn cấp của việc chưa xong: Quá hạn / Hôm nay / Ngày mai / Chưa có hạn). **Top 3**: mỗi ngày một lần, chỗ trống tự điền việc trễ hạn rồi việc ô Khẩn cấp, người dùng vẫn đổi được bằng ngôi sao. **Sắp đến hạn**: việc chưa xong có hạn từ ngày kia đến 7 ngày tới. **Việc hôm nay** chuyển giữa dạng **Bảng** (việc chưa xong có hạn đến ngày mai gồm trễ hạn, việc Top 3, việc đã xong hôm nay; cột Việc, Hạn, Ưu tiên, Ô ma trận) và **Ma trận 4 ô** (gồm mọi việc chưa xong, trừ việc đã ở Top 3). Thói quen cần làm hôm nay, nút thêm task nhanh. |
+| **Hôm nay** (mặc định) | **Biểu đồ tổng quan**: số việc đã xong trên tổng và 3 thanh tỷ trọng của danh sách việc hôm nay (tình trạng Xong / Đang làm / Cần làm; mức ưu tiên Cao / Trung bình / Thấp; độ khẩn cấp của việc chưa xong: Quá hạn / Hôm nay / Ngày mai / Chưa có hạn). **Top 3**: mỗi ngày một lần, chỗ trống tự điền việc trễ hạn rồi việc ô Khẩn cấp, người dùng vẫn đổi được bằng ngôi sao. **Sắp đến hạn**: việc chưa xong có hạn từ hôm nay đến hôm nay + 2 ngày. **Việc hôm nay** chuyển giữa dạng **Bảng** (việc chưa xong có hạn đến ngày mai gồm trễ hạn, việc Top 3, việc đã xong hôm nay; cột Việc, Hạn, Ưu tiên, Ô ma trận) và **Ma trận 4 ô** (gồm mọi việc chưa xong, trừ việc đã ở Top 3). Thói quen cần làm hôm nay, nút thêm task nhanh. |
 | **Mục tiêu** | Lọc theo kỳ (Năm / Quý / Tháng / Tuần) và theo nhóm. Mỗi thẻ mục tiêu có thanh %, bấm vào thì mở chi tiết và danh sách task |
 | **Task** | Danh sách đủ bộ lọc (trạng thái, ưu tiên, mục tiêu, hạn), sắp xếp theo hạn hoặc ưu tiên |
 | **Thói quen** | Lưới tick và streak |
