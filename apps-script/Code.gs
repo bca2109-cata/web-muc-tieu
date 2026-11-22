@@ -6,10 +6,10 @@
 
 var SHEETS = {
   Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
-  Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon'],
+  Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time'],
   Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
   HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
-  Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at']
+  Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from']
 };
 // Cột lưu dạng số, các cột còn lại lưu dạng chữ để ngày giữ đúng yyyy-mm-dd
 var NUMBER_COLS = { Goals: ['target', 'actual'] };
@@ -27,17 +27,9 @@ function caiDat() {
     if (head.join('') === '') {
       sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold');
       sh.setFrozenRows(1);
-    } else {
-      // Cột mới thêm sau này: ghi vào cuối, không đụng tới cột cũ
-      var have = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
-      cols.forEach(function (c) {
-        if (have.indexOf(c) < 0) {
-          have.push(c);
-          sh.getRange(1, have.length).setValue(c).setFontWeight('bold');
-        }
-      });
     }
   });
+  ensureColumns_();
   var props = PropertiesService.getScriptProperties();
   if (!props.getProperty('TOKEN')) props.setProperty('TOKEN', Utilities.getUuid().replace(/-/g, ''));
   Logger.log('Đã cài đặt xong. Mã bí mật của bạn: ' + props.getProperty('TOKEN'));
@@ -51,6 +43,23 @@ function xemMaBiMat() {
 function doiMaBiMat() {
   PropertiesService.getScriptProperties().setProperty('TOKEN', Utilities.getUuid().replace(/-/g, ''));
   xemMaBiMat();
+}
+
+// Cột mới thêm sau này: ghi tên cột vào cuối dòng tiêu đề, không đụng tới cột cũ.
+// Web tự gọi trước mỗi lần ghi, nên không cần chạy lại caiDat khi nâng cấp.
+function ensureColumns_() {
+  var ss = SpreadsheetApp.getActive();
+  Object.keys(SHEETS).forEach(function (name) {
+    var sh = ss.getSheetByName(name);
+    if (!sh || sh.getLastColumn() < 1) return;
+    var have = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    SHEETS[name].forEach(function (c) {
+      if (have.indexOf(c) < 0) {
+        have.push(c);
+        sh.getRange(1, have.length).setValue(c).setFontWeight('bold');
+      }
+    });
+  });
 }
 
 /* ---------- Web App ---------- */
@@ -79,6 +88,7 @@ function handle_(req) {
     var lk = LockService.getScriptLock();
     lk.waitLock(30000);
     try {
+      ensureColumns_();
       return replaceAll_(req.db || {});
     } finally {
       lk.releaseLock();
@@ -88,6 +98,7 @@ function handle_(req) {
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);
     try {
+      ensureColumns_();
       var ops = req.ops || [];
       ops.forEach(applyOp_);
       SpreadsheetApp.flush();

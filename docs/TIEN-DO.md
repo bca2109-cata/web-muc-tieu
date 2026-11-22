@@ -176,6 +176,30 @@
   - Nhập JSON chỉ kiểm cột và id, không kiểm định dạng từng giá trị.
   - meta theme-color và manifest ghi thẳng mã màu nền (không dùng được biến CSS).
 
+### Giai đoạn 5: đã làm (22/11/2026)
+Góp ý sau khi dùng thử, quyết định ghi ở SPEC mục 4.5.
+- **Agenda** (đổi tên từ Hôm nay, đứng đầu thanh tab): lùi / tiến ngày, chọn ngày bất kỳ, nút Về hôm nay. Việc của ngày D = hạn ngày D + quá hạn chưa xong tính đến D + xong trong ngày D (`logic.dayList`). Top 3 chỉ hiện ở hôm nay; thói quen theo ngày đang xem (ngày tương lai không tick được). Thêm nhanh điền sẵn ngày đang xem và 17:00.
+- Bảng việc: bấm tiêu đề cột để sắp xếp, bấm lần nữa đảo chiều (Agenda và Task nhớ riêng). Mặc định xếp theo ngày rồi giờ.
+- Biểu đồ tổng quan mới: Trạng thái hoàn thành; Trạng thái đến hạn (3 thanh xếp chồng Xong / Chưa xong); Mức độ quan trọng (3 thanh chia theo 4 ô ma trận). Mỗi thanh có số và chú thích.
+- Ma trận có 2 trục (Khẩn cấp / Không khẩn cấp, Quan trọng / Không quan trọng), tên mới: Khẩn cấp, Làm sau, Làm trong ngày / Nhượng quyền, Dời hôm sau. Giữ màu cũ.
+- Lời nhắc ở đầu Agenda: "Cần chú ý" của review ngày hôm trước; "Chưa tốt" và "Kỳ sau ưu tiên" của review tuần / tháng trước, hiện suốt kỳ này. Nút Ẩn (từ ngày đang xem trở đi), nút Hiện lại.
+- **Task**: thứ tự tab Agenda, Task, Mục tiêu, Thói quen, Tổng kết. Bộ lọc Hoàn thành, Đến hạn, Quan trọng (ưu tiên), Khẩn cấp (ô ma trận), Mục tiêu, khoảng ngày hạn từ - đến. Form việc có ô Giờ, ngày và giờ bắt buộc.
+- **Thói quen**: thêm xem Năm (12 tháng nhỏ, chỉ xem, có % từng tháng). Chuỗi hiện bằng huy hiệu ngọn lửa.
+- **Tổng kết**: kỳ Ngày / Tuần / Tháng / Năm; bên dưới chọn gộp theo Ngày / Tuần / Tháng (không lớn hơn kỳ; kỳ Ngày xem 7 ngày tính đến ngày đó). Thêm ô "tỷ lệ hoàn thành" và biểu đồ đường mượt tỷ lệ hoàn thành (việc xong / việc có hạn từng mốc). Thêm phần tổng kết thói quen. Review có 5 mức hài lòng vẽ bằng bông hoa (1 héo rũ, 5 nở tươi); review ngày có 2 câu.
+- **Nền**: hoa rơi 46 bông, 13 màu, vừa rơi vừa đung đưa; máy bật giảm chuyển động thì hoa đứng yên.
+- **Dữ liệu**: Tasks thêm `due_time`; Reviews thêm `rating`, `hide_from`. `Code.gs` thêm `ensureColumns_`: tự thêm cột còn thiếu vào cuối dòng tiêu đề trước mỗi lần ghi (cần cập nhật Apps Script). Nhập JSON kiểm giờ HH:mm và mức 1 đến 5.
+- Màu biểu đồ Mức độ quan trọng dùng màu 4 ô ma trận (người dùng chọn giữ màu cũ). Kiểm tra mù màu: vàng (Làm sau) và cam (Làm trong ngày) gần nhau, xanh xám (Dời) nhạt. Bù bằng chú thích có số, khe 2px giữa các đoạn, chú thích nổi và nhãn đọc màn hình.
+- Kiểm thử tự động thêm mục H (Giai đoạn 5). Ma trận và tổng quan trong bài thử đổi sang cách tính việc của ngày.
+
+### Kết quả kiểm tra GĐ5
+- spec-reviewer: 16/17 đạt, chỉ có lỗi Thấp. qa-tester: đạt, 1 FAIL do bộ thử tính sót lần lặp (app đúng), 0 lỗi console; số liệu Agenda khớp tính tay từ 18/11 đến 26/11; lời nhắc tuần / tháng hết đúng khi sang kỳ mới.
+- Đã sửa (Thấp): cột ngôi sao Top 3 cũng sắp xếp được; chú thích `dayList` ghi rõ lần lặp chỉ hiện đúng ngày của nó; chữ "Hôm nay" ở ô chào đổi sang `--accent-deep`; bộ thử tính cả lần lặp khi xem ngày đã qua.
+- Ghi nhận (Thấp, chờ người dùng xem):
+  - Lần lặp quá hạn chưa làm chỉ hiện ở đúng ngày của nó, không kéo sang ngày sau (giữ khái niệm "Bỏ lỡ" từ GĐ2). Việc thường quá hạn thì kéo sang.
+  - Tổng kết kỳ Ngày: biểu đồ đường hiện 7 ngày tính đến ngày đang xem.
+  - Có thêm review kỳ Năm (SPEC chỉ nêu Ngày / Tuần / Tháng). Lời nhắc chỉ lấy từ review ngày, tuần, tháng.
+  - Bộ lọc Task giữ thêm "Chưa có hạn", "Lần lặp bỏ lỡ", "Cần làm", "Đang làm" từ giai đoạn trước.
+
 ## Câu hỏi chờ người dùng
 - (chưa có)
 

@@ -1,4 +1,4 @@
-/* Hoa trang trí: 12 loại vẽ SVG, hình nền hoa bay nhẹ, hiệu ứng hoa bung khi xong việc.
+/* Hoa trang trí: 12 loại vẽ SVG, hình nền hoa rơi, hiệu ứng hoa bung khi xong việc.
    Cánh hoa lấy màu theo `color` của thẻ svg. Nhụy và lá có màu cố định (một phần của hình vẽ). */
 var App = window.App || (window.App = {});
 
@@ -6,6 +6,8 @@ App.flowers = (function () {
   var NAMES = ['daisy', 'sakura', 'tulip', 'rose', 'sunflower', 'lavender', 'forget', 'plumeria', 'cosmos', 'bell', 'hydrangea', 'sprig'];
   // Màu cánh hoa: lấy từ biến CSS --petal-1 … --petal-9
   var PETALS = 9;
+  // Hình nền dùng thêm 4 màu: --petal-10 … --petal-13
+  var BG_TONES = 13;
   var LEAF = '#3fae7a', LEAF2 = '#7fd1a8', CORE = '#ffd56b';
 
   function ring(shape, n, step) {
@@ -82,12 +84,14 @@ App.flowers = (function () {
     document.documentElement.setAttribute('data-bg', mode);
     var layer = document.getElementById('bg-flowers');
     if (mode === 'flowers' && layer && !layer.childNodes.length) {
-      // Vị trí cố định theo hạt giống, mỗi lần mở giống nhau
+      /* Hoa rơi (GĐ5): 46 bông, 13 màu, rơi từ trên xuống rồi lặp lại, vừa rơi vừa đung đưa.
+         Vị trí cố định theo hạt giống. Máy bật "giảm chuyển động" thì hoa đứng yên tại chỗ (CSS). */
       var seed = 7, rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }, out = '';
-      for (var i = 0; i < 22; i++) {
-        var size = 28 + Math.round(rnd() * 40);
-        out += html(NAMES[i % 11], size, 1 + i % PETALS, '',
-          'left:' + (rnd() * 96).toFixed(1) + '%;top:' + (rnd() * 96).toFixed(1) + '%;--d:' + (9 + rnd() * 10).toFixed(1) + 's;--dl:-' + (rnd() * 8).toFixed(1) + 's');
+      for (var i = 0; i < 46; i++) {
+        var size = 20 + Math.round(rnd() * 38), top = Math.round(rnd() * 96), dur = 16 + rnd() * 18;
+        out += '<span class="fall" style="left:' + (rnd() * 98).toFixed(1) + '%;top:' + top + 'vh;--from:' + (-top - 12) + 'vh;--to:' + (108 - top) + 'vh;' +
+          '--fd:' + dur.toFixed(1) + 's;--fdl:-' + (rnd() * dur).toFixed(1) + 's">' +
+          html(NAMES[i % 11], size, 1 + i % BG_TONES, '', '--d:' + (4 + rnd() * 5).toFixed(1) + 's;--dl:-' + (rnd() * 6).toFixed(1) + 's') + '</span>';
       }
       layer.innerHTML = out;
     }

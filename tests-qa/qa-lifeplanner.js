@@ -25,6 +25,10 @@ async function pc(p, sel) {
 // Việc hiện trên màn hình: bỏ việc lặp mẫu và lần lặp đã qua ngày mà chưa làm (GĐ2)
 const T = p => p.evaluate(() => { const td = App.date.today(); return JSON.parse(JSON.stringify(App.store.get().tasks.filter(t => !App.logic.isTemplate(t) && !App.logic.isMissed(t, td)))); });
 const G = p => p.evaluate(() => JSON.parse(JSON.stringify(App.store.get().goals)));
+function dayList(ts, D) {
+  return ts.filter(t => (t.status === 'Xong' && String(t.done_at).slice(0, 10) === D) || t.due_date === D ||
+    (t.due_date && t.due_date < D && (t.status !== 'Xong' || String(t.done_at).slice(0, 10) > D) && !t.parent_recurring_id && !t.recurring_rule));
+}
 function quad(t) {
   const imp = t.priority === 'Cao', urg = !!t.due_date && t.due_date <= addDays(TODAY, 1);
   return imp && urg ? 1 : imp ? 2 : urg ? 3 : 4;
@@ -71,8 +75,8 @@ async function small(p, sel, min, label) {
   ok('Top 3 có 3/3 (mẫu + giữ từ hôm qua + tự điền việc trễ hạn)', /3\/3/.test(top) && /Làm bài kiểm tra cuối khóa/.test(top) && /Vẽ biểu đồ/.test(top) && /Gửi bảng KPI/.test(top), top);
   async function checkMatrix(label) {
     const dom = await matrixDOM(p); const ts = await T(p);
-    const rest = ts.filter(t => !(t.is_top3 === 'TRUE' && t.top3_date === TODAY));
-    const shown = rest.filter(t => t.status !== 'Xong' || t.done_at === TODAY);
+    // GĐ5: ma trận = việc của ngày (hạn đúng ngày, quá hạn chưa xong trừ lần lặp, xong trong ngày)
+    const shown = dayList(ts, TODAY);
     let good = true, msg = [];
     for (const q of [1, 2, 3, 4]) {
       const exp = shown.filter(t => quad(t) === q).map(t => t.id).sort();
@@ -87,17 +91,17 @@ async function small(p, sel, min, label) {
   const nowExp = tasks.filter(t => t.status !== 'Xong' && quad(t) === 1).length;
   // Biểu đồ tổng quan: tính tay rồi so với số trên màn hình
   async function checkOverview(label) {
-    const ts = await T(p), tm = addDays(TODAY, 1);
-    const work = ts.filter(t => t.status === 'Xong' ? t.done_at === TODAY : ((t.is_top3 === 'TRUE' && t.top3_date === TODAY) || (t.due_date && t.due_date <= tm)));
+    const ts = await T(p);
+    const work = dayList(ts, TODAY);
     const done = work.filter(t => t.status === 'Xong').length;
     const big = await p.locator('.ov-big .num').innerText();
-    const over = work.filter(t => t.status !== 'Xong' && t.due_date && t.due_date < TODAY).length;
-    const legend = await p.locator('.ov-legend li', { hasText: 'Quá hạn' }).innerText();
+    const over = work.filter(t => t.due_date && t.due_date < TODAY).length;
+    const legend = await p.locator('.sr-row').first().innerText();
     ok('Biểu đồ tổng quan khớp tính tay (' + label + ')', big === done + '/' + work.length && +(legend.match(/(\d+)/) || [])[1] === over, big + ' vs ' + done + '/' + work.length + '; ' + legend + ' vs ' + over);
   }
   await checkOverview('ban đầu');
   void nowExp;
-  const mtask = tasks.find(t => t.title === 'Gia hạn bảo hiểm xe');
+  const mtask = tasks.find(t => t.title === 'Chạy 3 km buổi tối'); // GĐ5: việc hạn hôm nay
   await pc(p, `.matrix [data-action="toggle-task"][data-id="${mtask.id}"]`);
   await p.waitForTimeout(150);
   ok('Tick ở ma trận -> task Xong', (await T(p)).find(t => t.id === mtask.id).status === 'Xong');
@@ -210,7 +214,7 @@ async function small(p, sel, min, label) {
   await ctx.close();
   ({ ctx, p } = await mk(browser, { reduce: true }));
   tasks = await T(p);
-  const rt = tasks.find(t => t.title === 'Gia hạn bảo hiểm xe');
+  const rt = tasks.find(t => t.title === 'Mua giấy in cho phòng');
   await pc(p, `.matrix [data-action="toggle-task"][data-id="${rt.id}"]`);
   await p.waitForTimeout(200);
   ok('reduced-motion: không sinh .fx', await p.locator('.fx').count() === 0);
@@ -264,7 +268,7 @@ async function small(p, sel, min, label) {
   ok('Lưu xong icon = gift (chọn tay)', saved.icon === 'gift' && saved.title === 'Mua quà sinh nhật', saved.icon);
   const rowIcon = await p.evaluate(id => { const b = document.querySelector('[data-action="open-task"][data-id="' + id + '"]'); const s = b && (b.closest('li') ? b.closest('li').querySelector('.ticon svg') : b.querySelector('svg.icon')); return s ? s.outerHTML.length : 0; }, et.id);
   ok('Dòng task hiện ô icon sau khi lưu', rowIcon > 50, '' + rowIcon);
-  const et2 = (await T(p)).find(t => t.title === 'Chạy 5 km cuối tuần');
+  const et2 = (await T(p)).find(t => t.title === 'Chạy 3 km buổi tối'); // GĐ5: phải là việc của hôm nay
   await p.click('[data-action="today-view"][data-view="matrix"]'); await p.waitForTimeout(100);
   await p.click(`.matrix [data-action="open-task"][data-id="${et2.id}"]`);
   await p.waitForSelector('.modal form [name="title"]');
@@ -276,7 +280,7 @@ async function small(p, sel, min, label) {
   // Top3 trong form: đang 2, bật task thứ 3 OK, task thứ 4 báo lỗi
   const autoT = (await T(p)).find(t => t.title === 'Gửi bảng KPI nháp cho anh Minh' && t.is_top3 === 'TRUE' && t.top3_date === TODAY);
   if (autoT) { await p.click(`.notes [data-action="toggle-top3"][data-id="${autoT.id}"]`); await p.waitForTimeout(150); }
-  const A = (await T(p)).filter(t => t.status !== 'Xong' && !(t.is_top3 === 'TRUE' && t.top3_date === TODAY)).slice(0, 2);
+  const A = dayList(await T(p), TODAY).filter(t => t.status !== 'Xong' && !(t.is_top3 === 'TRUE' && t.top3_date === TODAY)).slice(0, 2);
   const results = [];
   for (const x of A) {
     await p.click(`[data-action="open-task"][data-id="${x.id}"]`);
@@ -414,9 +418,10 @@ async function small(p, sel, min, label) {
       return { done: done.length, onPct: due.length ? Math.round(on / due.length * 100) : null, avg, n: gs.length };
     }, type);
     const st = await p.$$eval('.stat .stat-big', els => els.map(e => e.innerText.trim()));
-    ok('Tổng kết ' + type + ': số việc xong = ' + exp.done, st[0] === String(exp.done), st.join(' | '));
-    ok('Tổng kết ' + type + ': % đúng hạn', st[1] === (exp.onPct === null ? '–' : exp.onPct + '%'), st[1] + ' vs ' + exp.onPct);
-    ok('Tổng kết ' + type + ': % TB mục tiêu', st[2] === (exp.avg === null ? '–' : exp.avg + '%'), st[2] + ' vs ' + exp.avg);
+    // GĐ5: ô đầu là tỷ lệ hoàn thành, 3 ô sau giữ như GĐ4
+    ok('Tổng kết ' + type + ': số việc xong = ' + exp.done, st[1] === String(exp.done), st.join(' | '));
+    ok('Tổng kết ' + type + ': % đúng hạn', st[2] === (exp.onPct === null ? '–' : exp.onPct + '%'), st[2] + ' vs ' + exp.onPct);
+    ok('Tổng kết ' + type + ': % TB mục tiêu', st[3] === (exp.avg === null ? '–' : exp.avg + '%'), st[3] + ' vs ' + exp.avg);
     ok('Tổng kết ' + type + ': số thanh mục tiêu = ' + exp.n, await p.locator('.gcol').count() === exp.n);
     await layoutChecks(p, 'Tổng kết ' + type);
   }
@@ -499,7 +504,7 @@ async function small(p, sel, min, label) {
       ok(L + name + ': bấm lại bằng click thật -> bỏ tick', good && (await T(p)).find(t => t.id === tk.id).status !== 'Xong', msg);
       await p.waitForTimeout(3300);
     }
-    await tickTest('ma trận', '.matrix', 'Gia hạn bảo hiểm xe', 'matrix');
+    await tickTest('ma trận', '.matrix', 'Chạy 3 km buổi tối', 'matrix');
     await tickTest('Top 3', '.notes', 'Vẽ biểu đồ so sánh các quý', null);
     await tickTest('bảng', '.ttable', 'Mua giấy in cho phòng', 'list');
     await p.click('#btn-bg', { timeout: 4000 }); await p.waitForTimeout(200);
@@ -544,6 +549,103 @@ async function small(p, sel, min, label) {
   ({ ctx, p } = await mk(browser, { q: '?today=' + TODAY + '&fail=1' }));
   await p.fill('#quick-add-today', 'Việc lỗi'); await p.press('#quick-add-today', 'Enter'); await p.waitForTimeout(1800);
   await small(p, '.toast button, #sync button', 44, 'Nút Thử lại/đóng trong thông báo lỗi');
+  await ctx.close();
+
+  // ===== H. Giai đoạn 5
+  ({ ctx, p } = await mk(browser));
+  ok('GĐ5: thứ tự tab Agenda, Task, Mục tiêu, Thói quen, Tổng kết', (await p.$$eval('.tab span', e => e.map(x => x.textContent).join(','))) === 'Agenda,Task,Mục tiêu,Thói quen,Tổng kết');
+  // Chuyển ngày: hôm qua rồi ngày mai; tổng việc khớp tính tay
+  for (const D of [addDays(TODAY, -1), addDays(TODAY, 1)]) {
+    if (D < TODAY) await p.click('[data-action="day-shift"][data-dir="-1"]');
+    else { await p.click('[data-action="day-shift"][data-dir="1"]'); await p.waitForTimeout(80); await p.click('[data-action="day-shift"][data-dir="1"]'); }
+    await p.waitForTimeout(120);
+    // Ngày đã qua: gồm cả lần lặp có hạn đúng ngày đó (T() đã lọc lần lặp bỏ lỡ nên lấy thẳng từ store)
+    const exp = dayList(await p.evaluate(() => JSON.parse(JSON.stringify(App.store.get().tasks.filter(t => !App.logic.isTemplate(t))))), D);
+    const big = await p.locator('.ov-big .num').innerText();
+    ok('GĐ5: Agenda ngày ' + D + ' tổng việc khớp tính tay', big === exp.filter(t => t.status === 'Xong' && String(t.done_at).slice(0, 10) <= D).length + '/' + exp.length, big + ' vs ' + exp.length);
+    ok('GĐ5: Top 3 ẩn khi không xem hôm nay (' + D + ')', await p.locator('#top3-title').count() === 0);
+  }
+  await p.click('[data-action="day-today"]'); await p.waitForTimeout(120);
+  ok('GĐ5: Về hôm nay hiện lại Top 3', await p.locator('#top3-title').count() === 1);
+  // Thêm nhanh khi xem ngày mai: hạn ngày mai, giờ 17:00
+  await p.click('[data-action="day-shift"][data-dir="1"]'); await p.waitForTimeout(100);
+  await p.fill('#quick-add-today', 'Việc ngày mai GĐ5'); await p.press('#quick-add-today', 'Enter'); await p.waitForTimeout(150);
+  const nm = (await T(p)).find(t => t.title === 'Việc ngày mai GĐ5');
+  ok('GĐ5: thêm nhanh điền ngày đang xem + 17:00', !!nm && nm.due_date === addDays(TODAY, 1) && nm.due_time === '17:00', nm && nm.due_date + ' ' + nm.due_time);
+  await p.click('[data-action="day-today"]'); await p.waitForTimeout(100);
+  // Bảng: sắp theo cột
+  await p.click('[data-action="today-view"][data-view="list"]'); await p.waitForTimeout(100);
+  await p.click('[data-action="tt-sort"][data-key="title"]'); await p.waitForTimeout(100);
+  let names = await p.$$eval('.ttable .tt-title', e => e.map(x => x.textContent));
+  ok('GĐ5: bấm cột Việc -> xếp A đến Z', names.join('|') === names.slice().sort((a, b) => a.localeCompare(b, 'vi')).join('|'), names.join('|'));
+  await p.click('[data-action="tt-sort"][data-key="title"]'); await p.waitForTimeout(100);
+  names = await p.$$eval('.ttable .tt-title', e => e.map(x => x.textContent));
+  ok('GĐ5: bấm lần nữa -> đảo chiều', names.join('|') === names.slice().sort((a, b) => b.localeCompare(a, 'vi')).join('|'));
+  ok('GĐ5: tiêu đề cột có aria-sort', await p.locator('th[aria-sort="descending"]').count() === 1);
+  await p.click('[data-action="tt-sort"][data-key="due"]'); await p.waitForTimeout(100);
+  const keys = await p.evaluate(() => { const L = App.logic, all = App.store.get().tasks; return [...document.querySelectorAll('.ttable [data-action="open-task"]')].map(b => L.dueKey(all.find(t => t.id === b.dataset.id))); });
+  ok('GĐ5: cột Hạn xếp theo ngày rồi giờ', keys.join() === keys.slice().sort().join(), keys.join());
+  // Form việc có giờ
+  await p.click('.qa-full'); await p.waitForSelector('.modal [name="due_time"]');
+  ok('GĐ5: form việc mới điền sẵn 17:00', await p.inputValue('.modal [name="due_time"]') === '17:00');
+  await p.fill('.modal [name="title"]', 'Có giờ GĐ5'); await p.fill('.modal [name="due_time"]', '08:15');
+  await p.click('.modal form button[type="submit"]'); await p.waitForTimeout(200);
+  ok('GĐ5: lưu giờ hạn', ((await T(p)).find(t => t.title === 'Có giờ GĐ5') || {}).due_time === '08:15');
+  await layoutChecks(p, 'GĐ5 Agenda bảng 390');
+  // Tab Task: lọc khẩn cấp + khoảng ngày
+  await p.click('.tab[data-tab="task"]'); await p.waitForTimeout(200);
+  await p.selectOption('[data-filter="status"]', ''); await p.waitForTimeout(80);
+  await p.selectOption('[data-filter="quad"]', '3'); await p.waitForTimeout(80);
+  const q3 = await p.$$eval('.ttable [data-action="open-task"]', e => e.map(b => b.dataset.id));
+  const expQ3 = (await T(p)).filter(t => quad(t) === 3).map(t => t.id);
+  ok('GĐ5: lọc Khẩn cấp = ô 3 khớp tính tay', q3.slice().sort().join() === expQ3.slice().sort().join(), q3.length + ' vs ' + expQ3.length);
+  await p.click('[data-action="task-reset"]'); await p.waitForTimeout(80);
+  await p.selectOption('[data-filter="status"]', ''); await p.waitForTimeout(80);
+  await p.fill('[data-filter="from"]', addDays(TODAY, 1)); await p.dispatchEvent('[data-filter="from"]', 'change'); await p.waitForTimeout(80);
+  await p.fill('[data-filter="to"]', addDays(TODAY, 3)); await p.dispatchEvent('[data-filter="to"]', 'change'); await p.waitForTimeout(80);
+  const rg = await p.$$eval('.ttable [data-action="open-task"]', e => e.length);
+  const expRg = (await T(p)).filter(t => t.due_date >= addDays(TODAY, 1) && t.due_date <= addDays(TODAY, 3)).length;
+  ok('GĐ5: lọc khoảng ngày đến hạn', rg === expRg, rg + ' vs ' + expRg);
+  await layoutChecks(p, 'GĐ5 Task lọc 390');
+  // Thói quen: xem Năm, lửa chuỗi
+  await p.click('.tab[data-tab="habits"]'); await p.waitForTimeout(200);
+  await p.click('[data-action="habit-view"][data-view="year"]'); await p.waitForTimeout(150);
+  ok('GĐ5: xem Năm có 12 tháng mỗi thói quen', await p.locator('.hyear').first().locator('.hy-m').count() === 12);
+  ok('GĐ5: chuỗi có huy hiệu lửa', await p.locator('.fire').count() > 0);
+  await layoutChecks(p, 'GĐ5 Thói quen năm 390');
+  await p.screenshot({ path: SS + '/lp-40-thoiquen-nam-390.png', fullPage: true });
+  // Tổng kết: 4 loại kỳ; tỷ lệ hoàn thành tính tay (Tuần)
+  await p.click('.tab[data-tab="review"]'); await p.waitForTimeout(200);
+  ok('GĐ5: Tổng kết có Ngày/Tuần/Tháng/Năm', (await p.$$eval('[data-action="rev-type"]', e => e.map(x => x.textContent).join(','))) === 'Ngày,Tuần,Tháng,Năm');
+  await p.click('[data-action="rev-type"][data-type="Tuần"]'); await p.waitForTimeout(120);
+  const wr = await p.evaluate(td => { const r = App.period.range('Tuần', App.period.valueOf('Tuần', td)); const ts = App.store.get().tasks.filter(t => !App.logic.isTemplate(t) && t.due_date >= r.start && t.due_date <= r.end && t.due_date <= td); return ts.length ? Math.round(ts.filter(t => t.status === 'Xong').length / ts.length * 100) + '%' : '–'; }, TODAY);
+  ok('GĐ5: tỷ lệ hoàn thành tuần khớp tính tay', (await p.locator('.stat .stat-big').first().innerText()) === wr, wr);
+  ok('GĐ5: tuần có 7 điểm trên đường', await p.locator('.ch-hit').count() === 7);
+  ok('GĐ5: có phần tổng kết thói quen', await p.locator('.hsum li').count() > 0);
+  await p.click('[data-action="rev-type"][data-type="Năm"]'); await p.waitForTimeout(120);
+  ok('GĐ5: Năm mặc định gộp theo tháng (12 điểm)', await p.locator('.ch-hit').count() === 12);
+  await layoutChecks(p, 'GĐ5 Tổng kết năm 390');
+  // Review ngày + lời nhắc ngày sau
+  await p.click('[data-action="rev-type"][data-type="Ngày"]'); await p.waitForTimeout(120);
+  ok('GĐ5: review ngày có 2 câu + 5 mức hoa', await p.locator('.review-form textarea').count() === 2 && await p.locator('.rt').count() === 5);
+  await p.click('.rt:nth-child(5)'); await p.fill('#rv-next', 'Mang áo mưa'); await p.click('.review-form button[type="submit"]'); await p.waitForTimeout(200);
+  const rvd = await p.evaluate(td => App.store.get().reviews.find(r => r.period_type === 'Ngày' && r.period_value === td), TODAY);
+  ok('GĐ5: lưu review ngày (rating 5, next)', !!rvd && rvd.rating === '5' && rvd.next === 'Mang áo mưa', JSON.stringify(rvd));
+  await p.click('.tab[data-tab="today"]'); await p.waitForTimeout(150);
+  ok('GĐ5: hôm nay chưa có lời nhắc của chính hôm nay', await p.locator('.remind').count() === 0);
+  await p.click('[data-action="day-shift"][data-dir="1"]'); await p.waitForTimeout(120);
+  ok('GĐ5: ngày sau hiện lời nhắc', /Mang áo mưa/.test(await p.locator('.reminders').innerText().catch(() => '')));
+  await p.click('[data-action="rem-hide"]'); await p.waitForTimeout(150);
+  ok('GĐ5: Ẩn lời nhắc -> hide_from = ngày đang xem', (await p.evaluate(id => App.store.get().reviews.find(r => r.id === id).hide_from, rvd.id)) === addDays(TODAY, 1) && await p.locator('.remind').count() === 0);
+  await p.click('[data-action="rem-show"]'); await p.waitForTimeout(150);
+  ok('GĐ5: Hiện lại lời nhắc', await p.locator('.remind').count() === 1);
+  // Review tuần trước -> nhắc suốt tuần này
+  await p.evaluate(td => { const v = App.summary.shift('Tuần', App.period.valueOf('Tuần', td), -1); App.store.upsert('Reviews', { id: 'rv-w-test', period_type: 'Tuần', period_value: v, good: '', bad: 'Ngủ muộn', next: 'Ngủ trước 23h', rating: '2', created_at: td }); }, TODAY);
+  await p.click('[data-action="day-today"]'); await p.waitForTimeout(150);
+  ok('GĐ5: review tuần trước hiện ở Agenda tuần này', /Ngủ muộn/.test(await p.locator('.reminders').innerText().catch(() => '')));
+  await layoutChecks(p, 'GĐ5 Agenda lời nhắc 390');
+  await p.screenshot({ path: SS + '/lp-41-agenda-nhac-390.png', fullPage: true });
+  ok('GĐ5: nền có hoa rơi (>= 40 bông)', await p.locator('#bg-flowers .fall').count() >= 40);
   await ctx.close();
 
   console.log('\nLỖI CONSOLE/PAGEERROR (' + errors.length + '):\n' + errors.join('\n'));

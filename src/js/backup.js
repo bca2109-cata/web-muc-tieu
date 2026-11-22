@@ -27,7 +27,7 @@ App.backup = (function () {
 
   /* Kiểm định dạng từng ô: ngày phải là yyyy-mm-dd, các cột chọn từ danh sách phải đúng giá trị tiếng Việt.
      Ô sai thì sửa về giá trị an toàn (ngày để trống, lựa chọn về mặc định) và đếm lại để báo trước khi nhập. */
-  var DATE_COLS = { Goals: ['start_date', 'end_date'], Tasks: ['due_date', 'top3_date', 'done_at'], HabitLogs: ['date'] };
+  var DATE_COLS = { Goals: ['start_date', 'end_date'], Tasks: ['due_date', 'top3_date', 'done_at'], HabitLogs: ['date'], Reviews: ['hide_from'] };
   function choiceCols() {
     var C = App.C;
     return {
@@ -64,7 +64,17 @@ App.backup = (function () {
       issues.push(table + ' "' + (row.name || row.id) + '": ' + c + ' = "' + row[c] + '"');
       row[c] = '';
     });
-    // Kỳ phải khớp loại kỳ (mục tiêu: Năm/Quý/Tháng/Tuần, review: Tuần/Tháng)
+    // Giờ hạn HH:mm (GĐ5), sai thì để trống (web hiểu là chưa có giờ)
+    if (table === 'Tasks' && row.due_time && !App.logic.isTime(row.due_time)) {
+      issues.push(table + ' "' + (row.title || row.id) + '": due_time = "' + row.due_time + '"');
+      row.due_time = '';
+    }
+    // Mức hài lòng 1 đến 5
+    if (table === 'Reviews' && row.rating && ['1', '2', '3', '4', '5'].indexOf(String(row.rating)) < 0) {
+      issues.push(table + ' "' + row.id + '": rating = "' + row.rating + '"');
+      row.rating = '';
+    }
+    // Kỳ phải khớp loại kỳ (mục tiêu: Năm/Quý/Tháng/Tuần, review: Ngày/Tuần/Tháng/Năm)
     if ((table === 'Goals' || table === 'Reviews') && !App.period.range(row.period_type, row.period_value)) {
       issues.push(table + ' "' + (row.name || row.id) + '": kỳ = "' + row.period_type + ' ' + row.period_value + '"');
       if (table === 'Goals') { row.period_type = 'Tháng'; row.period_value = App.period.valueOf('Tháng', App.date.isValid(row.start_date) ? row.start_date : App.date.today()); }

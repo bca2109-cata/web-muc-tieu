@@ -61,6 +61,8 @@ Chỉ cần khi Claude báo đã đổi `apps-script/Code.gs`. Link web app gi�
 
 Giai đoạn 4 (22/11/2026) có đổi Code.gs: thêm phần nhập dữ liệu từ file sao lưu. Chưa cập nhật thì mọi thứ vẫn chạy, chỉ riêng nút **Nhập JSON** báo lỗi.
 
+Giai đoạn 5 (22/11/2026) có đổi Code.gs: tự thêm cột mới (giờ hạn của việc, mức hài lòng và ẩn lời nhắc của review) vào cuối dòng tiêu đề. Chưa cập nhật thì giờ hạn, mức hài lòng và nút Ẩn lời nhắc không được lưu lên Sheet.
+
 1. Mở Apps Script (Phần A, bước 2), dán code mới đè lên như bước 4 đến 6.
 2. Bấm **Triển khai** (Deploy) → **Quản lý các bản triển khai** (Manage deployments).
 3. Bấm biểu tượng bút chì, ở ô **Phiên bản** (Version) chọn **Phiên bản mới** (New version) → **Triển khai** (Deploy).

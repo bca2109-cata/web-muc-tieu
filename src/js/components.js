@@ -51,22 +51,24 @@ App.comp = (function () {
   }
 
   // Nhãn hạn của task: "Trễ 2 ngày", "Hôm nay", "Ngày mai", hoặc ngày dd/mm/yyyy
+  // today: ngày đang xem (Agenda có thể xem ngày khác hôm nay). Có giờ hạn thì ghi kèm giờ.
   function dueTag(t, today) {
     if (!t.due_date) return tag('tplain', 'clock', 'Chưa có hạn');
+    var hm = L.isTime(t.due_time) ? ' <span class="num tm">' + t.due_time + '</span>' : '';
     if (L.isMissed(t, today)) return tag('tplain', 'refresh', 'Bỏ lỡ <span class="num">' + D.fmt(t.due_date) + '</span>', 'Lần lặp đã qua ngày, vẫn tính vào % mục tiêu');
     if (L.isOverdue(t, today)) return tag('tq1', 'clock', 'Trễ <span class="num">' + D.diffDays(t.due_date, today) + '</span> ngày');
     if (L.isDueSoon(t, today)) {
       var when = t.due_date === today ? 'hôm nay' : t.due_date === D.addDays(today, 1) ? 'ngày mai' : 'ngày kia';
-      return tag('twarm', 'clock', '<span class="soon-lbl">Sắp đến hạn: </span>' + when, 'Sắp đến hạn: ' + when);
+      return tag('twarm', 'clock', '<span class="soon-lbl">Sắp đến hạn: </span>' + when + hm, 'Sắp đến hạn: ' + when);
     }
-    if (t.due_date === today) return tag('tplain', 'clock', 'Hôm nay');
-    if (t.due_date === D.addDays(today, 1)) return tag('tplain', 'clock', 'Ngày mai');
-    return tag('tplain', 'clock', '<span class="num">' + D.fmt(t.due_date) + '</span>');
+    if (t.due_date === today) return tag('tplain', 'clock', 'Hôm nay' + hm);
+    if (t.due_date === D.addDays(today, 1)) return tag('tplain', 'clock', 'Ngày mai' + hm);
+    return tag('tplain', 'clock', '<span class="num">' + D.fmt(t.due_date) + '</span>' + hm);
   }
 
   function quadTag(q) {
     var Q = L.QUADRANTS[q];
-    return tag('tq' + q, Q.icon, Q.label, Q.hint);
+    return tag('tq' + q, Q.icon, Q.short, Q.label + ': ' + Q.hint);
   }
 
   function tickButton(t, ctx) {
@@ -84,7 +86,7 @@ App.comp = (function () {
   }
 
   function taskMeta(t, ctx, q) {
-    var meta = [quadTag(q), dueTag(t, ctx.today)];
+    var meta = [quadTag(q), dueTag(t, ctx.day || ctx.today)];
     if (t.priority === 'Cao') meta.push(tag('tpri', 'up', 'Cao'));
     else if (t.priority === 'Thấp') meta.push(tag('tplain', 'down', 'Thấp'));
     if (t.status === 'Đang làm') meta.push(tag('tplain', 'play', 'Đang làm'));
@@ -98,7 +100,7 @@ App.comp = (function () {
 
   // ctx: { today, goalsById, hideGoal, flashId }
   function taskRow(t, ctx) {
-    var done = L.isDone(t), q = L.quadrant(t, ctx.today);
+    var done = L.isDone(t), q = L.quadrant(t, ctx.day || ctx.today);
     return '<li class="task' + (done ? ' is-done' : '') + '">' +
       (done ? '' : '<span class="qbar b' + q + '"></span>') + tickButton(t, ctx) +
       '<span class="ticon tq' + q + '">' + icon(L.iconOf(t)) + '</span>' +
@@ -126,22 +128,29 @@ App.comp = (function () {
       '</button>' + starButton(t, ctx) + '</li>';
   }
 
-  // Ma trận 4 ô
+  /* Ma trận 4 ô có 2 trục: cột Khẩn cấp / Không khẩn cấp, hàng Quan trọng / Không quan trọng.
+     Thứ tự đọc: ô 1 trên trái, ô 2 trên phải, ô 3 dưới trái, ô 4 dưới phải. */
   function matrix(tasks, ctx) {
-    var out = '<div class="matrix">';
+    var day = ctx.day || ctx.today;
+    var out = '<div class="mx">' +
+      '<div class="mx-top" aria-hidden="true"><span>' + icon('flame', 'ic14') + 'Khẩn cấp</span><span>Không khẩn cấp</span></div>' +
+      '<div class="mx-side" aria-hidden="true"><span>Quan trọng</span><span>Không quan trọng</span></div>' +
+      '<div class="matrix">';
     [1, 2, 3, 4].forEach(function (q) {
       var Q = L.QUADRANTS[q];
-      var items = L.sortTasks(tasks.filter(function (t) { return L.quadrant(t, ctx.today) === q; }));
+      var items = tasks.filter(function (t) { return L.quadrant(t, day) === q; }).sort(function (a, b) {
+        return ((L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0)) || (L.dueKey(a) < L.dueKey(b) ? -1 : L.dueKey(a) > L.dueKey(b) ? 1 : 0);
+      });
       var open = items.filter(function (t) { return !L.isDone(t); }).length;
-      out += '<section class="q q' + q + '" aria-label="' + Q.label + ': ' + Q.hint + '"><h3 title="' + Q.hint + '">' + icon(Q.icon, 'ic14') + Q.label +
-        '<span class="num qn">' + open + '</span></h3><p class="q-act">' + Q.act + '</p><ul>' +
+      out += '<section class="q q' + q + '" aria-label="' + Q.label + ': ' + Q.hint + '"><h3 title="' + Q.hint + '">' + icon(Q.icon, 'ic18') + '<span class="q-name">' + Q.label + '</span>' +
+        '<span class="num qn">' + open + '</span></h3><p class="q-act">' + Q.hint + '. ' + Q.act + '</p><ul>' +
         (items.length ? items.map(function (t) {
           return '<li class="' + (L.isDone(t) ? 'is-done' : '') + '">' + tickButton(t, ctx) +
             '<button type="button" class="qname" data-action="open-task" data-id="' + esc(t.id) + '" title="' + esc(t.title) + '">' +
             icon(L.iconOf(t), 'ic14') + '<span>' + esc(t.title) + '</span></button></li>';
         }).join('') : '<li class="none">Trống, nhẹ nhàng ghê</li>') + '</ul></section>';
     });
-    return out + '</div>';
+    return out + '</div></div>';
   }
 
   function goalStatusLine(g, p, slow) {
@@ -178,12 +187,14 @@ App.comp = (function () {
       goalStatusLine(g, p, slow) + '</span></button>';
   }
 
-  function quickAdd(id, placeholder, goalId) {
-    return '<form class="quick-add" data-form="quick-add"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') + '>' +
+  // day: ngày điền sẵn cho việc mới (Agenda đang xem ngày khác hôm nay)
+  function quickAdd(id, placeholder, goalId, day) {
+    var dayAttr = day ? ' data-day="' + esc(day) + '"' : '';
+    return '<form class="quick-add" data-form="quick-add"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') + dayAttr + '>' +
       '<label class="qa-field" for="' + id + '">' + icon('pencil') + '<span class="sr-only">Tên việc mới</span>' +
       '<input id="' + id + '" name="title" autocomplete="off" maxlength="200" placeholder="' + esc(placeholder) + '"></label>' +
       '<button type="submit" class="fab" aria-label="Thêm việc">' + icon('plus') + '</button>' +
-      '<button type="button" class="btn btn-soft qa-full" data-action="new-task"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') +
+      '<button type="button" class="btn btn-soft qa-full" data-action="new-task"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') + dayAttr +
       ' title="Mở form đủ trường: hạn, ưu tiên, mục tiêu, lặp lại">' + icon('edit', 'ic18') + 'Thêm đầy đủ</button></form>';
   }
 

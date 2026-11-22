@@ -1,20 +1,21 @@
-/* Tab Task: mọi việc, lọc theo trạng thái, ưu tiên, mục tiêu, hạn; sắp xếp theo hạn hoặc ưu tiên; danh sách việc lặp lại */
+/* Tab Task: mọi việc, lọc theo trạng thái hoàn thành, trạng thái đến hạn, mức quan trọng (ưu tiên), mức khẩn cấp (ô ma trận),
+   mục tiêu, khoảng ngày đến hạn; bấm tiêu đề cột để sắp xếp; danh sách việc lặp lại */
 var App = window.App || (window.App = {});
 App.views = App.views || {};
 
 App.views.tasks = function (state, ui) {
   var C = App.comp, L = App.logic, D = App.date, esc = App.util.esc, icon = App.ui.icon, fl = App.flowers.html;
   var today = D.today();
-  var f = ui.taskFilter, sort = ui.taskSort === 'priority' ? 'priority' : 'due';
+  var f = ui.taskFilter;
   var goalsById = {};
   state.goals.forEach(function (g) { goalsById[g.id] = g; });
-  var ctx = { today: today, goalsById: goalsById, flashId: ui.flashId };
+  var ctx = { today: today, goalsById: goalsById, flashId: ui.flashId, sort: ui.taskSort, scope: 'task' };
 
   var DUE = {
     '': function () { return true; },
-    overdue: function (t) { return L.isOverdue(t, today); },
-    today: function (t) { return t.due_date === today; },
-    soon: function (t) { return L.isDueSoon(t, today); },
+    over: function (t) { return L.dueState(t, today) === 'over'; },
+    due: function (t) { return L.dueState(t, today) === 'due'; },
+    later: function (t) { return !!t.due_date && L.dueState(t, today) === 'later'; },
     none: function (t) { return !t.due_date; },
     missed: function (t) { return L.isMissed(t, today); }
   };
@@ -26,14 +27,11 @@ App.views.tasks = function (state, ui) {
     if (f.priority && (t.priority || 'Trung bình') !== f.priority) return false;
     if (f.goal === '__misc' && t.goal_id && goalsById[t.goal_id]) return false;
     if (f.goal && f.goal !== '__misc' && t.goal_id !== f.goal) return false;
+    if (f.quad && String(L.quadrant(t, today)) !== f.quad) return false;
+    if ((f.from || f.to) && !t.due_date) return false;
+    if (f.from && t.due_date < f.from) return false;
+    if (f.to && t.due_date > f.to) return false;
     return (DUE[f.due] || DUE['']) (t);
-  });
-  var byDue = function (a, b) { var x = a.due_date || '9999', y = b.due_date || '9999'; return x < y ? -1 : x > y ? 1 : 0; };
-  var byPri = function (a, b) { return L.priorityRank(a.priority) - L.priorityRank(b.priority); };
-  list.sort(function (a, b) {
-    return ((L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0)) ||
-      (sort === 'due' ? byDue(a, b) || byPri(a, b) : byPri(a, b) || byDue(a, b)) ||
-      ((a.created_at || '') < (b.created_at || '') ? -1 : 1);
   });
 
   function select(name, label, iconName, opts) {
@@ -42,19 +40,23 @@ App.views.tasks = function (state, ui) {
       '</select></label>';
   }
   var goalOpts = [['', 'Tất cả'], ['__misc', App.C.MISC]].concat(state.goals.map(function (g) { return [g.id, g.name]; }));
-  var changed = f.status !== 'open' || f.priority || f.goal || f.due;
+  var changed = f.status !== 'open' || f.priority || f.goal || f.due || f.quad || f.from || f.to;
+  function dateBox(name, label) {
+    return '<label class="tf"><span>' + icon('calendar', 'ic14') + label + '</span><input class="input" type="date" data-filter="' + name + '" value="' + esc(f[name] || '') + '"></label>';
+  }
+  var quadOpts = [['', 'Tất cả']].concat([1, 2, 3, 4].map(function (q) { return [String(q), L.QUADRANTS[q].label]; }));
 
   var html = '<div class="page-head"><h1>' + fl('lavender', 30, 3) + 'Tất cả việc</h1></div>';
   html += C.quickAdd('quick-add-task', 'Thêm việc, gõ tên rồi Enter');
   html += '<section class="card task-filters" aria-label="Bộ lọc">' +
-    select('status', 'Trạng thái', 'flag', [['open', 'Chưa xong'], ['', 'Tất cả'], ['Cần làm', 'Cần làm'], ['Đang làm', 'Đang làm'], ['Xong', 'Xong']]) +
-    select('priority', 'Ưu tiên', 'up', [['', 'Tất cả'], ['Cao', 'Cao'], ['Trung bình', 'Trung bình'], ['Thấp', 'Thấp']]) +
+    select('status', 'Hoàn thành', 'check', [['open', 'Chưa xong'], ['Xong', 'Xong'], ['', 'Tất cả'], ['Cần làm', 'Cần làm'], ['Đang làm', 'Đang làm']]) +
+    select('due', 'Đến hạn', 'clock', [['', 'Tất cả'], ['over', 'Quá hạn'], ['due', 'Đến hạn hôm nay'], ['later', 'Chưa đến hạn'], ['none', 'Chưa có hạn'], ['missed', 'Lần lặp bỏ lỡ']]) +
+    select('priority', 'Quan trọng', 'up', [['', 'Tất cả'], ['Cao', 'Cao'], ['Trung bình', 'Trung bình'], ['Thấp', 'Thấp']]) +
+    select('quad', 'Khẩn cấp', 'flame', quadOpts) +
     select('goal', 'Mục tiêu', 'target', goalOpts) +
-    select('due', 'Hạn', 'calendar', [['', 'Tất cả'], ['overdue', 'Trễ hạn'], ['today', 'Hôm nay'], ['soon', 'Sắp đến hạn'], ['none', 'Chưa có hạn'], ['missed', 'Lần lặp bỏ lỡ']]) +
-    '<div class="tf-foot"><span class="seg-switch" role="group" aria-label="Sắp xếp">' +
-    '<button type="button" data-action="task-sort" data-sort="due" aria-pressed="' + (sort === 'due') + '"' + (sort === 'due' ? ' class="on"' : '') + '>' + icon('clock', 'ic14') + 'Theo hạn</button>' +
-    '<button type="button" data-action="task-sort" data-sort="priority" aria-pressed="' + (sort === 'priority') + '"' + (sort === 'priority' ? ' class="on"' : '') + '>' + icon('up', 'ic14') + 'Theo ưu tiên</button>' +
-    '</span>' + (changed ? '<button type="button" class="btn btn-soft tf-reset" data-action="task-reset">' + icon('refresh', 'ic14') + 'Bỏ lọc</button>' : '') +
+    '<div class="tf-range">' + dateBox('from', 'Hạn từ ngày') + dateBox('to', 'Đến ngày') + '</div>' +
+    '<div class="tf-foot"><p class="hint">' + icon('sparkle', 'ic14') + 'Bấm tên cột trong bảng để sắp xếp.</p>' +
+    (changed ? '<button type="button" class="btn btn-soft tf-reset" data-action="task-reset">' + icon('refresh', 'ic14') + 'Bỏ lọc</button>' : '') +
     '</div></section>';
 
   html += '<section class="block" aria-labelledby="tl-title"><h2 class="sec-title" id="tl-title">' + fl('sprig', 24, 1) +

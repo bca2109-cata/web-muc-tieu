@@ -91,7 +91,9 @@ App.forms = (function () {
       '<p class="form-error" hidden data-err="title">Hãy nhập tên việc.</p>' +
       '<div class="field"><span>' + icon('sparkle', 'ic14') + 'Icon <small class="muted">(tự đoán theo tên, bấm để đổi)</small></span>' + iconPicker(App.logic.iconOf(t)) + '</div>' +
       '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu</span><select class="select" name="goal_id">' + options(goalOpts, t.goal_id) + '</select></label>' +
-      '<label class="field"><span>' + icon('calendar', 'ic14') + '<span data-due-label>' + (repeat === 'none' ? 'Hạn chót' : 'Bắt đầu lặp từ') + '</span></span>' + dateInput('due_date', t.due_date) + '</label>' +
+      '<div class="dt-row"><label class="field"><span>' + icon('calendar', 'ic14') + '<span data-due-label>' + (repeat === 'none' ? 'Hạn chót' : 'Bắt đầu lặp từ') + '</span></span>' + dateInput('due_date', t.due_date || today) + '</label>' +
+      '<label class="field"><span>' + icon('clock', 'ic14') + 'Giờ</span><input class="input num" type="time" name="due_time" required value="' + esc(L.isTime(t.due_time) ? t.due_time : L.DEFAULT_TIME) + '"></label></div>' +
+      '<p class="form-error" hidden data-err="due">Hãy chọn ngày và giờ hạn.</p>' +
       repeatBlock +
       '<div class="field"><span>' + icon('up', 'ic14') + 'Mức ưu tiên</span>' + seg('priority', App.C.PRIORITY, t.priority) + '</div>' +
       '<div class="field"><span>' + icon('flag', 'ic14') + 'Trạng thái</span>' + seg('status', App.C.TASK_STATUS, t.status) + '</div>' +
@@ -157,9 +159,10 @@ App.forms = (function () {
         form.querySelector('[data-err="top3"]').hidden = false;
         return;
       }
-      var due = val(form, 'due_date');
+      var due = val(form, 'due_date'), dueTime = val(form, 'due_time');
+      if (!App.date.isValid(due) || !L.isTime(dueTime)) { form.querySelector('[data-err="due"]').hidden = false; return; }
       var row = Object.assign({}, t, {
-        title: title, goal_id: val(form, 'goal_id'), due_date: App.date.isValid(due) ? due : '',
+        title: title, goal_id: val(form, 'goal_id'), due_date: due, due_time: dueTime,
         priority: val(form, 'priority') || 'Trung bình', status: val(form, 'status') || 'Cần làm', note: val(form, 'note'),
         icon: val(form, 'icon') || App.logic.guessIcon(title)
       });

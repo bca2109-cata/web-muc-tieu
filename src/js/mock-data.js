@@ -26,11 +26,13 @@ App.mockData = function (today) {
   var g7 = goal('Giữ nếp sống lành mạnh', 'Sức khỏe', 'Tháng', null, 2);
   g7.progress_mode = 'habit';
 
+  // Giờ hạn mẫu, xoay vòng để thấy việc được xếp theo giờ
+  var t0 = ['09:00', '17:00', '14:30', '11:00', '17:00', '20:00', '08:30'], n = 0;
   function task(title, g, dueOffset, priority, status, extra) {
     var t = {
       id: uuid(), title: title, goal_id: g ? g.id : '', due_date: dueOffset == null ? '' : D.addDays(today, dueOffset),
       priority: priority || 'Trung bình', status: status || 'Cần làm', is_top3: 'FALSE', top3_date: '',
-      recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp, icon: ''
+      recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp, icon: '', due_time: t0[(n++) % t0.length]
     };
     t.icon = App.logic.guessIcon(title);
     // Ngày xong không ở tương lai

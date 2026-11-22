@@ -1,11 +1,13 @@
-# Bàn giao phiên làm việc (cập nhật 22/11/2026, chiều)
+# Bàn giao phiên làm việc (cập nhật 22/11/2026, tối)
 
 Đọc file này trước, rồi chỉ mở thêm file nào thật sự cần. Chi tiết yêu cầu ở `SPEC.md`, quy tắc giao diện ở `DESIGN.md`, lịch sử ở `docs/TIEN-DO.md`.
 
 ## 1. Đang ở đâu
 - Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). Giai đoạn 2: xong (duyệt 22/11/2026). **Giai đoạn 3** (thói quen, streak, tab Thói quen): xong, duyệt 22/11/2026.
 
-**Giai đoạn 4** (tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA): đã làm, đã kiểm tra, chờ người dùng duyệt. Có đổi `Code.gs` (thêm `replaceAll`), người dùng cần cập nhật Apps Script.
+**Giai đoạn 4** (tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA): xong, kể cả xử lý giới hạn.
+
+**Giai đoạn 5** (góp ý sau dùng thử, SPEC mục 4.5: Agenda theo ngày, biểu đồ mới, ma trận 2 trục, lời nhắc review, lọc Task, xem Năm, Tổng kết 4 kỳ, hoa rơi): đã làm, chờ người dùng duyệt. `Code.gs` đổi (thêm `ensureColumns_`), cần triển khai phiên bản mới.
 - Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
 - Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
 - Mặt trời mặt cười: người dùng chốt **giữ**.
@@ -14,20 +16,22 @@
 - (chưa có)
 
 ## 3. Kiến trúc (chỉ điều không tự thấy ngay trong code)
-- Phương án B: web tĩnh trên GitHub Pages, gọi Web App Apps Script (`apps-script/Code.gs`, tên "Muc tieu API", bản "Ban 1"). Gọi bằng POST `text/plain`, mã bí mật nằm trong body. Thao tác: `ping`, `loadAll`, `batch`.
+- Phương án B: web tĩnh trên GitHub Pages, gọi Web App Apps Script (`apps-script/Code.gs`, tên "Muc tieu API", bản "Ban 1"). Gọi bằng POST `text/plain`, mã bí mật nằm trong body. Thao tác: `ping`, `loadAll`, `batch`, `replaceAll`. Trước `batch`/`replaceAll` tự thêm cột còn thiếu (`ensureColumns_`). Cập nhật Code.gs: Claude làm qua Chrome (dán bằng monaco, Ctrl+S, Triển khai, Quản lý các bản triển khai, bút chì, Phiên bản mới).
 - Code.gs ghi theo tên cột ở dòng 1, nên thêm cột vào cuối sheet thì **không cần triển khai lại** Apps Script. `caiDat` tự thêm cột còn thiếu.
 - **Mã bí mật: không bao giờ hỏi, gõ, đọc hay nhắc lại.** Người dùng tự dán vào ô Cài đặt trên web (lưu localStorage).
-- JS thường, không ES module, mọi thứ nằm trong `window.App`. Thứ tự nạp ở `src/index.html`: config, logic, mock-data, api-mock, api-sheet, api, flowers, ui, store, components, views/today, views/goals, forms, app.
+- JS thường, không ES module, mọi thứ nằm trong `window.App`. Thứ tự nạp: xem `src/index.html` (config, logic, mock-data, api-*, flowers, ui, store, components, views/*, backup, forms, app).
 - **Mỗi lần sửa CSS/JS rồi đẩy lên: đổi số `?v=...` ở các thẻ link/script trong `src/index.html`** (đang dùng mã commit gần nhất), vì GitHub Pages cho trình duyệt giữ file cũ khoảng 10 phút.
 - Bản mock: mở bằng `file:` hoặc thêm `?mock=1`. Tham số kiểm thử: `?today=yyyy-mm-dd`, `?fail=1` (giả lập lưu lỗi).
 - `store.js`: cập nhật lạc quan, hàng đợi lưu nền, có bộ nhớ đệm để mở lại hiện ngay.
-- localStorage của người dùng: `lp_bg` (`flowers` mặc định hoặc `plain`), `lp_today_view` (`matrix` mặc định hoặc `list` = dạng Bảng), `lp_top3_auto` (ngày đã tự điền Top 3).
-- Định tuyến: `#/hom-nay`, `#/muc-tieu`, `#/muc-tieu/<id>`, `#/sap-co/(task|thoi-quen|tong-ket)`.
+- localStorage của người dùng: `lp_bg`, `lp_today_view`, `lp_top3_auto`, `lp_habit_view`, `lp_review_type`, `lp_review_chart`, `lp_theme`.
+- Định tuyến: `#/agenda` (cũ `#/hom-nay` vẫn vào Agenda), `#/task`, `#/muc-tieu`, `#/muc-tieu/<id>`, `#/thoi-quen`, `#/tong-ket`.
 
 ## 4. Quy tắc nghiệp vụ đã chốt (ngoài SPEC hoặc dễ quên)
-- Ma trận 4 ô: Khẩn cấp, Lên lịch, Xử lý sau, Xem xét (người dùng chốt 22/11). Quan trọng là ưu tiên Cao; khẩn cấp là `due_date` đến ngày mai (tính cả trễ hạn). Ma trận gồm mọi việc chưa xong, cộng việc xong hôm nay; việc đã ở Top 3 thì không hiện lại. `logic.quadrant()`.
+- Ma trận 4 ô (GĐ5): Khẩn cấp, Làm sau, Làm trong ngày / Nhượng quyền, Dời hôm sau. Quan trọng là ưu tiên Cao; khẩn cấp là `due_date` đến ngày sau ngày đang xem (tính cả quá hạn). `logic.quadrant(t, day)`.
+- Agenda ngày D (GĐ5): `logic.dayList` = hạn ngày D + quá hạn chưa xong tính đến D (trừ lần lặp) + xong trong ngày D. Biểu đồ: `logic.dayStats2`. Giờ hạn mặc định 17:00 (`logic.DEFAULT_TIME`).
+- Lời nhắc review: `views.reminderItems`. `hide_from` = ngày bắt đầu ẩn.
 - Top 3 hôm trước chưa xong thì giữ sang hôm nay, tối đa 3. Sau đó, lần đầu mở web mỗi ngày, chỗ trống tự điền việc trễ hạn rồi việc ô Khẩn cấp (`logic.top3Suggest`).
-- Tab Hôm nay: biểu đồ tổng quan và dạng Bảng tính trên `logic.workList` (chưa xong có hạn <= ngày mai hoặc Top 3, cộng việc xong hôm nay). Khối Sắp đến hạn: hạn từ ngày kia đến 7 ngày tới. Xóa mục tiêu thì hỏi mỗi lần: chuyển task thành "Việc lặt vặt" hay xóa theo.
+- Khối Sắp đến hạn: việc chưa xong có hạn từ ngày đang xem đến 2 ngày sau. Xóa mục tiêu thì hỏi mỗi lần: chuyển task thành "Việc lặt vặt" hay xóa theo.
 - Task lặp (GĐ2): sinh bù những ngày không mở web, tính từ ngày tạo, tối đa 30 ngày gần nhất; mỗi lần sinh tính 1 task vào %.
 - Mục tiêu: `importance` 1 đến 3 (mặc định 2, hiện bằng tim). Nhãn hạn: còn ≤3 ngày là `hot`, ≤10 ngày là `warm`, còn lại `calm`. `logic.goalDeadline()`.
 - Icon task: `logic.guessIcon()` so cả từ, giữ dấu tiếng Việt, khớp từ dài nhất thắng; tên gõ không dấu thì so với từ khóa đã bỏ dấu. Người dùng chọn icon tay trong form thì không tự đổi nữa.
@@ -36,16 +40,16 @@
 ## 5. Google Sheet
 - ID `1_zdutUcr7DnRLUm5SFWd959af_h2zZTg700jxPmEK9c`, tên "Quản lý mục tiêu - dữ liệu". Claude đọc ghi qua kết nối Google Sheets.
 - Cột đều để dạng chữ (ngày giữ `yyyy-mm-dd`), `target`/`actual` dạng số. Khi ghi bằng kết nối, ghi kiểu RAW để ngày không bị đổi thành số. Đọc lại ô để kiểm.
-- Cột mới nhất: Goals P = `importance`, Tasks O = `icon`. Không đổi tên cột nếu chưa hỏi người dùng.
+- Cột mới nhất: Goals P = `importance`, Tasks O = `icon`, Tasks P = `due_time` (GĐ5), Reviews I = `rating`, J = `hide_from` (GĐ5, Apps Script tự thêm khi ghi lần đầu). Không đổi tên cột nếu chưa hỏi người dùng.
 - Dữ liệu thử: Goals dòng 2 đến 4 (3 mục tiêu), Tasks dòng 3 đến 29 (27 task), tất cả có `note` = "Dữ liệu thử". Tasks dòng 2 ("hhh") là của người dùng, **không xóa**.
 
 ## 6. Kiểm thử
 - Mỗi giai đoạn gọi `spec-reviewer` và `qa-tester` **cùng một lượt** (song song), không sửa code trong lúc chờ. Sửa lỗi Cao và Trung bình, ghi lỗi Thấp vào TIEN-DO, chạy lại qa một lần rồi báo.
 - Playwright có sẵn trong `node_modules`. Chạy: `NODE_PATH=./node_modules node tests-qa/qa-lifeplanner.js` (Bash). Trong Bash, đường dẫn `/tmp` không dùng được với node; dùng `cygpath` hoặc thư mục scratchpad.
-- Kiểm ở 390px và 1280px. Chế độ tối mới làm ở GĐ4 (giá trị tạm có trong `DESIGN.md`).
+- Kiểm ở 390px và 1280px, sáng và tối. Bài thử mất hơn 2 phút: chạy nền hoặc đặt timeout 300000.
 
 ## 7. Lỗi mức Thấp còn tồn
-Xem 2 mục "Lỗi mức Thấp" trong `docs/TIEN-DO.md`. Tóm tắt: số trong `<option>` và hộp hỏi xóa chưa đậm thẳng hàng; `theme-color` viết cứng; ô chọn ngày theo ngôn ngữ trình duyệt; màu đỏ còn dùng cho nút Xóa và lỗi form; bo góc vài khối lệch 22px; hình nền dùng 11 hoa.
+Xem 2 mục "Lỗi mức Thấp" trong `docs/TIEN-DO.md`. Tóm tắt: số trong `<option>` và hộp hỏi xóa chưa đậm thẳng hàng; `theme-color` viết cứng; ô chọn ngày theo ngôn ngữ trình duyệt; màu đỏ còn dùng cho nút Xóa và lỗi form; bo góc vài khối lệch 22px; hình nền dùng 11 loại hoa.
 
 ## 8. Cách làm việc với người dùng
 - Trả lời tiếng Việt, ngắn. Người dùng không phải lập trình viên: hướng dẫn phải ghi rõ bấm vào đâu. Mọi thứ phải dùng được trên trình duyệt (máy công ty không cài được phần mềm).

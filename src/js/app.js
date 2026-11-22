@@ -5,7 +5,8 @@ App.app = (function () {
   var view = document.getElementById('view');
   var ui = {
     groupFilter: '', periodType: '', periodValue: '', flashId: null, todayView: readPref('lp_today_view', 'matrix'),
-    taskFilter: { status: 'open', priority: '', goal: '', due: '' }, taskSort: 'due',
+    day: '', agendaSort: { key: 'due', dir: 1 }, taskSort: { key: 'due', dir: 1 },
+    taskFilter: { status: 'open', priority: '', goal: '', due: '', quad: '', from: '', to: '' },
     habitView: readPref('lp_habit_view', 'week'), habitShift: 0,
     revType: readPref('lp_review_type', 'Tuần'), revValue: '', revChart: readPref('lp_review_chart', 'day')
   };
@@ -16,7 +17,7 @@ App.app = (function () {
   var flashTimer = null;
 
   function route() {
-    var h = location.hash || '#/hom-nay';
+    var h = location.hash || '#/agenda';
     var m = /^#\/muc-tieu\/(.+)$/.exec(h);
     if (m) return { tab: 'goals', goalId: decodeURIComponent(m[1]) };
     if (h.indexOf('#/muc-tieu') === 0) return { tab: 'goals' };
@@ -153,7 +154,9 @@ App.app = (function () {
     var title = input.value.trim();
     if (!title) { input.focus(); return; }
     var goalId = form.getAttribute('data-goal') || '';
-    App.store.upsert('Tasks', App.logic.newTask({ title: title, goal_id: goalId }));
+    var d = {title: title, goal_id: goalId };
+    if (App.date.isValid(form.getAttribute('data-day'))) d.due_date = form.getAttribute('data-day');
+    App.store.upsert('Tasks', App.logic.newTask(d));
     input.value = '';
     var el = document.getElementById(input.id);
     if (el) { el.value = ''; el.focus(); }
@@ -186,15 +189,30 @@ App.app = (function () {
     });
   }
 
-  // Lưu ghi chú review của một kỳ (mỗi kỳ một dòng Reviews)
+  // Lưu review của một kỳ (mỗi kỳ một dòng Reviews): mức hài lòng và các câu trả lời
   function saveReview(form) {
     var type = form.getAttribute('data-type'), value = form.getAttribute('data-value');
-    var f = { good: form.elements.good.value.trim(), bad: form.elements.bad.value.trim(), next: form.elements.next.value.trim() };
+    function txt(n) { return form.elements[n] ? form.elements[n].value.trim() : ''; }
+    var picked = form.querySelector('input[name="rating"]:checked');
+    var f = { good: txt('good'), next: txt('next'), rating: picked ? picked.value : '' };
+    // Review ngày chỉ có 2 câu: không đụng tới cột bad
+    if (form.elements.bad) f.bad = txt('bad');
     var old = App.summary.findReview(App.store.get().reviews, type, value);
-    if (!old && !f.good && !f.bad && !f.next) { App.ui.toast('Hãy viết ít nhất một câu trước khi lưu.'); form.elements.good.focus(); return; }
+    if (!old && !f.good && !f.bad && !f.next && !f.rating) { App.ui.toast('Hãy chọn mức hài lòng hoặc viết ít nhất một câu trước khi lưu.'); return; }
     var now = App.util.now();
     App.store.upsert('Reviews', Object.assign({ id: App.util.uuid(), period_type: type, period_value: value, created_at: now }, old || {}, f));
     App.ui.toast('Đã lưu review ' + App.period.label(type, value) + '.');
+  }
+
+  // Ẩn lời nhắc từ ngày day trở đi (day rỗng: hiện lại)
+  function setReminder(ids, day) {
+    var reviews = App.store.get().reviews;
+    var ops = ids.map(function (id) { return reviews.find(function (r) { return r.id === id; }); }).filter(Boolean).map(function (r) {
+      return { type: 'upsert', table: 'Reviews', row: Object.assign({}, r, { hide_from: day }) };
+    });
+    if (!ops.length) return;
+    App.store.batch(ops);
+    App.ui.toast(day ? 'Đã ẩn lời nhắc. Muốn xem lại thì bấm "Hiện lại".' : 'Đã hiện lại lời nhắc.');
   }
 
   // Top 3 hôm trước chưa xong: chuyển sang hôm nay
@@ -250,22 +268,36 @@ App.app = (function () {
         ui.periodType = el.getAttribute('data-type') || '';
         ui.periodValue = App.C.PERIOD_TYPES.indexOf(ui.periodType) >= 0 ? App.period.valueOf(ui.periodType, App.date.today()) : '';
         render(); break;
-      case 'new-task': App.forms.openTask(null, el.getAttribute('data-goal') ? { goal_id: el.getAttribute('data-goal') } : null); break;
+      case 'new-task':
+        var td = {};
+        if (el.getAttribute('data-goal')) td.goal_id = el.getAttribute('data-goal');
+        if (App.date.isValid(el.getAttribute('data-day'))) td.due_date = el.getAttribute('data-day');
+        App.forms.openTask(null, td); break;
+      case 'day-shift': ui.day = App.date.addDays(ui.day || App.date.today(), +el.getAttribute('data-dir') || 0); render(); break;
+      case 'day-today': ui.day = ''; render(); break;
+      case 'tt-sort':
+        var sk = el.getAttribute('data-scope') === 'task' ? 'taskSort' : 'agendaSort', key = el.getAttribute('data-key');
+        ui[sk] = { key: key, dir: ui[sk].key === key ? -ui[sk].dir : 1 };
+        render();
+        var again = view.querySelector('[data-action="tt-sort"][data-key="' + key + '"]');
+        if (again) again.focus();
+        break;
+      case 'rem-hide': setReminder([id], ui.day || App.date.today()); break;
+      case 'rem-show': setReminder(String(el.getAttribute('data-ids') || '').split(','), ''); break;
       case 'metric-add': addMetric(id); break;
       case 'new-habit': App.forms.openHabit(null, el.getAttribute('data-goal') ? { goal_id: el.getAttribute('data-goal') } : null); break;
       case 'edit-habit': var hb = App.store.get().habits.find(function (x) { return x.id === id; }); if (hb) App.forms.openHabit(hb); break;
       case 'habit-tick': toggleHabit(id, el.getAttribute('data-date'), el); break;
       case 'habit-view': ui.habitView = el.getAttribute('data-view'); ui.habitShift = 0; writePref('lp_habit_view', ui.habitView); render(); break;
       case 'habit-shift': ui.habitShift = Math.min(0, (ui.habitShift || 0) + (+el.getAttribute('data-dir') || 0)); render(); break;
-      case 'rev-type': ui.revType = el.getAttribute('data-type'); ui.revValue = ''; writePref('lp_review_type', ui.revType); render(); break;
+      case 'rev-type': ui.revType = el.getAttribute('data-type'); ui.revValue = ''; ui.revChart = App.summary.GRAN_DEFAULT[ui.revType] || 'day'; writePref('lp_review_type', ui.revType); render(); break;
       case 'rev-shift':
         var rcur = App.summary.current(ui.revType, App.date.today());
         var rv = App.summary.shift(ui.revType, ui.revValue || rcur, +el.getAttribute('data-dir') || 0);
         ui.revValue = rv > rcur ? rcur : rv; render(); break;
       case 'rev-chart': ui.revChart = el.getAttribute('data-chart'); writePref('lp_review_chart', ui.revChart); render(); break;
       case 'rev-open': ui.revType = el.getAttribute('data-type'); ui.revValue = el.getAttribute('data-value'); render(); window.scrollTo(0, 0); break;
-      case 'task-sort': ui.taskSort = el.getAttribute('data-sort'); render(); break;
-      case 'task-reset': ui.taskFilter = { status: 'open', priority: '', goal: '', due: '' }; render(); break;
+      case 'task-reset': ui.taskFilter = { status: 'open', priority: '', goal: '', due: '', quad: '', from: '', to: '' }; render(); break;
       case 'go': go(el.getAttribute('data-href')); break;
       case 'reload': reload(); break;
     }
@@ -274,6 +306,7 @@ App.app = (function () {
   view.addEventListener('change', function (e) {
     var el = e.target;
     if (el.name === 'period-value') { ui.periodValue = el.value; render(); }
+    else if (el.name === 'agenda-day') { if (App.date.isValid(el.value)) { ui.day = el.value === App.date.today() ? '' : el.value; render(); } }
     else if (el.getAttribute && el.getAttribute('data-filter')) { ui.taskFilter[el.getAttribute('data-filter')] = el.value; render(); }
   });
   view.addEventListener('submit', function (e) {
@@ -287,7 +320,7 @@ App.app = (function () {
 
   document.getElementById('btn-settings').addEventListener('click', function () { App.forms.openSettings(); });
 
-  // Chọn hình nền: hoa bay nhẹ hoặc trơn
+  // Chọn hình nền: hoa rơi hoặc trơn
   var bgBtn = document.getElementById('btn-bg'), bgPop = document.getElementById('bg-pop');
   function syncBg() {
     var mode = App.flowers.getBg();

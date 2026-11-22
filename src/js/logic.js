@@ -16,10 +16,10 @@ App.C = {
   TOP3_MAX: 3,
   COLUMNS: {
     Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
-    Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon'],
+    Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time'],
     Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
     HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
-    Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at']
+    Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from']
   },
   // Tên sheet -> khóa trong state
   TABLES: { Goals: 'goals', Tasks: 'tasks', Habits: 'habits', HabitLogs: 'habitLogs', Reviews: 'reviews' }
@@ -104,6 +104,7 @@ App.period = (function () {
   var D = App.date, pad = function (n) { return App.util.pad(n); };
 
   function valueOf(type, dateStr) {
+    if (type === 'Ngày') return String(dateStr).slice(0, 10);
     var d = D.parse(dateStr), y = d.getUTCFullYear(), m = d.getUTCMonth() + 1;
     if (type === 'Năm') return String(y);
     if (type === 'Quý') return y + '-Q' + Math.ceil(m / 3);
@@ -114,6 +115,7 @@ App.period = (function () {
 
   function range(type, value) {
     var v = String(value || ''), m;
+    if (type === 'Ngày') return D.isValid(v) && v.length === 10 ? { start: v, end: v } : null;
     if (type === 'Năm' && (m = /^(\d{4})$/.exec(v))) {
       return { start: m[1] + '-01-01', end: m[1] + '-12-31' };
     }
@@ -133,6 +135,7 @@ App.period = (function () {
 
   function label(type, value) {
     var v = String(value || ''), m;
+    if (type === 'Ngày') return 'Ngày ' + D.fmt(v);
     if (type === 'Năm') return 'Năm ' + v;
     if (type === 'Quý' && (m = /^(\d{4})-Q(\d)$/.exec(v))) return 'Q' + m[2] + '/' + m[1];
     if (type === 'Tháng' && (m = /^(\d{4})-(\d{2})$/.exec(v))) return 'Tháng ' + m[2] + '/' + m[1];
@@ -289,7 +292,7 @@ App.logic = {
         if (have[id] || !L.ruleMatches(tpl.recurring_rule, d)) continue;
         have[id] = true;
         out.push(L.newTask({
-          id: id, title: tpl.title, goal_id: tpl.goal_id, due_date: d, priority: tpl.priority, icon: tpl.icon,
+          id: id, title: tpl.title, goal_id: tpl.goal_id, due_date: d, due_time: tpl.due_time || L.DEFAULT_TIME, priority: tpl.priority, icon: tpl.icon,
           parent_recurring_id: tpl.id
         }));
       }
@@ -441,10 +444,49 @@ App.logic = {
     return imp && urg ? 1 : imp ? 2 : urg ? 3 : 4;
   },
   QUADRANTS: {
-    1: { label: 'Khẩn cấp', icon: 'flame', hint: 'Quan trọng và khẩn cấp', act: 'Xử lý ngay lập tức' },
-    2: { label: 'Lên lịch', icon: 'calendar', hint: 'Quan trọng, không khẩn cấp', act: 'Lập kế hoạch, đặt thời hạn rõ ràng' },
-    3: { label: 'Xử lý sau', icon: 'hourglass', hint: 'Khẩn cấp, không quan trọng', act: 'Giao người khác hoặc xử lý nhanh' },
-    4: { label: 'Xem xét', icon: 'refresh', hint: 'Không quan trọng, không khẩn cấp', act: 'Cắt giảm hoặc bỏ nếu không phục vụ mục tiêu' }
+    1: { label: 'Khẩn cấp', short: 'Khẩn cấp', icon: 'flame', hint: 'Quan trọng và khẩn cấp', act: 'Việc cần làm ngay' },
+    2: { label: 'Làm sau', short: 'Làm sau', icon: 'calendar', hint: 'Quan trọng, chưa khẩn cấp', act: 'Sắp phải làm, đưa vào lịch' },
+    3: { label: 'Làm trong ngày / Nhượng quyền', short: 'Trong ngày', icon: 'hourglass', hint: 'Khẩn cấp, không quan trọng', act: 'Làm nhanh trong ngày hoặc nhờ người khác' },
+    4: { label: 'Dời hôm sau', short: 'Dời', icon: 'refresh', hint: 'Không quan trọng, không khẩn cấp', act: 'Dời lại hoặc bỏ qua' }
+  },
+
+  /* Agenda theo ngày (GĐ5). Mọi việc có ngày + giờ hạn, giờ mặc định 17:00. */
+  DEFAULT_TIME: '17:00',
+  isTime: function (v) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || '')); },
+  // Khóa sắp xếp theo ngày rồi giờ; việc không có hạn xếp cuối
+  dueKey: function (t) {
+    return t.due_date ? t.due_date + ' ' + (App.logic.isTime(t.due_time) ? t.due_time : '23:59') : '9999';
+  },
+  doneDay: function (t) { return String(t.done_at || '').slice(0, 10); },
+  /* Việc của ngày D: hạn đúng ngày D (kể cả lần lặp), quá hạn (hạn trước D) mà chưa xong tính đến D, và việc đã xong trong ngày D.
+     Lần lặp quá hạn chỉ hiện ở đúng ngày của nó, không kéo sang các ngày sau (xem isMissed). */
+  dayList: function (tasks, day) {
+    var L = App.logic;
+    return tasks.filter(function (t) {
+      if (L.isTemplate(t)) return false;
+      var dd = L.isDone(t) ? L.doneDay(t) : '';
+      if (dd === day) return true;
+      if (!t.due_date) return false;
+      if (t.due_date === day) return true;
+      var openAtDay = !L.isDone(t) || (dd && dd > day);
+      return t.due_date < day && openAtDay && !t.parent_recurring_id;
+    }).sort(function (a, b) { var x = L.dueKey(a), y = L.dueKey(b); return x < y ? -1 : x > y ? 1 : L.priorityRank(a.priority) - L.priorityRank(b.priority); });
+  },
+  // Trạng thái đến hạn so với ngày D: over (hạn trước D), due (hạn ngày D), later (hạn sau D hoặc chưa có hạn)
+  dueState: function (t, day) { return !t.due_date || t.due_date > day ? 'later' : t.due_date < day ? 'over' : 'due'; },
+  // Việc đã xong tính đến hết ngày D
+  doneBy: function (t, day) { var d = App.logic.doneDay(t); return App.logic.isDone(t) && (!d || d <= day); },
+  // Số liệu biểu đồ tổng quan của ngày D
+  dayStats2: function (list, day) {
+    var L = App.logic, s = { total: list.length, done: 0, due: {}, quad: {} };
+    ['over', 'due', 'later'].forEach(function (k) { s.due[k] = { done: 0, open: 0 }; s.quad[k] = [0, 0, 0, 0]; });
+    list.forEach(function (t) {
+      var k = L.dueState(t, day), done = L.doneBy(t, day);
+      if (done) s.done++;
+      s.due[k][done ? 'done' : 'open']++;
+      s.quad[k][L.quadrant(t, day) - 1]++;
+    });
+    return s;
   },
 
   // Mức quan trọng của mục tiêu: 1 đến 3 trái tim, để trống thì coi là 2
@@ -519,7 +561,7 @@ App.logic = {
   newTask: function (fields) {
     var now = App.util.now();
     var t = {
-      id: App.util.uuid(), title: '', goal_id: '', due_date: App.date.today(), priority: 'Trung bình',
+      id: App.util.uuid(), title: '', goal_id: '', due_date: App.date.today(), due_time: App.logic.DEFAULT_TIME, priority: 'Trung bình',
       status: 'Cần làm', is_top3: 'FALSE', top3_date: '', recurring_rule: '', parent_recurring_id: '',
       done_at: '', note: '', created_at: now, updated_at: now, icon: ''
     };
@@ -540,13 +582,54 @@ App.logic = {
   }
 };
 
-/* Tổng kết tuần / tháng (chốt GĐ4):
+/* Tổng kết ngày / tuần / tháng / năm (chốt GĐ4, mở rộng GĐ5):
+   - Tỷ lệ hoàn thành: việc có hạn trong kỳ (đến hôm nay) đã xong / tổng số việc đó.
    - Việc đã xong: việc (không tính việc lặp mẫu) có done_at trong kỳ.
    - % đúng hạn: trong số việc xong trong kỳ có hạn chót, bao nhiêu % xong không muộn hơn hạn.
    - % trung bình mục tiêu: các mục tiêu không Tạm dừng có thời gian chạm vào kỳ, % tính tại cuối kỳ (kỳ đang diễn ra: hôm nay). */
 App.summary = (function () {
   var D = App.date, P = App.period;
-  var TYPES = ['Tuần', 'Tháng'];
+  var TYPES = ['Ngày', 'Tuần', 'Tháng', 'Năm'];
+  // Gộp biểu đồ: không lớn hơn kỳ. Kỳ Ngày thì xem 7 ngày tính đến ngày đó.
+  var GRANS = { 'Ngày': ['day'], 'Tuần': ['day'], 'Tháng': ['day', 'week'], 'Năm': ['day', 'week', 'month'] };
+  var GRAN_DEFAULT = { 'Ngày': 'day', 'Tuần': 'day', 'Tháng': 'day', 'Năm': 'month' };
+
+  /* Tỷ lệ hoàn thành theo mốc: trong số việc có hạn rơi vào mốc, bao nhiêu việc đã xong.
+     Tính cả lần lặp bỏ lỡ (chưa xong). Mốc sau hôm nay để trống. */
+  function rate(state, start, end, gran, today) {
+    var L = App.logic, map = {}, list = [];
+    for (var d = start; d <= end; d = D.addDays(d, 1)) {
+      var key = gran === 'month' ? d.slice(0, 7) : gran === 'week' ? D.isoWeek(d).year + '-' + D.isoWeek(d).week : d;
+      var b = map[key];
+      if (!b) { b = map[key] = { key: key, start: d, end: d, due: 0, done: 0, week: D.isoWeek(d).week }; list.push(b); }
+      b.end = d;
+    }
+    state.tasks.forEach(function (t) {
+      if (L.isTemplate(t) || !D.isValid(t.due_date) || t.due_date < start || t.due_date > end || t.due_date > today) return;
+      for (var i = 0; i < list.length; i++) {
+        if (t.due_date <= list[i].end) { list[i].due++; if (L.isDone(t)) list[i].done++; break; }
+      }
+    });
+    return list.map(function (b) {
+      b.future = b.start > today;
+      b.pct = b.due ? Math.round(b.done / b.due * 100) : null;
+      return b;
+    });
+  }
+
+  // Tổng kết thói quen trong kỳ: số ngày cần làm (đến hôm nay, từ ngày tạo), số ngày đã tick
+  function habitSum(state, start, end, today) {
+    var L = App.logic;
+    return state.habits.map(function (h) {
+      var done = L.habitDone(h, state.habitLogs), need = 0, did = 0;
+      var from = String(h.created_at || '').slice(0, 10);
+      for (var d = start; d <= end && d <= today; d = D.addDays(d, 1)) {
+        if ((D.isValid(from) && d < from) || !L.isHabitDay(h, d)) continue;
+        need++; if (done[d]) did++;
+      }
+      return { habit: h, need: need, did: did, pct: need ? Math.round(did / need * 100) : null, streak: L.habitStreak(h, state.habitLogs, today) };
+    }).filter(function (x) { return x.need || x.did; });
+  }
 
   function current(type, today) { return P.valueOf(type, today); }
   // Kỳ liền trước / liền sau
@@ -588,8 +671,15 @@ App.summary = (function () {
       last.end = x.date; last.n += x.n; if (!x.future) last.future = false;
     });
 
+    var dueAll = 0, dueDone = 0;
+    tasks.forEach(function (t) {
+      if (!D.isValid(t.due_date) || t.due_date < r.start || t.due_date > r.end || t.due_date > today) return;
+      dueAll++; if (L.isDone(t)) dueDone++;
+    });
     return {
       type: type, value: value, start: r.start, end: r.end,
+      dueAll: dueAll, dueDone: dueDone, ratePct: dueAll ? Math.round(dueDone / dueAll * 100) : null,
+      habits: habitSum(state, r.start, r.end, today),
       doneCount: done.length, onTime: onTime, withDue: withDue.length,
       onTimePct: withDue.length ? Math.round(onTime / withDue.length * 100) : null,
       goals: goals, avg: goals.length ? avg : null, days: days, weeks: weeks
@@ -600,5 +690,5 @@ App.summary = (function () {
     return reviews.find(function (x) { return x.period_type === type && x.period_value === value; }) || null;
   }
 
-  return { TYPES: TYPES, current: current, shift: shift, build: build, findReview: findReview };
+  return { TYPES: TYPES, GRANS: GRANS, GRAN_DEFAULT: GRAN_DEFAULT, current: current, shift: shift, build: build, rate: rate, habitSum: habitSum, findReview: findReview };
 })();

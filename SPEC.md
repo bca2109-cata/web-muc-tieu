@@ -66,6 +66,37 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
   - Chốt GĐ4 (22/11/2026): kỳ là tuần ISO (thứ Hai đến Chủ nhật) hoặc tháng dương lịch, lùi được về kỳ trước. Việc đã xong = việc có `done_at` trong kỳ. % đúng hạn = trong các việc xong trong kỳ có hạn chót, phần xong không muộn hơn hạn (việc không có hạn không tính). % trung bình mục tiêu = trung bình % của các mục tiêu không Tạm dừng có thời gian chạm vào kỳ, tính tại cuối kỳ (kỳ đang diễn ra thì tính đến hôm nay): theo task đếm task đã có và đã xong đến ngày đó, theo thói quen đếm ngày đến ngày đó; theo chỉ số dùng số hiện tại, nếu mục tiêu sửa sau kỳ thì đánh dấu * (Sheet không lưu lịch sử chỉ số). Biểu đồ đường theo ngày; xem tháng thì chọn được gộp theo tuần. Biểu đồ % mục tiêu là cột đứng, xếp theo nhóm, nhiều cột thì vuốt ngang trong khung. Review lưu mỗi kỳ một dòng Reviews (`period_type` Tuần/Tháng, `period_value` như kỳ của mục tiêu).
   - Nhập JSON (chốt GĐ4): thay toàn bộ dữ liệu (cả Sheet), hỏi trước và tự tải bản sao lưu dữ liệu hiện tại về máy trước khi thay. Chế độ tối chọn trong Cài đặt: Theo máy / Sáng / Tối.
 
+### 4.5 Giai đoạn 5: góp ý sau khi dùng thử (chốt 22/11/2026)
+Phần này thay thế các chỗ tương ứng ở mục 4.1 đến 4.4 và mục 5 khi khác nhau.
+
+**Tab Agenda** (đổi tên từ "Hôm nay", vẫn là tab mặc định)
+- Có nút lùi / tiến ngày và nút về hôm nay: xem được hôm qua, hôm nay, ngày mai (và các ngày khác).
+- Việc của một ngày D = việc có hạn đúng ngày D + việc quá hạn (hạn trước D, tính đến 23:59 ngày D-1) chưa xong tính đến D + việc đã xong trong ngày D.
+- Mọi việc có ngày và giờ hạn. Thêm nhanh bằng Enter thì điền sẵn ngày đang xem và giờ mặc định 17:00, sửa được. Danh sách mặc định xếp theo ngày rồi giờ.
+- Bảng việc: bấm tiêu đề cột để sắp xếp theo cột đó (tăng / giảm), ở mọi cột.
+- Biểu đồ tổng quan của ngày đang xem:
+  - Trạng thái hoàn thành: Xong / Chưa xong.
+  - Trạng thái đến hạn (thanh ngang xếp chồng, mỗi hàng chia Xong / Chưa xong): Quá hạn, Đến hạn (hạn ngày D), Chưa đến hạn (hạn sau ngày D, đã xong sớm).
+  - Mức độ quan trọng (thanh ngang xếp chồng, mỗi hàng chia 4 ô ma trận): Quá hạn, Đến hạn, Chưa đến hạn.
+- Ma trận 4 ô đổi tên và bố cục giống ảnh mẫu người dùng gửi (trục Quan trọng / Không quan trọng và Khẩn cấp / Không khẩn cấp có mũi tên): Khẩn cấp (quan trọng + khẩn cấp, làm ngay), Làm sau (quan trọng, chưa khẩn cấp, đưa vào lịch), Làm trong ngày / Nhượng quyền (khẩn cấp, không quan trọng), Dời hôm sau (không quan trọng, không khẩn cấp). Giữ màu --q1 đến --q4 hiện tại.
+- Top 3 chỉ hiện khi xem hôm nay. Thói quen hiện theo ngày đang xem (ngày tương lai không tick được).
+- Lời nhắc: "Cần chú ý gì cho hôm sau" của review ngày D hiện rõ ở đầu Agenda ngày D+1. Phần "Chưa tốt" và "Kỳ sau ưu tiên" của review tuần / tháng hiện ở Agenda mọi ngày của kỳ kế tiếp. Mỗi lời nhắc có nút Ẩn: ẩn ở ngày X thì từ ngày X trở đi không hiện nữa; có chỗ để hiện lại.
+
+**Thứ tự tab**: Agenda, Task, Mục tiêu, Thói quen, Tổng kết.
+
+**Tab Task**: bộ lọc Trạng thái hoàn thành, Trạng thái đến hạn (Quá hạn / Đến hạn hôm nay / Chưa đến hạn), Mức độ quan trọng (= ưu tiên Cao / Trung bình / Thấp), Mức độ khẩn cấp (= 4 ô ma trận), Mục tiêu, Ngày đến hạn (chọn khoảng ngày từ - đến).
+
+**Thói quen**: xem Tuần (7 ngày) / Tháng / Năm. Chuỗi streak có icon ngọn lửa nổi bật.
+
+**Tổng kết**: kỳ Ngày / Tuần / Tháng / Năm. Bên dưới chọn gộp biểu đồ theo Ngày / Tuần / Tháng (không lớn hơn kỳ). Biểu đồ đường mượt "Tỷ lệ hoàn thành" = việc đã xong / việc có hạn trong từng mốc. Thêm phần tổng kết thói quen (tỷ lệ tick từng thói quen trong kỳ).
+- Review ngày: mức hài lòng, "Cần chú ý gì cho hôm sau?", "Hôm nay có gì muốn chia sẻ?".
+- Review tuần / tháng: giữ 3 câu cũ, thêm mức hài lòng.
+- Mức hài lòng chọn 1 đến 5, hiện bằng bông hoa: 1 héo rũ, 5 nở tươi.
+
+**Nền**: hoa rơi chuyển động, nhiều hoa hơn, nhiều màu hơn, dày hơn. Máy bật "giảm chuyển động" thì hoa đứng yên.
+
+**Dữ liệu** (thêm cột cuối sheet, không đổi tên cột cũ): Tasks thêm `due_time` (HH:mm). Reviews thêm `rating` (1-5) và `hide_from` (ngày bắt đầu ẩn lời nhắc, trống = đang hiện). Review ngày lưu `period_type` = "Ngày", `period_value` = yyyy-mm-dd; `next` = cần chú ý cho hôm sau, `good` = chia sẻ. Apps Script tự thêm cột còn thiếu vào cuối dòng tiêu đề.
+
 ## 5. Màn hình
 
 | Tab | Nội dung chính |
@@ -161,6 +192,7 @@ Tên web: **LIFE PLANNER**. Chi tiết đầy đủ (vai trò từng màu, cỡ 
 | **2** | Tiến độ theo chỉ số, lọc theo kỳ, task lặp lại, cảnh báo trễ hạn và tiến độ chậm, tab Task, nút "Thêm task đầy đủ" | |
 | **3** | Thói quen, streak, tab Thói quen | |
 | **4** | Tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA | |
+| **5** | Góp ý sau khi dùng thử (22/11/2026), xem mục 4.5 | |
 
 ## 9. Tiêu chí hoàn thành mỗi giai đoạn
 
