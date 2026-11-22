@@ -205,7 +205,10 @@ Góp ý sau khi dùng thử, quyết định ghi ở SPEC mục 4.5.
 ### Duyệt Giai đoạn 5 (22/11/2026)
 - Người dùng duyệt GĐ5 cùng lúc duyệt kế hoạch GĐ6. Dòng "hhh" ở Tasks: người dùng tự xóa.
 
-### Giai đoạn 6: đã làm (22/11/2026)
+### Giai đoạn 6: XONG (22/11/2026, người dùng cho duyệt tự động sau khi kiểm)
+Đã triển khai Apps Script Phiên bản 4, đã chuyển cột Sheet thật, đã xóa dòng "Uống đủ 2 lít nước". Web thật mở được, không lỗi console. Chưa kiểm được lưu thật từ web (cần mã bí mật trên máy người dùng): việc tự tạo sheet Interruptions và Settings sẽ xảy ra ở lần lưu đầu.
+
+#### Chi tiết đã làm
 Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: việc Công việc về kho lúc 17:30, việc buổi tối giữ tới hết ngày; báo ngay khi đặt vượt quỹ; ngày thường 5h15 giờ làm + 1h30 buổi tối, cuối tuần 1 quỹ 4h; hạn chót có giờ là tùy chọn.
 - **Dữ liệu**: Tasks thêm `do_date`, `duration_min`, `is_important`, `parent_id`, `first_step`, `defer_count`, `inbox_since` (thêm ở cuối, không đổi tên cột cũ). Sheet mới `Interruptions` và `Settings` (1 dòng `id = main`). `Code.gs` tự tạo sheet còn thiếu.
 - **Kho việc**: việc chưa có Ngày sẽ làm nằm trong kho. Tab Task có nút Kho, sắp theo lâu nhất / dời nhiều / quan trọng, lọc mục tiêu. Mỗi tuần một lần nhắc "Xem lại kho" (giữ, chia nhỏ, đặt ngày, bỏ).

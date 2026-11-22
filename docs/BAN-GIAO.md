@@ -2,53 +2,8 @@
 
 Đọc file này trước, rồi chỉ mở thêm file nào thật sự cần. Chi tiết yêu cầu ở `SPEC.md`, quy tắc giao diện ở `DESIGN.md`, lịch sử ở `docs/TIEN-DO.md`.
 
-## 0. VIỆC ĐANG DỞ (GĐ6), phiên mới làm tiếp từ đây
-Người dùng đã duyệt kế hoạch GĐ6 và cách chuyển dữ liệu. Code GĐ6 đã viết xong, **chưa commit, chưa đẩy, Sheet thật chưa chuyển dữ liệu**. Mọi thay đổi đang nằm trong thư mục làm việc (`git status`).
-
-Đã xong:
-- Code GĐ6 (chi tiết ở TIEN-DO mục "Giai đoạn 6: đã làm"). Phiên bản `?v=gd6c`, sw `lp-gd6c`.
-- Tài liệu: TIEN-DO, BAN-GIAO, HUONG-DAN-TRIEN-KHAI, DESIGN đã cập nhật.
-- Kiểm thử: `tests-qa/flow-gd6.js` 0 FAIL. `tests-qa/qa-lifeplanner.js` 297 PASS, 0 FAIL ở lần chạy của qa-tester. spec-reviewer và qa-tester đã chạy song song, không có lỗi Cao về code.
-- Sau kiểm tra đã sửa:
-  - Xem lại kho đặt ngày: báo vượt quỹ, chặn ngày đã qua (`forms.js`, hàm `inboxReview`).
-  - Việc lặp từ 2 giờ trở lên bị chặn trong form.
-  - Chip thêm nhanh và tên việc trong Kế hoạch đủ 44px; ô giờ "Nhắc xem lại kho" rộng hơn (cuối `style.css`).
-  - "Đưa về kho" khi đột xuất có nút Hoàn tác.
-  - Nhãn quỹ "Còn" đổi thành "Chưa xong"; nhãn đọc màn hình "Top 3" đổi thành "3 việc chính".
-  - Chọn lặp rồi bỏ lặp thì xóa hạn chót đã tự điền.
-  - Thông báo lỗi lưu (Thử lại) không bị che mất (`ui.js`, `store.js`).
-  - Câu vượt quỹ khi thêm việc hôm nay.
-  - Bài thử fail=1 chờ 5,6 giây.
-
-CẬP NHẬT (22/11/2026, sau bước 3): đã kiểm thử đạt (297 PASS, 0 FAIL, qa-tester đạt), đã ghi lỗi Thấp vào TIEN-DO, đã commit `33a5c8d` và đẩy `main`. Đã triển khai Apps Script Phiên bản 4 (link giữ nguyên). Đã sao lưu Sheet ("Quản lý mục tiêu - sao lưu trước GĐ6 - 22-11-2026"). Đã ghi cột P..W của Tasks cho dòng 3..29 (đã đọc lại kiểm). **Còn lại**: xóa dòng 22 "Uống đủ 2 lít nước" (hệ thống chặn xóa dòng, chờ người dùng cho phép hoặc tự xóa); Sheet Interruptions và Settings tự tạo ở lần lưu đầu từ web; mở web thật kiểm; báo người dùng, chờ duyệt GĐ6. Các bước 1 đến 5 và bước 6 (phần ghi cột) bên dưới đã xong.
-
-Còn phải làm, theo thứ tự:
-1. Chạy lại `node --check` cho mọi file JS và `tests-qa/flow-gd6.js`. Chạy nền `qa-lifeplanner.js` (hơn 3 phút), cần 0 FAIL. Chạy lại qa-tester một lần cho các mục vừa sửa (quy trình mục 6).
-2. Ghi lỗi Thấp còn lại vào TIEN-DO, mục GĐ6, phần "Kết quả kiểm tra GĐ6":
-   - Đổi thứ tự bằng nút lên/xuống, không kéo thả.
-   - Việc cha hiện "x/y việc con", không hiện %.
-   - Thanh quỹ ghi "/ quỹ trừ đột xuất".
-   - Việc về kho chỉ chạy khi mở hoặc tải lại web.
-   - Ô lọc 40px.
-   - Hình trang trí có mã màu viết thẳng (có từ trước).
-   - "(quỹ 4h )" có khoảng trắng thừa.
-3. Commit `Giai đoạn 6: lập kế hoạch ngày (kho, quỹ giờ, kế hoạch hôm nay, chia nhỏ, đột xuất)`, kèm dòng `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Push `main`.
-4. Cập nhật Apps Script qua Chrome (cách làm ở mục 3), tạo Phiên bản mới. Lấy Code.gs từ `raw.githubusercontent.com/bca2109-cata/web-muc-tieu/<commit>/apps-script/Code.gs`, dán bằng `monaco.editor.getModels()[0].pushEditOperations`, rồi Ctrl+S. Editor: https://script.google.com/home/projects/15J2aWqExBogtct11IXwPsu-a0i4uWZYaL_ewV57k_cieVA_W0i9IPfKt/edit. **Không chạy `caiDat`, `xemMaBiMat`, `doiMaBiMat`** (chúng in mã bí mật ra log).
-5. **Sao lưu Sheet trước khi đổi dữ liệu**: dùng Drive `copy_file`, đặt tên "Quản lý mục tiêu - sao lưu trước GĐ6 - 22-11-2026".
-6. Chuyển dữ liệu Sheet thật bằng kết nối Google Sheets, ghi kiểu RAW:
-   - Tasks hiện có cột A..O, chưa có `due_time`. Thêm tiêu đề vào cuối, theo thứ tự `logic.js` `App.C.COLUMNS.Tasks`: `due_time`, `do_date`, `duration_min`, `is_important`, `parent_id`, `first_step`, `defer_count`, `inbox_since`. Đọc dòng 1 trước để chắc chắn.
-   - Giá trị cho dòng 3..29:
-     - `is_important` = TRUE cho 8 việc ưu tiên Cao, còn lại FALSE.
-     - `duration_min` = 30, `defer_count` = 0.
-     - Việc chưa xong: `do_date` trống, `inbox_since` = 2026-11-22.
-   - Xóa dòng việc "Uống đủ 2 lít nước" (id c63eb9c5-a87d-4922-a2d5-07fbbcabfef5).
-   - Sheet Interruptions và Settings: Code.gs tự tạo ở lần lưu đầu, hoặc tạo tay theo cột trong `App.C.COLUMNS`.
-   - Đọc lại để kiểm.
-7. Mở web thật để kiểm, rồi báo người dùng bằng tiếng Việt (ngắn, bấm vào đâu). Dừng chờ duyệt GĐ6. Duyệt xong thì đánh dấu GĐ6 "Xong" trong TIEN-DO và xóa mục 0 này.
-
-Ghi chú kỹ thuật:
-- Bash heredoc có dấu nháy hay lỗi. Viết script bằng Write vào scratchpad rồi chạy bằng node.
-- `'\n'` trong chuỗi patch bị thành xuống dòng thật, từng làm hỏng `app.js`.
+## 0. Việc đang dở
+Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sheet thật đã chuyển. Một điều chưa kiểm: lưu thật từ web (cần mã bí mật của người dùng) và việc tự tạo sheet Interruptions, Settings ở lần lưu đầu. Nếu lỗi, chạy `caiDat` thủ công? KHÔNG: hỏi người dùng (hàm in mã bí mật). Chờ người dùng đưa góp ý GĐ7 nếu có.
 
 ## 1. Đang ở đâu
 - Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). Giai đoạn 2: xong (duyệt 22/11/2026). **Giai đoạn 3** (thói quen, streak, tab Thói quen): xong, duyệt 22/11/2026.
@@ -56,7 +11,7 @@ Ghi chú kỹ thuật:
 **Giai đoạn 4** (tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA): xong, kể cả xử lý giới hạn.
 
 **Giai đoạn 5** (góp ý sau dùng thử, SPEC mục 4.5: Agenda theo ngày, biểu đồ mới, ma trận 2 trục, lời nhắc review, lọc Task, xem Năm, Tổng kết 4 kỳ, hoa rơi): đã duyệt 22/11/2026. `Code.gs` đổi (thêm `ensureColumns_`), Claude đã triển khai Phiên bản 3 qua Chrome (22/11/2026), link giữ nguyên. Cột mới tự thêm vào Sheet ở lần lưu đầu tiên.
-**Giai đoạn 6** (Lập kế hoạch ngày, SPEC mục 4.6: kho việc, quỹ giờ, kế hoạch hôm nay, thời lượng, chia nhỏ, đột xuất, ma trận theo Quan trọng do người dùng đánh dấu): đã làm, chờ người dùng duyệt. Code.gs đổi (cột mới cho Tasks, sheet Interruptions và Settings).
+**Giai đoạn 6** (Lập kế hoạch ngày, SPEC mục 4.6: kho việc, quỹ giờ, kế hoạch hôm nay, thời lượng, chia nhỏ, đột xuất, ma trận theo Quan trọng do người dùng đánh dấu): đã xong (duyệt 22/11/2026). Code.gs đổi (cột mới cho Tasks, sheet Interruptions và Settings).
 - Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
 - Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
 - Mặt trời mặt cười: người dùng chốt **giữ**.
