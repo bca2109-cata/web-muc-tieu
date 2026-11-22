@@ -200,6 +200,9 @@ Góp ý sau khi dùng thử, quyết định ghi ở SPEC mục 4.5.
   - Có thêm review kỳ Năm (SPEC chỉ nêu Ngày / Tuần / Tháng). Lời nhắc chỉ lấy từ review ngày, tuần, tháng.
   - Bộ lọc Task giữ thêm "Chưa có hạn", "Lần lặp bỏ lỡ", "Cần làm", "Đang làm" từ giai đoạn trước.
 
+### Duyệt Giai đoạn 5 (22/11/2026)
+- Người dùng duyệt GĐ5 cùng lúc duyệt kế hoạch GĐ6. Dòng "hhh" ở Tasks: người dùng tự xóa.
+
 ## Câu hỏi chờ người dùng
 - (chưa có)
 

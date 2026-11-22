@@ -41,7 +41,7 @@
 - ID `1_zdutUcr7DnRLUm5SFWd959af_h2zZTg700jxPmEK9c`, tên "Quản lý mục tiêu - dữ liệu". Claude đọc ghi qua kết nối Google Sheets.
 - Cột đều để dạng chữ (ngày giữ `yyyy-mm-dd`), `target`/`actual` dạng số. Khi ghi bằng kết nối, ghi kiểu RAW để ngày không bị đổi thành số. Đọc lại ô để kiểm.
 - Cột mới nhất: Goals P = `importance`, Tasks O = `icon`, Tasks P = `due_time` (GĐ5), Reviews I = `rating`, J = `hide_from` (GĐ5, Apps Script tự thêm khi ghi lần đầu). Không đổi tên cột nếu chưa hỏi người dùng.
-- Dữ liệu thử: Goals dòng 2 đến 4 (3 mục tiêu), Tasks dòng 3 đến 29 (27 task), tất cả có `note` = "Dữ liệu thử". Tasks dòng 2 ("hhh") là của người dùng, **không xóa**.
+- Dữ liệu thử: Goals dòng 2 đến 4 (3 mục tiêu), Tasks dòng 3 đến 29 (27 task), tất cả có `note` = "Dữ liệu thử". Tasks dòng 2 ("hhh") người dùng đã tự xóa (22/11/2026), dòng 2 đang trống.
 
 ## 6. Kiểm thử
 - Mỗi giai đoạn gọi `spec-reviewer` và `qa-tester` **cùng một lượt** (song song), không sửa code trong lúc chờ. Sửa lỗi Cao và Trung bình, ghi lỗi Thấp vào TIEN-DO, chạy lại qa một lần rồi báo.
