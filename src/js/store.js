@@ -21,6 +21,7 @@ App.store = (function () {
 
   function emit() { listeners.forEach(function (fn) { fn(state); }); }
   function status() {
+    if (failed && navigator.onLine === false) return { kind: 'error', text: 'Mất mạng, sẽ lưu khi có mạng', error: lastError };
     if (failed) return { kind: 'error', text: 'Chưa lưu', error: lastError };
     if (queue.length) return { kind: 'saving', text: 'Đang lưu…' };
     return { kind: 'saved', text: 'Đã lưu' };
@@ -52,6 +53,8 @@ App.store = (function () {
         App.forms.openSettings('Mã bí mật không đúng hoặc chưa nhập. Dán lại mã rồi bấm Lưu và kết nối.');
         return;
       }
+      // Mất mạng: chỉ báo ở dòng trạng thái, có mạng lại thì tự lưu tiếp
+      if (navigator.onLine === false) return;
       App.ui.toast('Chưa lưu được vào Google Sheet. ' + lastError + '.', { actionLabel: 'Thử lại', action: retry, sticky: true });
     });
   }
@@ -108,6 +111,7 @@ App.store = (function () {
     upsert: function (table, row) { commit([{ type: 'upsert', table: table, row: row }]); },
     remove: function (table, id) { commit([{ type: 'delete', table: table, id: id }]); },
     batch: function (ops) { if (ops.length) commit(ops); },
+    refreshStatus: emitStatus,
     retry: retry
   };
 })();

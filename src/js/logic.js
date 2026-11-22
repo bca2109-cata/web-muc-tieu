@@ -184,6 +184,32 @@ App.logic = {
     var pct = total ? Math.round(done / total * 100) : 0;
     return { mode: 'task', done: done, total: total, pct: pct };
   },
+  /* Tiến độ tính tại một ngày đã qua (cuối kỳ trong tab Tổng kết).
+     Theo task: task đã có vào ngày đó (lần lặp tính theo hạn, task khác theo ngày tạo), xong khi done_at không muộn hơn ngày đó.
+     Theo thói quen: các ngày cần làm đến hết ngày đó.
+     Theo chỉ số: Sheet không lưu lịch sử, nên lấy giá trị hiện tại; nếu mục tiêu được sửa sau ngày đó thì đánh dấu approx. */
+  goalProgressAt: function (goal, tasks, asOf) {
+    var L = App.logic, D = App.date;
+    if (goal.progress_mode === 'habit') {
+      var st = App.store && App.store.get ? App.store.get() : {};
+      return L.habitProgress(goal, st.habits || [], st.habitLogs || [], asOf, true);
+    }
+    if (goal.progress_mode === 'metric') {
+      var p = L.goalProgress(goal, tasks), upd = String(goal.updated_at || '').slice(0, 10);
+      p.approx = !D.isValid(upd) || upd > asOf;
+      return p;
+    }
+    var mine = tasks.filter(function (t) {
+      if (t.goal_id !== goal.id || L.isTemplate(t)) return false;
+      var born = t.parent_recurring_id ? t.due_date : String(t.created_at || '').slice(0, 10);
+      return !D.isValid(born) || born <= asOf;
+    });
+    var done = mine.filter(function (t) {
+      var d = String(t.done_at || '').slice(0, 10);
+      return t.status === App.C.DONE && (!D.isValid(d) || d <= asOf);
+    }).length;
+    return { mode: 'task', done: done, total: mine.length, pct: mine.length ? Math.round(done / mine.length * 100) : 0 };
+  },
   // Đọc số từ Sheet (có thể là chữ, có dấu phẩy thập phân)
   num: function (v) {
     var n = parseFloat(String(v == null ? '' : v).replace(',', '.'));
@@ -299,7 +325,8 @@ App.logic = {
     }
     return { current: run, best: best };
   },
-  habitProgress: function (goal, habits, logs, today) {
+  // closed = true: ngày "today" là ngày đã qua (tính tiến độ tại cuối một kỳ cũ), ngày đó chưa tick cũng tính
+  habitProgress: function (goal, habits, logs, today, closed) {
     var L = App.logic, D = App.date, done = 0, total = 0, n = 0;
     habits.forEach(function (h) {
       if (h.goal_id !== goal.id) return;
@@ -310,7 +337,7 @@ App.logic = {
       var to = D.isValid(goal.end_date) && goal.end_date < today ? goal.end_date : today;
       for (var d = from; d <= to; d = D.addDays(d, 1)) {
         if (!L.isHabitDay(h, d)) continue;
-        if (m[d]) { done++; total++; } else if (on && d !== today) total++;
+        if (m[d]) { done++; total++; } else if (on && (closed || d !== today)) total++;
       }
     });
     return { mode: 'habit', done: done, total: total, habits: n, pct: total ? Math.min(100, Math.round(done / total * 100)) : 0 };
@@ -516,7 +543,7 @@ App.logic = {
 /* Tổng kết tuần / tháng (chốt GĐ4):
    - Việc đã xong: việc (không tính việc lặp mẫu) có done_at trong kỳ.
    - % đúng hạn: trong số việc xong trong kỳ có hạn chót, bao nhiêu % xong không muộn hơn hạn.
-   - % trung bình mục tiêu: các mục tiêu không Tạm dừng có thời gian chạm vào kỳ, lấy % hiện tại. */
+   - % trung bình mục tiêu: các mục tiêu không Tạm dừng có thời gian chạm vào kỳ, % tính tại cuối kỳ (kỳ đang diễn ra: hôm nay). */
 App.summary = (function () {
   var D = App.date, P = App.period;
   var TYPES = ['Tuần', 'Tháng'];
@@ -541,7 +568,11 @@ App.summary = (function () {
 
     var goals = state.goals.filter(function (g) {
       return g.status !== 'Tạm dừng' && D.isValid(g.start_date) && D.isValid(g.end_date) && g.start_date <= r.end && g.end_date >= r.start;
-    }).map(function (g) { return { goal: g, pct: L.goalProgress(g, state.tasks).pct }; });
+    }).map(function (g) {
+      var asOf = r.end < today ? r.end : today;
+      var p = asOf === today ? L.goalProgress(g, state.tasks) : L.goalProgressAt(g, state.tasks, asOf);
+      return { goal: g, pct: p.pct, approx: !!p.approx && asOf !== today };
+    });
     var avg = goals.length ? Math.round(goals.reduce(function (a, x) { return a + x.pct; }, 0) / goals.length) : 0;
 
     // Số việc xong theo từng ngày của kỳ (ngày sau hôm nay để trống)

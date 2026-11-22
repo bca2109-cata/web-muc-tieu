@@ -335,6 +335,13 @@ App.app = (function () {
     if (document.visibilityState === 'visible' && loaded && App.store.status().kind === 'saved') reload();
   });
 
+  // Mất mạng / có mạng lại: báo ở dòng trạng thái, có mạng thì lưu phần còn chờ rồi tải dữ liệu mới
+  window.addEventListener('offline', function () { App.store.refreshStatus(); });
+  window.addEventListener('online', function () {
+    if (App.store.status().kind === 'error') App.store.retry();
+    if (loaded) reload();
+  });
+
   function reload() {
     loadError = null;
     if (!loaded) render();
@@ -351,7 +358,9 @@ App.app = (function () {
         App.forms.openSettings(err.code === 'BAD_TOKEN' ? 'Mã bí mật không đúng. Hãy dán lại.' : '');
         return;
       }
-      if (loaded) {
+      if (loaded && navigator.onLine === false) {
+        App.ui.toast('Đang mất mạng, web dùng dữ liệu đã lưu trên máy. Có mạng lại sẽ tự cập nhật.');
+      } else if (loaded) {
         App.ui.toast('Không tải được dữ liệu mới. ' + err.message + '.', { actionLabel: 'Thử lại', action: reload, sticky: true });
       } else {
         loadError = err.message;

@@ -25,13 +25,63 @@ App.backup = (function () {
     return counts(data);
   }
 
+  /* Kiểm định dạng từng ô: ngày phải là yyyy-mm-dd, các cột chọn từ danh sách phải đúng giá trị tiếng Việt.
+     Ô sai thì sửa về giá trị an toàn (ngày để trống, lựa chọn về mặc định) và đếm lại để báo trước khi nhập. */
+  var DATE_COLS = { Goals: ['start_date', 'end_date'], Tasks: ['due_date', 'top3_date', 'done_at'], HabitLogs: ['date'] };
+  function choiceCols() {
+    var C = App.C;
+    return {
+      Goals: { group: [C.GROUPS.map(function (g) { return g.key; }), 'Công việc'], period_type: [C.PERIOD_TYPES, 'Tháng'],
+        progress_mode: [['task', 'metric', 'habit'], 'task'], status: [C.GOAL_STATUS, 'Đang làm'], importance: [['1', '2', '3'], '2'] },
+      Tasks: { priority: [C.PRIORITY, 'Trung bình'], status: [C.TASK_STATUS, 'Cần làm'], is_top3: [['TRUE', 'FALSE'], 'FALSE'] },
+      Habits: { active: [['TRUE', 'FALSE'], 'TRUE'] },
+      HabitLogs: { done: [['TRUE', 'FALSE'], 'FALSE'] }
+    };
+  }
+  function clean(table, row, issues) {
+    (DATE_COLS[table] || []).forEach(function (c) {
+      var v = row[c];
+      if (!v) return;
+      // Ngày đúng yyyy-mm-dd; riêng done_at cho phép kèm giờ phía sau
+      var head = v.slice(0, 10), rest = v.slice(10);
+      if (App.date.isValid(head) && (!rest || (c === 'done_at' && rest.charAt(0) === ' '))) return;
+      issues.push(table + ' "' + (row.name || row.title || row.id) + '": ' + c + ' = "' + v + '"');
+      row[c] = '';
+    });
+    var ch = choiceCols()[table] || {};
+    Object.keys(ch).forEach(function (c) {
+      var v = row[c];
+      if (c === 'is_top3' || c === 'active' || c === 'done') v = row[c] = String(v).toUpperCase();
+      if (v === '' && c !== 'status' && c !== 'group') { row[c] = ch[c][1]; return; }
+      if (ch[c][0].indexOf(v) >= 0) return;
+      issues.push(table + ' "' + (row.name || row.title || row.id) + '": ' + c + ' = "' + v + '"');
+      row[c] = ch[c][1];
+    });
+    // Chỉ tiêu và thực tế của mục tiêu phải là số
+    if (table === 'Goals') ['target', 'actual'].forEach(function (c) {
+      var v = row[c].replace(',', '.');
+      if (v === '' || isFinite(+v)) { row[c] = v; return; }
+      issues.push(table + ' "' + (row.name || row.id) + '": ' + c + ' = "' + row[c] + '"');
+      row[c] = '';
+    });
+    // Kỳ phải khớp loại kỳ (mục tiêu: Năm/Quý/Tháng/Tuần, review: Tuần/Tháng)
+    if ((table === 'Goals' || table === 'Reviews') && !App.period.range(row.period_type, row.period_value)) {
+      issues.push(table + ' "' + (row.name || row.id) + '": kỳ = "' + row.period_type + ' ' + row.period_value + '"');
+      if (table === 'Goals') { row.period_type = 'Tháng'; row.period_value = App.period.valueOf('Tháng', App.date.isValid(row.start_date) ? row.start_date : App.date.today()); }
+      else row.drop = true;
+    }
+    // Ngày tick hoặc review không dùng được thì bỏ cả dòng
+    if (table === 'HabitLogs' && (!row.date || !row.habit_id)) row.drop = true;
+    if (table === 'Reviews' && App.summary.TYPES.indexOf(row.period_type) < 0) row.drop = true;
+  }
+
   // Đọc file sao lưu. Chỉ giữ các cột đã biết, dòng phải có id. Sai định dạng thì báo lỗi.
   function parse(text) {
     var obj;
     try { obj = JSON.parse(text); } catch (e) { throw new Error('File không đọc được. Hãy chọn đúng file .json đã xuất từ Life Planner.'); }
     var src = obj && typeof obj === 'object' && obj.data && typeof obj.data === 'object' ? obj.data : obj;
     if (!src || typeof src !== 'object') throw new Error('File không phải bản sao lưu của Life Planner.');
-    var db = {}, found = 0;
+    var db = {}, found = 0, issues = [];
     Object.keys(TABLES).forEach(function (t) {
       var key = TABLES[t], cols = App.C.COLUMNS[t], list = src[key];
       if (list === undefined) { db[key] = []; return; }
@@ -43,11 +93,14 @@ App.backup = (function () {
         if (!r || typeof r !== 'object' || !r.id) return;
         var row = {};
         cols.forEach(function (c) { row[c] = r[c] === null || r[c] === undefined ? '' : (typeof r[c] === 'object' ? '' : String(r[c])); });
+        clean(t, row, issues);
+        if (row.drop) return;
         if (seen[row.id] !== undefined) db[key][seen[row.id]] = row;
         else { seen[row.id] = db[key].length; db[key].push(row); }
       });
     });
     if (!found) throw new Error('File không phải bản sao lưu của Life Planner.');
+    Object.defineProperty(db, 'issues', { value: issues, enumerable: false });
     return db;
   }
 
@@ -65,7 +118,8 @@ App.backup = (function () {
       var now = counts(App.store.get()), next = counts(db);
       var where = App.api.mode === 'sheet' ? 'trên web và trong Google Sheet' : 'trong bản mẫu trên trình duyệt này';
       var empty = !(next.goals + next.tasks + next.habits + next.habitLogs + next.reviews);
-      App.ui.ask('Nhập dữ liệu từ file', 'File "' + file.name + '" ' + (empty ? 'không có dữ liệu nào, nhập vào thì web sẽ trống. ' : 'có ' + countText(next) + '. ') + 'Toàn bộ dữ liệu hiện tại ' + where +
+      App.ui.ask('Nhập dữ liệu từ file', 'File "' + file.name + '" ' + (empty ? 'không có dữ liệu nào, nhập vào thì web sẽ trống. ' : 'có ' + countText(next) + '. ') + (db.issues.length ? 'Có ' + db.issues.length + ' ô sai định dạng sẽ được sửa về giá trị mặc định hoặc để trống (ví dụ ' + db.issues.slice(0, 2).join('; ') + '). ' : '') +
+        'Toàn bộ dữ liệu hiện tại ' + where +
         ' (' + countText(now) + ') sẽ bị thay bằng nội dung file. Trước khi thay, web tự tải một file sao lưu bản hiện tại về máy.', [
         { label: 'Thay toàn bộ', value: 'yes', kind: 'danger' }, { label: 'Hủy', value: null }
       ]).then(function (v) {

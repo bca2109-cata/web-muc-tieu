@@ -56,7 +56,7 @@ Chế độ tối (làm ở Giai đoạn 4): giữ tên biến, đổi giá tr�
 - **Bảng tác vụ**: tick, Việc (tên + mục tiêu và "Đang làm" ở dòng nhỏ), Hạn, Ưu tiên, Ô ma trận. Vạch trái theo ô ma trận. Điện thoại ẩn cột Ưu tiên, ô ma trận chỉ còn icon.
 - **Ô chọn ngày**: dưới ô có dòng nhỏ ghi ngày kiểu Việt Nam (`.date-read`), vì ô chọn ngày hiện theo ngôn ngữ trình duyệt.
 - **Mốc bề ngang**: 560px (ma trận 2 cột, bảng hiện đủ cột), 620px, 900px (2 cột tab Hôm nay).
-- **Ngoại lệ màu viết thẳng**: `src/favicon.svg` (file riêng, không dùng được biến), hình mặt trời và hoa trang trí (màu cố định).
+- **Ngoại lệ màu viết thẳng**: `src/favicon.svg` và icon trong `src/icons/` (file riêng, không dùng được biến), hình mặt trời và hoa trang trí (màu cố định), màu nền trong `manifest.json` và thẻ `theme-color` của `index.html` (trình duyệt đọc trước khi có CSS; sau khi tải, web tự đổi theo `--bg`).
 - **Thẻ mục tiêu**: băng dính washi sọc theo màu nhóm, sticker icon nhóm xoay nghiêng, nhãn kỳ, nhãn "Còn N ngày", trái tim, thanh tiến độ có sọc chéo, câu trạng thái ("Cần tăng tốc", "Sắp tới đích", "Đạt rồi, giỏi quá!").
 - **Nút**: chính (nền accent, chữ trắng, bóng đặc), phụ (nền trắng, viền accent nhạt), nguy hiểm (chữ đỏ). Nút nào cũng có icon.
 - **Thông báo**: viên thuốc màu `--ink`, chữ trắng, ở đáy màn hình. Thông báo chúc mừng có 2 bông hoa phía trước.

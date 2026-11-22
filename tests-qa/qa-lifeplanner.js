@@ -417,7 +417,7 @@ async function small(p, sel, min, label) {
     ok('Tổng kết ' + type + ': số việc xong = ' + exp.done, st[0] === String(exp.done), st.join(' | '));
     ok('Tổng kết ' + type + ': % đúng hạn', st[1] === (exp.onPct === null ? '–' : exp.onPct + '%'), st[1] + ' vs ' + exp.onPct);
     ok('Tổng kết ' + type + ': % TB mục tiêu', st[2] === (exp.avg === null ? '–' : exp.avg + '%'), st[2] + ' vs ' + exp.avg);
-    ok('Tổng kết ' + type + ': số thanh mục tiêu = ' + exp.n, await p.locator('.gbar').count() === exp.n);
+    ok('Tổng kết ' + type + ': số thanh mục tiêu = ' + exp.n, await p.locator('.gcol').count() === exp.n);
     await layoutChecks(p, 'Tổng kết ' + type);
   }
   await p.fill('#rv-good', 'Làm đều tay'); await p.click('[data-form="review"] button[type="submit"]'); await p.waitForTimeout(300);

@@ -72,13 +72,15 @@ App.views.charts = (function () {
       var n = items.filter(function (x) { return x.goal.group === k; }).length;
       return '<li><i style="background:var(' + GROUP_VAR[k] + ')"></i>' + esc(k) + ' <span class="num">' + n + '</span></li>';
     }).join('') + '</ul>';
-    return legend + '<ul class="gbars">' + items.map(function (x) {
+    // Biểu đồ cột đứng: mỗi cột một mục tiêu, nhiều mục tiêu thì vuốt ngang trong khung
+    return legend + '<div class="gcols-wrap"><ul class="gcols">' + items.map(function (x) {
       var g = x.goal, c = GROUP_VAR[g.group] || '--muted', m = App.comp.groupMeta(g.group);
-      return '<li><button type="button" class="gbar" data-action="open-goal" data-id="' + esc(g.id) + '" data-tip="' + esc(g.name + ': ' + x.pct + '%') + '">' +
-        '<span class="gbar-name">' + App.ui.icon(m.icon, 'ic14') + '<span>' + esc(g.name) + '</span></span>' +
-        '<span class="gbar-row"><span class="gbar-track"><span class="gbar-fill" style="width:' + x.pct + '%;background:var(' + c + ')"></span></span>' +
-        '<span class="num gbar-val">' + x.pct + '%</span></span></button></li>';
-    }).join('') + '</ul>';
+      var tip = g.name + ': ' + x.pct + '%' + (x.approx ? ' (số hiện tại)' : '');
+      return '<li><button type="button" class="gcol" data-action="open-goal" data-id="' + esc(g.id) + '" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">' +
+        '<span class="num gcol-val">' + x.pct + '%' + (x.approx ? '<sup>*</sup>' : '') + '</span>' +
+        '<span class="gcol-track"><span class="gcol-fill" style="height:' + x.pct + '%;background:var(' + c + ')"></span></span>' +
+        '<span class="gcol-name">' + App.ui.icon(m.icon, 'ic14') + '<span>' + esc(g.name) + '</span></span></button></li>';
+    }).join('') + '</ul></div>';
   }
 
   // Chú thích nổi khi rê chuột hoặc chạm vào biểu đồ
@@ -173,7 +175,8 @@ App.views.review = function (state, ui) {
   html += '<section class="block" aria-labelledby="rv-bars"><h2 class="sec-title" id="rv-bars">' + fl('tulip', 24, 6) + '<span>Tiến độ mục tiêu</span>' +
     (s.goals.length ? '<span class="badge num">' + s.goals.length + '</span>' : '') + '</h2>' +
     (s.goals.length
-      ? '<div class="card chart-card">' + Ch.goalBars(s.goals) + '<p class="hint">' + icon('sparkle', 'ic14') + 'Mục tiêu có thời gian chạm vào kỳ này, trừ mục tiêu Tạm dừng. Số % là tiến độ hiện tại. Bấm vào để mở mục tiêu.</p></div>'
+      ? '<div class="card chart-card">' + Ch.goalBars(s.goals) + '<p class="hint">' + icon('sparkle', 'ic14') + 'Mục tiêu có thời gian chạm vào kỳ này, trừ mục tiêu Tạm dừng. Số % tính đến ' + (s.end < today ? 'cuối kỳ' : 'hôm nay') + '. Bấm vào cột để mở mục tiêu.' +
+        (s.goals.some(function (x) { return x.approx; }) ? ' Dấu * là mục tiêu theo chỉ số đã cập nhật sau kỳ này, đang hiện số hiện tại.' : '') + '</p></div>'
       : App.views.emptyCard('Không có mục tiêu nào trong ' + P.label(type, value) + '.', 'Mục tiêu có ngày bắt đầu đến ngày kết thúc chạm vào kỳ này sẽ hiện ở đây.')) +
     '</section></div>';
 

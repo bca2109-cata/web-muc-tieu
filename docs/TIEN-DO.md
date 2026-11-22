@@ -159,7 +159,17 @@
   - `replaceAll_` ghi dữ liệu mới trước rồi mới xóa dòng thừa, lỡ bị ngắt giữa chừng không bị trống Sheet.
   - Nhập file không có dòng nào thì hộp thoại báo rõ "web sẽ trống".
   - Bỏ mã màu dự phòng viết thẳng trong `App.theme`. Biểu đồ đường co được tới 220px (màn 320px).
-- Ghi nhận, chưa sửa (Thấp):
+- Người dùng yêu cầu xử lý hết giới hạn (22/11/2026). Đã làm:
+  - Claude cập nhật Apps Script qua Chrome: dán Code.gs mới, triển khai Phiên bản 2, link web app giữ nguyên.
+  - % mục tiêu trong Tổng kết tính tại cuối kỳ (`logic.goalProgressAt`). Theo chỉ số không có lịch sử: hiện số hiện tại kèm dấu * khi mục tiêu sửa sau kỳ.
+  - Biểu đồ % mục tiêu đổi sang cột đứng.
+  - Mất mạng: dòng trạng thái báo "Mất mạng, sẽ lưu khi có mạng", không hiện thông báo lỗi; có mạng lại tự lưu phần chờ và tải dữ liệu mới.
+  - Chế độ tối: nút đang chọn dùng màu hồng, thông báo nổi nền tối (`--sel-*`, `--toast-*`). Logo và tên task có vùng bấm 44px. Màn 320px hết cuộn ngang (`overflow-x:clip`, nhãn mục tiêu co theo khung).
+  - Nhập JSON kiểm ngày yyyy-mm-dd và các giá trị chọn (nhóm, kỳ, trạng thái, ưu tiên...); ô sai được báo trước và sửa về mặc định hoặc để trống.
+  - Mã màu trong manifest và theme-color ghi vào danh sách ngoại lệ của DESIGN.md.
+  - Kiểm lại (spec-reviewer 7/7, qa-tester đạt, 245 PASS). Sửa thêm: nhập JSON bỏ dòng ngày tick sai ngày và review sai loại kỳ, kiểm chỉ tiêu/thực tế là số, kỳ khớp loại kỳ, ngày phải đúng 10 ký tự; chữ logo co nhỏ ở màn 320px để không đè nút. qa-tester xác nhận lại: đạt.
+  - Ghi nhận (Thấp): dấu * của mục tiêu theo chỉ số dựa vào updated_at của cả dòng, nên sửa tên mục tiêu sau kỳ cũng hiện *. Hai khối biến chế độ tối (theo máy, chọn tay) giống hệt nhau, sửa màu tối phải sửa cả hai.
+- Ghi nhận cũ (đã xử lý ở trên, giữ để tra lại):
   - Chế độ tối: nút đang chọn của bộ chuyển (Tuần/Tháng, chip lọc) và thông báo dùng nền `--ink` nên sáng màu. Đây là kiểu đảo màu có chủ ý, chữ vẫn đọc tốt.
   - Chữ logo LIFE PLANNER cao 40px ở 390px; nút tên task trong chi tiết mục tiêu cao 32px (cả hàng vẫn trên 44px).
   - Tab Hôm nay ở màn 320px dư 8px cuộn ngang (hoa trang trí và nhãn mục tiêu). SPEC chỉ yêu cầu 390px, ở 390px không bị.
