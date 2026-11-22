@@ -139,6 +139,11 @@
   - (Thấp) `goalProgress` đọc thẳng store để lấy thói quen.
   - (Thấp) Ngày bắt đầu theo dõi lấy 10 ký tự đầu của `created_at`, phụ thuộc múi giờ lúc tạo.
   - Thói quen mới tạo vẫn tick bù được các ngày trước ngày tạo (đúng quyết định "tick bù mọi ngày đã qua").
+- qa-tester chạy lại sau khi sửa: đạt, 0 lỗi.
+
+### Duyệt Giai đoạn 3 (22/11/2026)
+- Người dùng trả lời "ok".
+- **Giai đoạn 3 xong, duyệt 22/11/2026.**
 
 ## Câu hỏi chờ người dùng
 - (chưa có)
