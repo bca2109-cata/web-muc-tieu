@@ -63,6 +63,8 @@ Cấu trúc: **Mục tiêu → Task**. Mỗi mục tiêu có một kỳ: **Năm 
 - Biểu đồ đường: số task xong theo ngày hoặc theo tuần.
 - Biểu đồ cột: % tiến độ từng mục tiêu, nhóm theo màu.
 - Ô ghi chú review 3 câu: "Làm tốt gì?", "Chưa tốt gì?", "Kỳ sau ưu tiên gì?". Lưu lại theo kỳ để xem lại được.
+  - Chốt GĐ4 (22/11/2026): kỳ là tuần ISO (thứ Hai đến Chủ nhật) hoặc tháng dương lịch, lùi được về kỳ trước. Việc đã xong = việc có `done_at` trong kỳ. % đúng hạn = trong các việc xong trong kỳ có hạn chót, phần xong không muộn hơn hạn (việc không có hạn không tính). % trung bình mục tiêu = trung bình % hiện tại của các mục tiêu không Tạm dừng có thời gian chạm vào kỳ. Biểu đồ đường theo ngày; xem tháng thì chọn được gộp theo tuần. Biểu đồ % mục tiêu là thanh ngang, xếp theo nhóm. Review lưu mỗi kỳ một dòng Reviews (`period_type` Tuần/Tháng, `period_value` như kỳ của mục tiêu).
+  - Nhập JSON (chốt GĐ4): thay toàn bộ dữ liệu (cả Sheet), hỏi trước và tự tải bản sao lưu dữ liệu hiện tại về máy trước khi thay. Chế độ tối chọn trong Cài đặt: Theo máy / Sáng / Tối.
 
 ## 5. Màn hình
 

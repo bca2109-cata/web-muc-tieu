@@ -1,0 +1,17 @@
+{
+  "name": "Life Planner",
+  "short_name": "Life Planner",
+  "description": "Quản lý mục tiêu, task và thói quen cá nhân",
+  "lang": "vi",
+  "start_url": "./#/hom-nay",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffafc",
+  "theme_color": "#fffafc",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

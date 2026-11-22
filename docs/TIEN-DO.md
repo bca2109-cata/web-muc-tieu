@@ -145,6 +145,27 @@
 - Người dùng trả lời "ok".
 - **Giai đoạn 3 xong, duyệt 22/11/2026.**
 
+### Giai đoạn 4: đã làm (22/11/2026)
+- Quyết định của người dùng: % trung bình tính mục tiêu có thời gian trùng kỳ; % đúng hạn chỉ tính việc xong có hạn; Nhập JSON thay toàn bộ, hỏi trước; nút chế độ tối trong Cài đặt.
+- **Tab Tổng kết** (`src/js/views/review.js`, `App.summary` trong `logic.js`): chọn Tuần / Tháng, lùi tới kỳ trước; 3 con số (việc đã xong, % đúng hạn, % trung bình mục tiêu); biểu đồ đường việc xong theo ngày (tháng chọn được theo tuần), rê chuột hoặc chạm để xem số, có bảng số liệu; biểu đồ thanh % từng mục tiêu tô màu theo nhóm, có chú thích; review 3 câu lưu theo kỳ và danh sách review đã lưu.
+- **Chế độ tối**: bộ màu tối theo DESIGN.md, theo cài đặt máy hoặc chọn tay trong Cài đặt (lưu trên từng thiết bị). Màu biểu đồ đã chạy kiểm tra mù màu; bản tối có cam và hồng nhạt sáng hơn dải khuyến nghị một chút, bù bằng chú thích và số ghi trực tiếp.
+- **Sao lưu**: Cài đặt có Xuất JSON và Nhập JSON. Nhập thì hỏi lại, tự tải bản hiện tại về máy rồi mới thay. `Code.gs` thêm thao tác `replaceAll` (cần cập nhật Apps Script theo hướng dẫn).
+- **PWA**: `manifest.json`, `sw.js` (trang chính lấy bản mới trên mạng trước, CSS/JS dùng bản đã lưu theo số phiên bản), icon 192/512/maskable/apple. Mở được khi mạng chập chờn; dữ liệu Sheet vẫn cần mạng.
+
+### Kết quả kiểm tra GĐ4
+- spec-reviewer: 12/13 đạt. qa-tester: đạt, 245 PASS, 0 FAIL, 0 lỗi console. Không có lỗi Cao hay Trung bình. qa-tester chạy lại sau khi sửa: đạt.
+- Đã sửa (Thấp):
+  - Chế độ tối: nhãn tab đang chọn tương phản 3.2:1. Đổi `--accent-deep` bản tối thành màu sáng hơn (5.2:1).
+  - `replaceAll_` ghi dữ liệu mới trước rồi mới xóa dòng thừa, lỡ bị ngắt giữa chừng không bị trống Sheet.
+  - Nhập file không có dòng nào thì hộp thoại báo rõ "web sẽ trống".
+  - Bỏ mã màu dự phòng viết thẳng trong `App.theme`. Biểu đồ đường co được tới 220px (màn 320px).
+- Ghi nhận, chưa sửa (Thấp):
+  - Chế độ tối: nút đang chọn của bộ chuyển (Tuần/Tháng, chip lọc) và thông báo dùng nền `--ink` nên sáng màu. Đây là kiểu đảo màu có chủ ý, chữ vẫn đọc tốt.
+  - Chữ logo LIFE PLANNER cao 40px ở 390px; nút tên task trong chi tiết mục tiêu cao 32px (cả hàng vẫn trên 44px).
+  - Tab Hôm nay ở màn 320px dư 8px cuộn ngang (hoa trang trí và nhãn mục tiêu). SPEC chỉ yêu cầu 390px, ở 390px không bị.
+  - Nhập JSON chỉ kiểm cột và id, không kiểm định dạng từng giá trị.
+  - meta theme-color và manifest ghi thẳng mã màu nền (không dùng được biến CSS).
+
 ## Câu hỏi chờ người dùng
 - (chưa có)
 

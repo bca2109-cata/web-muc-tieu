@@ -165,3 +165,28 @@ App.ui = (function () {
 
   return { icon: icon, toast: toast, hideToast: hideToast, openModal: openModal, closeModal: closeModal, ask: ask };
 })();
+
+/* Chế độ sáng / tối: "auto" theo cài đặt máy, hoặc chọn tay. Lưu trên từng thiết bị. */
+App.theme = (function () {
+  var KEY = 'lp_theme';
+  function get() { try { var v = localStorage.getItem(KEY); return v === 'light' || v === 'dark' ? v : 'auto'; } catch (e) { return 'auto'; } }
+  function isDark() {
+    var m = get();
+    return m === 'dark' || (m === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function apply() {
+    var m = get(), root = document.documentElement;
+    if (m === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', m);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--bg').trim());
+  }
+  function set(m) {
+    try { if (m === 'auto') localStorage.removeItem(KEY); else localStorage.setItem(KEY, m); } catch (e) { /* bỏ qua */ }
+    apply();
+  }
+  if (window.matchMedia) {
+    var mq = matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', apply);
+  }
+  return { get: get, set: set, apply: apply, isDark: isDark };
+})();

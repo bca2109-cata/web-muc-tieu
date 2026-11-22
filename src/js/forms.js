@@ -406,19 +406,41 @@ App.forms = (function () {
   /* ---------- Cài đặt ---------- */
   function openSettings(reason) {
     var mock = App.api.mode === 'mock';
-    var body = mock
+    var conn = mock
       ? '<p>Đang dùng <strong>dữ liệu mẫu</strong> lưu trên trình duyệt này, chưa kết nối Google Sheet.</p>' +
-        '<div class="modal-foot"><button type="button" class="btn btn-danger" data-act="reset">' + icon('refresh', 'ic18') + 'Khôi phục dữ liệu mẫu</button>' +
-        '<span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Đóng</button></div>'
+        '<button type="button" class="btn btn-danger" data-act="reset">' + icon('refresh', 'ic18') + 'Khôi phục dữ liệu mẫu</button>'
       : (reason ? '<p class="form-error" style="margin:0 0 12px">' + esc(reason) + '</p>' : '') +
         '<p>Dán mã bí mật lấy từ Apps Script. Mỗi thiết bị chỉ cần nhập một lần.</p>' +
         '<form data-form="settings" novalidate><label class="field"><span>' + icon('key', 'ic14') + 'Mã bí mật</span>' +
         '<input class="input num" name="token" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + esc(App.settings.getToken()) + '"></label>' +
         '<p class="form-error" hidden data-err="token"></p>' +
-        '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Đóng</button>' +
-        '<button type="submit" class="btn btn-primary">' + icon('cloud', 'ic18') + 'Lưu và kết nối</button></div></form>';
+        '<button type="submit" class="btn btn-primary">' + icon('cloud', 'ic18') + 'Lưu và kết nối</button></form>';
+    var body = '<section class="set-sec">' + conn + '</section>' +
+      '<section class="set-sec"><h3>' + icon('moon', 'ic18') + 'Giao diện</h3>' +
+      seg('theme', [{ key: 'auto', label: 'Theo máy' }, { key: 'light', label: 'Sáng' }, { key: 'dark', label: 'Tối' }], App.theme.get()) +
+      '<p class="muted set-note">Chỉ đổi trên thiết bị này.</p></section>' +
+      '<section class="set-sec"><h3>' + icon('doc', 'ic18') + 'Sao lưu</h3>' +
+      '<p class="muted set-note">Tải toàn bộ dữ liệu về máy thành một file JSON. Khi cần, nhập lại file này để thay toàn bộ dữ liệu hiện tại.</p>' +
+      '<div class="set-row"><button type="button" class="btn btn-soft" data-act="export">' + icon('down', 'ic18') + 'Xuất JSON</button>' +
+      '<label class="btn btn-soft file-btn">' + icon('up', 'ic18') + 'Nhập JSON<input type="file" accept=".json,application/json" data-act="import" class="sr-only"></label></div></section>' +
+      '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>' + icon('close', 'ic18') + 'Đóng</button></div>';
 
-    var m = App.ui.openModal({ title: mock ? 'Cài đặt' : 'Kết nối Google Sheet', body: body });
+    var m = App.ui.openModal({ title: 'Cài đặt', body: body });
+
+    m.querySelectorAll('input[name="theme"]').forEach(function (r) {
+      r.addEventListener('change', function () { App.theme.set(r.value); });
+    });
+    m.querySelector('[data-act="export"]').addEventListener('click', function () {
+      var c = App.backup.exportFile();
+      App.ui.toast('Đã tải file sao lưu (' + c.goals + ' mục tiêu, ' + c.tasks + ' task).');
+    });
+    m.querySelector('[data-act="import"]').addEventListener('change', function (e) {
+      var file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      App.ui.closeModal();
+      App.backup.importFile(file);
+    });
 
     if (mock) {
       m.querySelector('[data-act="reset"]').addEventListener('click', function () {

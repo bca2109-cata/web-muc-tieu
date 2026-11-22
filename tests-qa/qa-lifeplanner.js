@@ -399,18 +399,35 @@ async function small(p, sel, min, label) {
   ok('Xóa kèm task: task bị xóa theo (' + cnt + ')', (await T(p)).length === nT1 - cnt, (await T(p)).length + '/' + nT1);
   await ctx.close();
 
-  // ===== G. Sắp có
+  // ===== G. Tổng kết: tự tính tay rồi so với màn hình
   ({ ctx, p } = await mk(browser));
-  for (const [tab, h] of [['tong-ket', 'Tổng kết']]) {
-    await pc(p, `.tab[data-tab="${tab}"]`); await p.waitForSelector('.soon-card'); await p.waitForTimeout(150);
-    const tx = await p.innerText('.soon-card');
-    ok('Tab ' + h + ': "sắp có" + nút Về Hôm nay', /sắp có/i.test(tx) && await p.locator('.soon-card a[href="#/hom-nay"]').count() === 1, tx.replace(/\n/g, ' | '));
-    ok('Tab ' + h + ' có nhãn "Sắp có" trên thanh tab', /Sắp có/.test(await p.locator(`.tab[data-tab="${tab}"]`).innerText()));
-    await p.screenshot({ path: SS + '/lp-16-sapco-390.png', fullPage: true });
-    await layoutChecks(p, 'Sắp có ' + h);
-    await p.click('.soon-card a[href="#/hom-nay"]'); await p.waitForTimeout(150);
-    ok('  Nút về Hôm nay hoạt động', await p.locator('#top3-title').count() === 1);
+  await pc(p, '.tab[data-tab="review"]'); await p.waitForSelector('.stats'); await p.waitForTimeout(150);
+  ok('Tab Tổng kết không còn nhãn "Sắp có"', !/Sắp có/.test(await p.locator('.tab[data-tab="review"]').innerText()));
+  for (const type of ['Tuần', 'Tháng']) {
+    await p.click('[data-action="rev-type"][data-type="' + type + '"]'); await p.waitForTimeout(150);
+    const exp = await p.evaluate(type => {
+      const st = App.store.get(), td = App.date.today(), v = App.period.valueOf(type, td), r = App.period.range(type, v);
+      const done = st.tasks.filter(t => !(t.recurring_rule && !t.parent_recurring_id) && t.status === 'Xong' && t.done_at && t.done_at.slice(0, 10) >= r.start && t.done_at.slice(0, 10) <= r.end);
+      const due = done.filter(t => App.date.isValid(t.due_date)), on = due.filter(t => t.done_at.slice(0, 10) <= t.due_date).length;
+      const gs = st.goals.filter(g => g.status !== 'Tạm dừng' && g.start_date <= r.end && g.end_date >= r.start);
+      const avg = gs.length ? Math.round(gs.reduce((a, g) => a + App.logic.goalProgress(g, st.tasks).pct, 0) / gs.length) : null;
+      return { done: done.length, onPct: due.length ? Math.round(on / due.length * 100) : null, avg, n: gs.length };
+    }, type);
+    const st = await p.$$eval('.stat .stat-big', els => els.map(e => e.innerText.trim()));
+    ok('Tổng kết ' + type + ': số việc xong = ' + exp.done, st[0] === String(exp.done), st.join(' | '));
+    ok('Tổng kết ' + type + ': % đúng hạn', st[1] === (exp.onPct === null ? '–' : exp.onPct + '%'), st[1] + ' vs ' + exp.onPct);
+    ok('Tổng kết ' + type + ': % TB mục tiêu', st[2] === (exp.avg === null ? '–' : exp.avg + '%'), st[2] + ' vs ' + exp.avg);
+    ok('Tổng kết ' + type + ': số thanh mục tiêu = ' + exp.n, await p.locator('.gbar').count() === exp.n);
+    await layoutChecks(p, 'Tổng kết ' + type);
   }
+  await p.fill('#rv-good', 'Làm đều tay'); await p.click('[data-form="review"] button[type="submit"]'); await p.waitForTimeout(300);
+  const rvs = await p.evaluate(() => App.store.get().reviews);
+  ok('Lưu review theo kỳ', rvs.length === 1 && rvs[0].good === 'Làm đều tay' && rvs[0].period_type === 'Tháng', JSON.stringify(rvs));
+  await p.click('[data-action="rev-shift"][data-dir="-1"]'); await p.waitForTimeout(150);
+  ok('Kỳ trước: ô review trống', (await p.inputValue('#rv-good')) === '');
+  await p.click('[data-action="rev-open"]'); await p.waitForTimeout(150);
+  ok('Mở lại review đã lưu', (await p.inputValue('#rv-good')) === 'Làm đều tay');
+  await p.screenshot({ path: SS + '/lp-16-tongket-390.png', fullPage: true });
   await ctx.close();
 
   // ===== H. Lưu lỗi
@@ -454,7 +471,7 @@ async function small(p, sel, min, label) {
   for (const W of [390, 1280]) {
     ({ ctx, p } = await mk(browser, { w: W, h: W === 390 ? 844 : 900 }));
     const L = 'J@' + W + ': ';
-    for (const tab of ['today', 'goals', 'task', 'habits', 'tong-ket']) {
+    for (const tab of ['today', 'goals', 'task', 'habits', 'review']) {
       const sel = '.tab[data-tab="' + tab + '"]';
       if (!(await p.locator(sel).count())) { ok(L + 'tab ' + tab + ' tồn tại', false); continue; }
       let good = true, msg = '';

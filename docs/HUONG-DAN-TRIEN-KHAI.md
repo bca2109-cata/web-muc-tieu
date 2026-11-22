@@ -59,9 +59,20 @@ https://docs.google.com/spreadsheets/d/1_zdutUcr7DnRLUm5SFWd959af_h2zZTg700jxPmE
 
 Chỉ cần khi Claude báo đã đổi `apps-script/Code.gs`. Link web app giữ nguyên.
 
+Giai đoạn 4 (22/11/2026) có đổi Code.gs: thêm phần nhập dữ liệu từ file sao lưu. Chưa cập nhật thì mọi thứ vẫn chạy, chỉ riêng nút **Nhập JSON** báo lỗi.
+
 1. Mở Apps Script (Phần A, bước 2), dán code mới đè lên như bước 4 đến 6.
 2. Bấm **Triển khai** (Deploy) → **Quản lý các bản triển khai** (Manage deployments).
 3. Bấm biểu tượng bút chì, ở ô **Phiên bản** (Version) chọn **Phiên bản mới** (New version) → **Triển khai** (Deploy).
+
+## Sao lưu và khôi phục
+
+- **Xuất**: bấm nút Cài đặt (biểu tượng hai thanh trượt, góc trên phải) → **Xuất JSON**. Máy tải về file `life-planner-sao-luu-<ngày>.json`.
+- **Nhập**: Cài đặt → **Nhập JSON** → chọn file. Web hỏi lại, tự tải một bản sao lưu dữ liệu hiện tại về máy, rồi thay **toàn bộ** dữ liệu (cả trong Google Sheet) bằng nội dung file.
+
+## Chế độ tối
+
+Cài đặt → **Giao diện**: Theo máy (mặc định), Sáng hoặc Tối. Chỉ đổi trên thiết bị đang dùng.
 
 ## Dùng thử bằng dữ liệu mẫu
 

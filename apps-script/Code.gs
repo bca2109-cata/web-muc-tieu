@@ -75,6 +75,15 @@ function doPost(e) {
 function handle_(req) {
   if (req.action === 'ping') return {};
   if (req.action === 'loadAll') return loadAll_();
+  if (req.action === 'replaceAll') {
+    var lk = LockService.getScriptLock();
+    lk.waitLock(30000);
+    try {
+      return replaceAll_(req.db || {});
+    } finally {
+      lk.releaseLock();
+    }
+  }
   if (req.action === 'batch') {
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);
@@ -136,6 +145,33 @@ function applyOp_(op) {
   // Định dạng chữ trước khi ghi để Sheet không tự đổi ngày hay số
   range.setNumberFormats([head.map(function (h) { return numCols.indexOf(h) >= 0 ? '#,##0.##' : '@'; })]);
   range.setValues([values]);
+}
+
+// Nhập từ file sao lưu: thay toàn bộ dữ liệu (giữ dòng tiêu đề), ghi một lượt cho mỗi sheet
+function replaceAll_(db) {
+  var ss = SpreadsheetApp.getActive(), out = {};
+  Object.keys(SHEETS).forEach(function (name) {
+    if (!ss.getSheetByName(name)) throw new Error('Không thấy sheet ' + name + '. Hãy chạy hàm caiDat.');
+  });
+  Object.keys(SHEETS).forEach(function (name) {
+    var sh = ss.getSheetByName(name);
+    var rows = (db[STATE_KEYS[name]] || []).filter(function (r) { return r && r.id; });
+    var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+    var numCols = NUMBER_COLS[name] || [];
+    var last = sh.getLastRow();
+    // Ghi đè dòng mới trước, rồi mới xóa phần dòng cũ còn thừa ở dưới
+    if (rows.length) {
+      if (rows.length + 1 > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows.length + 1 - sh.getMaxRows());
+      var range = sh.getRange(2, 1, rows.length, head.length);
+      var fmt = head.map(function (h) { return numCols.indexOf(h) >= 0 ? '#,##0.##' : '@'; });
+      range.setNumberFormats(rows.map(function () { return fmt; }));
+      range.setValues(rows.map(function (r) { return head.map(function (h) { return toCell_(r[h], numCols.indexOf(h) >= 0); }); }));
+    }
+    if (last > rows.length + 1) sh.getRange(rows.length + 2, 1, last - rows.length - 1, sh.getMaxColumns()).clearContent();
+    out[STATE_KEYS[name]] = rows.length;
+  });
+  SpreadsheetApp.flush();
+  return out;
 }
 
 function findRow_(sh, id) {

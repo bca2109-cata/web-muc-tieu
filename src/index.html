@@ -4,12 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fffafc">
+  <script>try{var lpT=localStorage.getItem('lp_theme');if(lpT==='light'||lpT==='dark')document.documentElement.setAttribute('data-theme',lpT)}catch(e){}</script>
   <title>Life Planner</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Life Planner">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
-  <link rel="stylesheet" href="css/style.css?v=gd3b">
+  <link rel="stylesheet" href="css/style.css?v=gd4b">
 </head>
 <body>
   <div class="bg-flowers" id="bg-flowers" aria-hidden="true"></div>
@@ -58,29 +64,31 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
         <span>Thói quen</span>
       </a>
-      <a class="tab later" href="#/sap-co/tong-ket" data-tab="tong-ket">
+      <a class="tab" href="#/tong-ket" data-tab="review">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V5M16 20v-7M21 20H3"/></svg>
-        <span>Tổng kết</span><small class="soon">Sắp có</small>
+        <span>Tổng kết</span>
       </a>
     </nav>
   </header>
   <main class="main" id="view"></main>
 
-  <script src="js/config.js?v=gd3b"></script>
-  <script src="js/logic.js?v=gd3b"></script>
-  <script src="js/mock-data.js?v=gd3b"></script>
-  <script src="js/api-mock.js?v=gd3b"></script>
-  <script src="js/api-sheet.js?v=gd3b"></script>
-  <script src="js/api.js?v=gd3b"></script>
-  <script src="js/flowers.js?v=gd3b"></script>
-  <script src="js/ui.js?v=gd3b"></script>
-  <script src="js/store.js?v=gd3b"></script>
-  <script src="js/components.js?v=gd3b"></script>
-  <script src="js/views/today.js?v=gd3b"></script>
-  <script src="js/views/goals.js?v=gd3b"></script>
-  <script src="js/views/tasks.js?v=gd3b"></script>
-  <script src="js/views/habits.js?v=gd3b"></script>
-  <script src="js/forms.js?v=gd3b"></script>
-  <script src="js/app.js?v=gd3b"></script>
+  <script src="js/config.js?v=gd4b"></script>
+  <script src="js/logic.js?v=gd4b"></script>
+  <script src="js/mock-data.js?v=gd4b"></script>
+  <script src="js/api-mock.js?v=gd4b"></script>
+  <script src="js/api-sheet.js?v=gd4b"></script>
+  <script src="js/api.js?v=gd4b"></script>
+  <script src="js/flowers.js?v=gd4b"></script>
+  <script src="js/ui.js?v=gd4b"></script>
+  <script src="js/store.js?v=gd4b"></script>
+  <script src="js/components.js?v=gd4b"></script>
+  <script src="js/views/today.js?v=gd4b"></script>
+  <script src="js/views/goals.js?v=gd4b"></script>
+  <script src="js/views/tasks.js?v=gd4b"></script>
+  <script src="js/views/habits.js?v=gd4b"></script>
+  <script src="js/views/review.js?v=gd4b"></script>
+  <script src="js/backup.js?v=gd4b"></script>
+  <script src="js/forms.js?v=gd4b"></script>
+  <script src="js/app.js?v=gd4b"></script>
 </body>
 </html>

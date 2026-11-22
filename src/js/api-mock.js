@@ -37,6 +37,11 @@ App.createMockApi = function (options) {
       return wait({ count: ops.length });
     },
     ping: function () { return wait({}); },
+    replaceAll: function (db) {
+      if (failRate && Math.random() < failRate) return wait(null, true);
+      write(clone(db));
+      return wait({});
+    },
     reset: function () { localStorage.removeItem(KEY); return wait(clone(read())); }
   };
 };

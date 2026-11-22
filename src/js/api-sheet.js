@@ -7,12 +7,12 @@ App.createSheetApi = function (options) {
   var url = options.url;
   var TIMEOUT = 25000;
 
-  function call(action, payload) {
+  function call(action, payload, timeout) {
     var token = App.settings.getToken();
     if (!token) return Promise.reject(Object.assign(new Error('Chưa nhập mã bí mật'), { code: 'NO_TOKEN' }));
     var body = Object.assign({ action: action, token: token }, payload || {});
     var ctrl = window.AbortController ? new AbortController() : null;
-    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, TIMEOUT) : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, timeout || TIMEOUT) : null;
 
     return fetch(url, {
       method: 'POST',
@@ -42,6 +42,8 @@ App.createSheetApi = function (options) {
     mode: 'sheet',
     loadAll: function () { return call('loadAll'); },
     batch: function (ops) { return call('batch', { ops: ops }); },
+    // Thay toàn bộ dữ liệu trong Sheet (nhập từ file sao lưu). Chờ lâu hơn vì ghi nhiều dòng.
+    replaceAll: function (db) { return call('replaceAll', { db: db }, 120000); },
     ping: function () { return call('ping'); }
   };
 };

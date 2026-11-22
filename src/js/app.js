@@ -6,7 +6,8 @@ App.app = (function () {
   var ui = {
     groupFilter: '', periodType: '', periodValue: '', flashId: null, todayView: readPref('lp_today_view', 'matrix'),
     taskFilter: { status: 'open', priority: '', goal: '', due: '' }, taskSort: 'due',
-    habitView: readPref('lp_habit_view', 'week'), habitShift: 0
+    habitView: readPref('lp_habit_view', 'week'), habitShift: 0,
+    revType: readPref('lp_review_type', 'Tuần'), revValue: '', revChart: readPref('lp_review_chart', 'day')
   };
   function readPref(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
   function writePref(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* bỏ qua */ } }
@@ -16,13 +17,12 @@ App.app = (function () {
 
   function route() {
     var h = location.hash || '#/hom-nay';
-    var s = /^#\/sap-co\/(tong-ket)$/.exec(h);
-    if (s) return { tab: s[1], soon: true };
     var m = /^#\/muc-tieu\/(.+)$/.exec(h);
     if (m) return { tab: 'goals', goalId: decodeURIComponent(m[1]) };
     if (h.indexOf('#/muc-tieu') === 0) return { tab: 'goals' };
     if (h.indexOf('#/task') === 0) return { tab: 'task' };
     if (h.indexOf('#/thoi-quen') === 0) return { tab: 'habits' };
+    if (h.indexOf('#/tong-ket') === 0) return { tab: 'review' };
     return { tab: 'today' };
   }
   function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
@@ -32,15 +32,16 @@ App.app = (function () {
     return App.store.get().tasks.filter(function (t) { return App.logic.isTop3Today(t, today); }).length;
   }
 
-  // Giữ chữ đang gõ và vị trí con trỏ khi vẽ lại
+  // Giữ chữ đang gõ và vị trí con trỏ khi vẽ lại (ô của form review chỉ giữ khi vẫn đúng kỳ đó)
+  function inputKey(el) { var f = el.closest('form'); return el.id + '|' + (f && f.getAttribute('data-value') || ''); }
   function snapshotInputs() {
     var snap = {};
-    view.querySelectorAll('input[id]').forEach(function (el) { snap[el.id] = el.value; });
+    view.querySelectorAll('input[id],textarea[id]').forEach(function (el) { snap[inputKey(el)] = el.value; });
     var a = document.activeElement;
     return { values: snap, focus: a && view.contains(a) && a.id ? a.id : null };
   }
   function restoreInputs(s) {
-    Object.keys(s.values).forEach(function (id) { var el = document.getElementById(id); if (el) el.value = s.values[id]; });
+    view.querySelectorAll('input[id],textarea[id]').forEach(function (el) { var k = inputKey(el); if (k in s.values) el.value = s.values[k]; });
     if (s.focus) { var el = document.getElementById(s.focus); if (el) el.focus(); }
   }
 
@@ -51,7 +52,6 @@ App.app = (function () {
       a.classList.toggle('is-active', on);
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    if (r.soon) { view.innerHTML = App.views.soon(r.tab); return; }
     if (!loaded) {
       view.innerHTML = loadError
         ? '<div class="card empty"><p>Không tải được dữ liệu. ' + App.util.esc(loadError) + '</p>' +
@@ -67,11 +67,11 @@ App.app = (function () {
       templates: raw.tasks.filter(App.logic.isTemplate)
     });
     var html;
-    if (r.soon) html = App.views.soon(r.tab);
-    else if (r.tab === 'goals' && r.goalId) html = App.views.goalDetail(state, ui, r.goalId);
+    if (r.tab === 'goals' && r.goalId) html = App.views.goalDetail(state, ui, r.goalId);
     else if (r.tab === 'goals') html = App.views.goals(state, ui);
     else if (r.tab === 'task') html = App.views.tasks(state, ui);
     else if (r.tab === 'habits') html = App.views.habits(state, ui);
+    else if (r.tab === 'review') html = App.views.review(state, ui);
     else html = App.views.today(state, ui);
     view.innerHTML = html;
     restoreInputs(snap);
@@ -186,6 +186,17 @@ App.app = (function () {
     });
   }
 
+  // Lưu ghi chú review của một kỳ (mỗi kỳ một dòng Reviews)
+  function saveReview(form) {
+    var type = form.getAttribute('data-type'), value = form.getAttribute('data-value');
+    var f = { good: form.elements.good.value.trim(), bad: form.elements.bad.value.trim(), next: form.elements.next.value.trim() };
+    var old = App.summary.findReview(App.store.get().reviews, type, value);
+    if (!old && !f.good && !f.bad && !f.next) { App.ui.toast('Hãy viết ít nhất một câu trước khi lưu.'); form.elements.good.focus(); return; }
+    var now = App.util.now();
+    App.store.upsert('Reviews', Object.assign({ id: App.util.uuid(), period_type: type, period_value: value, created_at: now }, old || {}, f));
+    App.ui.toast('Đã lưu review ' + App.period.label(type, value) + '.');
+  }
+
   // Top 3 hôm trước chưa xong: chuyển sang hôm nay
   function carryOverTop3() {
     var today = App.date.today();
@@ -246,6 +257,13 @@ App.app = (function () {
       case 'habit-tick': toggleHabit(id, el.getAttribute('data-date'), el); break;
       case 'habit-view': ui.habitView = el.getAttribute('data-view'); ui.habitShift = 0; writePref('lp_habit_view', ui.habitView); render(); break;
       case 'habit-shift': ui.habitShift = Math.min(0, (ui.habitShift || 0) + (+el.getAttribute('data-dir') || 0)); render(); break;
+      case 'rev-type': ui.revType = el.getAttribute('data-type'); ui.revValue = ''; writePref('lp_review_type', ui.revType); render(); break;
+      case 'rev-shift':
+        var rcur = App.summary.current(ui.revType, App.date.today());
+        var rv = App.summary.shift(ui.revType, ui.revValue || rcur, +el.getAttribute('data-dir') || 0);
+        ui.revValue = rv > rcur ? rcur : rv; render(); break;
+      case 'rev-chart': ui.revChart = el.getAttribute('data-chart'); writePref('lp_review_chart', ui.revChart); render(); break;
+      case 'rev-open': ui.revType = el.getAttribute('data-type'); ui.revValue = el.getAttribute('data-value'); render(); window.scrollTo(0, 0); break;
       case 'task-sort': ui.taskSort = el.getAttribute('data-sort'); render(); break;
       case 'task-reset': ui.taskFilter = { status: 'open', priority: '', goal: '', due: '' }; render(); break;
       case 'go': go(el.getAttribute('data-href')); break;
@@ -259,6 +277,8 @@ App.app = (function () {
     else if (el.getAttribute && el.getAttribute('data-filter')) { ui.taskFilter[el.getAttribute('data-filter')] = el.value; render(); }
   });
   view.addEventListener('submit', function (e) {
+    var rf = e.target.closest('[data-form="review"]');
+    if (rf) { e.preventDefault(); saveReview(rf); return; }
     var form = e.target.closest('[data-form="quick-add"]');
     if (!form) return;
     e.preventDefault();
@@ -302,6 +322,14 @@ App.app = (function () {
 
   App.store.onChange(function () { if (loaded) render(); });
   window.addEventListener('hashchange', function () { render(); window.scrollTo(0, 0); });
+  // Biểu đồ vẽ theo bề ngang màn hình: đổi cỡ thì vẽ lại
+  var resizeTimer = null, lastW = window.innerWidth;
+  window.addEventListener('resize', function () {
+    if (route().tab !== 'review' || window.innerWidth === lastW) return;
+    lastW = window.innerWidth;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(render, 150);
+  });
   // Quay lại trang (ví dụ mở lại tab trên điện thoại): tải dữ liệu mới, có thể đã sửa ở thiết bị khác
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible' && loaded && App.store.status().kind === 'saved') reload();
@@ -335,6 +363,11 @@ App.app = (function () {
   function start() {
     App.flowers.install();
     App.flowers.applyBg();
+    App.theme.apply();
+    // PWA: cài lên màn hình chính, mở được khi mạng chập chờn (chỉ chạy trên https)
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* không có cũng vẫn dùng được */ });
+    }
     if (App.api.mode === 'mock') document.getElementById('banner').hidden = false;
     if (App.store.loadCache()) { loaded = true; render(); }
     else render();

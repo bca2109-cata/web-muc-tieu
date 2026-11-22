@@ -512,3 +512,62 @@ App.logic = {
     return Object.assign(g, fields || {});
   }
 };
+
+/* Tổng kết tuần / tháng (chốt GĐ4):
+   - Việc đã xong: việc (không tính việc lặp mẫu) có done_at trong kỳ.
+   - % đúng hạn: trong số việc xong trong kỳ có hạn chót, bao nhiêu % xong không muộn hơn hạn.
+   - % trung bình mục tiêu: các mục tiêu không Tạm dừng có thời gian chạm vào kỳ, lấy % hiện tại. */
+App.summary = (function () {
+  var D = App.date, P = App.period;
+  var TYPES = ['Tuần', 'Tháng'];
+
+  function current(type, today) { return P.valueOf(type, today); }
+  // Kỳ liền trước / liền sau
+  function shift(type, value, dir) {
+    var r = P.range(type, value);
+    if (!r) return value;
+    return P.valueOf(type, dir < 0 ? D.addDays(r.start, -1) : D.addDays(r.end, 1));
+  }
+
+  function build(state, type, value, today) {
+    var L = App.logic, r = P.range(type, value);
+    var tasks = state.tasks.filter(function (t) { return !L.isTemplate(t); });
+    var done = tasks.filter(function (t) {
+      var d = String(t.done_at || '').slice(0, 10);
+      return L.isDone(t) && D.isValid(d) && d >= r.start && d <= r.end;
+    });
+    var withDue = done.filter(function (t) { return D.isValid(t.due_date); });
+    var onTime = withDue.filter(function (t) { return String(t.done_at).slice(0, 10) <= t.due_date; }).length;
+
+    var goals = state.goals.filter(function (g) {
+      return g.status !== 'Tạm dừng' && D.isValid(g.start_date) && D.isValid(g.end_date) && g.start_date <= r.end && g.end_date >= r.start;
+    }).map(function (g) { return { goal: g, pct: L.goalProgress(g, state.tasks).pct }; });
+    var avg = goals.length ? Math.round(goals.reduce(function (a, x) { return a + x.pct; }, 0) / goals.length) : 0;
+
+    // Số việc xong theo từng ngày của kỳ (ngày sau hôm nay để trống)
+    var byDay = {};
+    done.forEach(function (t) { var d = String(t.done_at).slice(0, 10); byDay[d] = (byDay[d] || 0) + 1; });
+    var days = [];
+    for (var d = r.start; d <= r.end; d = D.addDays(d, 1)) days.push({ date: d, n: byDay[d] || 0, future: d > today });
+    // Gộp theo tuần (tuần cắt theo kỳ, bắt đầu thứ Hai)
+    var weeks = [];
+    days.forEach(function (x) {
+      var wk = D.isoWeek(x.date).week, last = weeks[weeks.length - 1];
+      if (!last || last.week !== wk) weeks.push(last = { week: wk, start: x.date, end: x.date, n: 0, future: true });
+      last.end = x.date; last.n += x.n; if (!x.future) last.future = false;
+    });
+
+    return {
+      type: type, value: value, start: r.start, end: r.end,
+      doneCount: done.length, onTime: onTime, withDue: withDue.length,
+      onTimePct: withDue.length ? Math.round(onTime / withDue.length * 100) : null,
+      goals: goals, avg: goals.length ? avg : null, days: days, weeks: weeks
+    };
+  }
+
+  function findReview(reviews, type, value) {
+    return reviews.find(function (x) { return x.period_type === type && x.period_value === value; }) || null;
+  }
+
+  return { TYPES: TYPES, current: current, shift: shift, build: build, findReview: findReview };
+})();

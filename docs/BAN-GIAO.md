@@ -5,7 +5,7 @@
 ## 1. Đang ở đâu
 - Giai đoạn 0 và 1: xong (GĐ1 duyệt 22/11/2026). Giai đoạn 2: xong (duyệt 22/11/2026). **Giai đoạn 3** (thói quen, streak, tab Thói quen): xong, duyệt 22/11/2026.
 
-**Tiếp theo: Giai đoạn 4** (tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA), chưa bắt đầu.
+**Giai đoạn 4** (tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA): đã làm, đã kiểm tra, chờ người dùng duyệt. Có đổi `Code.gs` (thêm `replaceAll`), người dùng cần cập nhật Apps Script.
 - Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
 - Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
 - Mặt trời mặt cười: người dùng chốt **giữ**.
