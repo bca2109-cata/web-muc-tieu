@@ -20,6 +20,8 @@ Người dùng đã duyệt kế hoạch GĐ6 và cách chuyển dữ liệu. Co
   - Câu vượt quỹ khi thêm việc hôm nay.
   - Bài thử fail=1 chờ 5,6 giây.
 
+CẬP NHẬT (22/11/2026, sau bước 3): đã kiểm thử đạt (297 PASS, 0 FAIL, qa-tester đạt), đã ghi lỗi Thấp vào TIEN-DO, đã commit `33a5c8d` và đẩy `main`. Đã triển khai Apps Script Phiên bản 4 (link giữ nguyên). Đã sao lưu Sheet ("Quản lý mục tiêu - sao lưu trước GĐ6 - 22-11-2026"). Đã ghi cột P..W của Tasks cho dòng 3..29 (đã đọc lại kiểm). **Còn lại**: xóa dòng 22 "Uống đủ 2 lít nước" (hệ thống chặn xóa dòng, chờ người dùng cho phép hoặc tự xóa); Sheet Interruptions và Settings tự tạo ở lần lưu đầu từ web; mở web thật kiểm; báo người dùng, chờ duyệt GĐ6. Các bước 1 đến 5 và bước 6 (phần ghi cột) bên dưới đã xong.
+
 Còn phải làm, theo thứ tự:
 1. Chạy lại `node --check` cho mọi file JS và `tests-qa/flow-gd6.js`. Chạy nền `qa-lifeplanner.js` (hơn 3 phút), cần 0 FAIL. Chạy lại qa-tester một lần cho các mục vừa sửa (quy trình mục 6).
 2. Ghi lỗi Thấp còn lại vào TIEN-DO, mục GĐ6, phần "Kết quả kiểm tra GĐ6":
