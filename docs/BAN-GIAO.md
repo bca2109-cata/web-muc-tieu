@@ -7,7 +7,7 @@
 
 **Giai đoạn 4** (tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA): xong, kể cả xử lý giới hạn.
 
-**Giai đoạn 5** (góp ý sau dùng thử, SPEC mục 4.5: Agenda theo ngày, biểu đồ mới, ma trận 2 trục, lời nhắc review, lọc Task, xem Năm, Tổng kết 4 kỳ, hoa rơi): đã làm, chờ người dùng duyệt. `Code.gs` đổi (thêm `ensureColumns_`), cần triển khai phiên bản mới.
+**Giai đoạn 5** (góp ý sau dùng thử, SPEC mục 4.5: Agenda theo ngày, biểu đồ mới, ma trận 2 trục, lời nhắc review, lọc Task, xem Năm, Tổng kết 4 kỳ, hoa rơi): đã làm, chờ người dùng duyệt. `Code.gs` đổi (thêm `ensureColumns_`), Claude đã triển khai Phiên bản 3 qua Chrome (22/11/2026), link giữ nguyên. Cột mới tự thêm vào Sheet ở lần lưu đầu tiên.
 - Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
 - Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
 - Mặt trời mặt cười: người dùng chốt **giữ**.
