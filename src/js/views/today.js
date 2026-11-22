@@ -1,5 +1,6 @@
-/* Tab Agenda: xem theo ngày (lùi / tiến ngày), lời nhắc từ review, biểu đồ tổng quan, ô thêm nhanh, Top 3 (chỉ hôm nay),
-   thói quen của ngày, việc của ngày (dạng bảng hoặc ma trận 4 ô), sắp đến hạn */
+/* Tab Agenda (GĐ6): xem theo ngày, lời nhắc từ review, Quỹ giờ, Kế hoạch hôm nay (gợi ý buổi sáng), ô thêm nhanh,
+   3 việc chính hôm nay, thói quen của ngày, việc của ngày (Ngày sẽ làm = ngày đó) kèm cảnh báo quá hạn chót, sắp đến hạn,
+   nút nổi "+ Đột xuất". Thống kê của ngày chuyển sang tab Tổng kết (kỳ Ngày). */
 var App = window.App || (window.App = {});
 App.views = App.views || {};
 
@@ -10,16 +11,18 @@ App.views.today = function (state, ui) {
   var isToday = day === today;
   var goalsById = {};
   state.goals.forEach(function (g) { goalsById[g.id] = g; });
-  var ctx = { today: today, day: day, goalsById: goalsById, flashId: ui.flashId, sort: ui.agendaSort, scope: 'agenda' };
+  var ctx = { today: today, day: day, goalsById: goalsById, flashId: ui.flashId, sort: ui.agendaSort, scope: 'agenda',
+    kids: C.kidsMap(state.tasks), order: App.app.planOrder(day) };
 
   var tasks = state.tasks;
   var list = L.dayList(tasks, day);
+  var over = L.overdueList(tasks, day);
   var top3 = isToday ? L.sortTasks(tasks.filter(function (t) { return L.isTop3Today(t, today); })) : [];
   var upcoming = L.upcoming(tasks.filter(function (t) { return !L.isMissed(t, day); }), day);
   var slowGoals = isToday ? state.goals.filter(function (g) { return L.slowInfo(g, state.tasks, today); }) : [];
   var dayShort = '<span class="num">' + D.fmt(day) + '</span>';
 
-  var h = new Date().getHours();
+  var h = +App.date.nowHM().slice(0, 2);
   var hello = !isToday ? 'Agenda' : h < 11 ? 'Chào buổi sáng!' : h < 13 ? 'Chào buổi trưa!' : h < 18 ? 'Chào buổi chiều!' : 'Chào buổi tối!';
   var rel = isToday ? 'Hôm nay' : day === D.addDays(today, -1) ? 'Hôm qua' : day === D.addDays(today, 1) ? 'Ngày mai' : day < today ? 'Ngày đã qua' : 'Ngày sắp tới';
 
@@ -35,6 +38,7 @@ App.views.today = function (state, ui) {
     '</div></section>';
 
   html += App.views.reminders(state, day);
+  if (isToday) html += App.views.inboxBanner(state, ui);
 
   if (slowGoals.length) {
     html += '<section class="card slow-card" aria-labelledby="slow-title"><h2 id="slow-title" class="slow-h">' + icon('alert', 'ic18') +
@@ -45,17 +49,18 @@ App.views.today = function (state, ui) {
           '<span class="slow-fig">đạt <span class="num">' + si.pct + '%</span>, đã qua <span class="num">' + si.time + '%</span> thời gian</span>' + icon('back', 'ic14 flip') + '</button></li>';
       }).join('') + '</ul></section>';
   }
-  html += App.views.overview(L.dayStats2(list, day), isToday ? 'hôm nay' : 'ngày ' + dayShort);
-  html += C.quickAdd('quick-add-today', isToday ? 'Hôm nay mình sẽ làm gì nè?' : 'Thêm việc cho ngày ' + D.fmt(day), '', day);
+  html += App.views.budget(state, day, ui);
+  if (isToday && ui.plan) html += App.views.planPanel(state, ui, ctx);
+  html += C.quickAdd('quick-add-today', isToday ? 'Hôm nay mình sẽ làm gì nè?' : 'Thêm việc cho ngày ' + D.fmt(day), '', day < today ? 'kho' : day);
 
   if (isToday) {
     html += '<section class="block" aria-labelledby="top3-title"><h2 class="sec-title" id="top3-title">' + fl('sakura', 24, 1) +
-      '<span>Top <span class="num">3</span> hôm nay</span><span class="badge num">' + top3.length + '/' + App.C.TOP3_MAX + '</span></h2>' +
+      '<span><span class="num">3</span> việc chính hôm nay</span><span class="badge num">' + top3.length + '/' + App.C.TOP3_MAX + '</span></h2>' +
       '<ul class="notes">' + top3.map(function (t, i) { return C.topNote(t, i, ctx); }).join('') +
       (top3.length < App.C.TOP3_MAX
-        ? '<li class="note empty">' + icon('star', 'ic14') + '<span>' + (top3.length ? 'Còn chỗ trống. ' : '') + 'Bấm ngôi sao ở một việc để đưa lên đây</span></li>'
+        ? '<li class="note empty">' + icon('star', 'ic14') + '<span>' + (top3.length ? 'Còn chỗ trống. ' : '') + 'Bấm Chốt ở Kế hoạch hôm nay, hoặc bấm ngôi sao ở một việc</span></li>'
         : '') + '</ul>' +
-      '<p class="hint">' + icon('sparkle', 'ic14') + 'Lần đầu mở web mỗi ngày, chỗ trống được tự điền bằng việc trễ hạn rồi việc Khẩn cấp. Bấm ngôi sao để đổi.</p></section>';
+      '<p class="hint">' + icon('sparkle', 'ic14') + 'Khi bấm Chốt kế hoạch, 3 việc đầu danh sách được đưa lên đây. Bấm ngôi sao để đổi.</p></section>';
   }
   html += App.views.habitToday(state, day);
 
@@ -67,21 +72,149 @@ App.views.today = function (state, ui) {
     '<button type="button" data-action="today-view" data-view="matrix" aria-pressed="' + (mode === 'matrix') + '"' + (mode === 'matrix' ? ' class="on"' : '') + '>' + icon('grid', 'ic14') + 'Ma trận</button>' +
     '</span></h2>';
 
-  var hint = '<p class="hint">' + icon('sparkle', 'ic14') + 'Gồm việc có hạn ngày này, việc quá hạn chưa xong và việc đã xong trong ngày. ' +
-    (mode === 'matrix' ? 'Quan trọng là ưu tiên Cao, khẩn cấp là quá hạn hoặc hạn đến ngày hôm sau.' : 'Bấm tên cột để sắp xếp.') + '</p>';
+  if (over.length) html += App.views.overdueCard(over, ctx);
+  var hint = '<p class="hint">' + icon('sparkle', 'ic14') + 'Gồm việc có Ngày sẽ làm là ngày này và việc đã xong trong ngày. ' +
+    (mode === 'matrix' ? 'Web tự xếp ô: Quan trọng do bạn đánh dấu, gấp là quá hạn hoặc hạn chót trong 2 ngày tới.' : 'Bấm tên cột để sắp xếp.') + '</p>';
   if (!list.length) {
-    html += App.views.emptyCard(isToday ? 'Hôm nay chưa có việc nào.' : 'Ngày này chưa có việc nào.', 'Gõ tên việc vào ô ở trên rồi bấm Enter để thêm.');
+    html += App.views.emptyCard(isToday ? 'Hôm nay chưa xếp việc nào.' : 'Ngày này chưa xếp việc nào.',
+      isToday ? 'Bấm "Xếp việc hôm nay" ở khung Quỹ giờ, hoặc gõ tên việc vào ô thêm nhanh.' : 'Gõ tên việc vào ô thêm nhanh, chọn ngày này rồi bấm Enter.');
   } else {
     html += hint + (mode === 'matrix' ? C.matrix(list, ctx) : App.views.taskTable(list, ctx));
   }
   html += '</section></div><div class="today-soon">';
   html += '<section class="block" aria-labelledby="soon-title"><h2 class="sec-title" id="soon-title">' + fl('tulip', 24, 6) +
     '<span>Sắp đến hạn</span><span class="badge num">' + upcoming.length + '</span></h2>' +
-    '<p class="hint">' + icon('calendar', 'ic14') + 'Việc chưa xong có hạn từ ' + (isToday ? 'hôm nay' : 'ngày đang xem') + ' đến <span class="num">' + L.SOON_DAYS + '</span> ngày sau đó.</p>' +
+    '<p class="hint">' + icon('calendar', 'ic14') + 'Việc chưa xong có hạn chót từ ' + (isToday ? 'hôm nay' : 'ngày đang xem') + ' đến <span class="num">' + L.SOON_DAYS + '</span> ngày sau đó.</p>' +
     (upcoming.length ? C.taskList(upcoming, ctx) : '<p class="muted soon-none">Chưa có việc nào sắp đến hạn.</p>') + '</section>';
 
   html += '</div></div>';
+  if (isToday) html += '<button type="button" class="intr-fab" data-action="intr-new">' + icon('bolt', 'ic18') + '<span>Đột xuất</span></button>';
   return html;
+};
+
+/* Khung Quỹ giờ của ngày D: thanh "Đã xếp X / Y" cho giờ làm và buổi tối (cuối tuần một quỹ chung),
+   đột xuất đã trừ vào quỹ, cảnh báo quá tải, việc sẽ không kịp (chỉ hôm nay) */
+App.views.budget = function (state, day, ui) {
+  var L = App.logic, P = App.plan, icon = App.ui.icon, esc = App.util.esc, D = App.date;
+  var today = D.today(), isToday = day === today, ld = P.load(state, day), f = L.fmtMin;
+  var rows = ld.buckets.map(function (b) {
+    var open = b.planned - b.done, scale = Math.max(b.cap, b.intr + b.planned, 1);
+    var w = function (m) { return (m / scale * 100).toFixed(1) + '%'; };
+    var aria = b.label + ': đã xếp ' + f(b.planned) + ' trên ' + f(b.avail) + (b.intr ? ', đột xuất ' + f(b.intr) : '') + (b.over > 0 ? ', quá tải ' + b.over + ' phút' : '');
+    return '<div class="bd-row' + (b.over > 0 ? ' is-over' : '') + '">' +
+      '<p class="bd-lbl"><span class="bd-name">' + icon(b.key === 'work' ? 'brief' : b.key === 'evening' ? 'moon' : 'home', 'ic14') + b.label + '</span>' +
+      '<span class="bd-fig">Đã xếp <span class="num">' + f(b.planned) + ' / ' + f(b.avail) + '</span></span></p>' +
+      '<div class="bd-track" role="img" aria-label="' + esc(aria) + '">' +
+      (b.intr ? '<span class="bd-seg bd-intr" style="width:' + w(b.intr) + '"></span>' : '') +
+      (b.done ? '<span class="bd-seg bd-done" style="width:' + w(b.done) + '"></span>' : '') +
+      (open ? '<span class="bd-seg bd-open" style="width:' + w(open) + '"></span>' : '') +
+      '<span class="bd-cap" style="left:' + w(b.cap) + '"></span></div>' +
+      '<p class="bd-sub">' + (b.done ? '<span><i class="bd-key bd-done"></i>Xong <span class="num">' + f(b.done) + '</span></span>' : '') +
+      (open ? '<span><i class="bd-key bd-open"></i>Chưa xong <span class="num">' + f(open) + '</span></span>' : '') +
+      (b.intr ? '<span><i class="bd-key bd-intr"></i>Đột xuất <span class="num">' + f(b.intr) + '</span> (quỹ <span class="num">' + f(b.cap) + '</span>)</span>' : '') +
+      (!b.planned && !b.intr ? '<span>Chưa xếp việc nào</span>' : '') + '</p>' +
+      (b.over > 0 ? '<p class="bd-warn">' + icon('alert', 'ic14') + '<span>Quá tải <span class="num">' + b.over + '</span> phút, hãy dời bớt về kho.</span></p>' : '') +
+      '</div>';
+  }).join('');
+  var intr = ld.intr.length ? '<ul class="bd-intr-list" aria-label="Việc đột xuất trong ngày">' + ld.intr.map(function (x) {
+    return '<li>' + icon('bolt', 'ic14') + '<span class="bd-it">' + esc(x.title || 'Việc đột xuất') + '</span><span class="num">' + f(L.duration(x)) + '</span>' +
+      '<button type="button" class="icon-btn" data-action="intr-del" data-id="' + esc(x.id) + '" aria-label="Xóa việc đột xuất ' + esc(x.title) + '">' + icon('close', 'ic14') + '</button></li>';
+  }).join('') + '</ul>' : '';
+  var late = '';
+  if (isToday) {
+    var nf = P.overflow(state, day, App.app.planOrder(day));
+    if (nf.length) late = '<div class="bd-late" role="status"><p>' + icon('clock', 'ic14') + '<span>Không kịp hôm nay (cuối danh sách): ' +
+      nf.map(function (t) { return '<b>' + esc(t.title) + '</b> <span class="num">' + f(L.duration(t)) + '</span>'; }).join(', ') + '</span></p>' +
+      '<button type="button" class="btn btn-soft" data-action="overflow-inbox">' + icon('box', 'ic18') + 'Đưa <span class="num">' + nf.length + '</span> việc về kho</button></div>';
+  }
+  var title = isToday ? 'Quỹ giờ hôm nay' : 'Quỹ giờ ' + D.weekday(day).toLowerCase() + ' <span class="num">' + D.fmt(day).slice(0, 5) + '</span>';
+  return '<section class="card budget" aria-labelledby="bd-title"><div class="bd-head"><h2 id="bd-title" class="bd-h">' + icon('hourglass', 'ic18') + '<span>' + title + '</span></h2>' +
+    (isToday && !ui.plan ? '<button type="button" class="btn btn-soft bd-plan" data-action="plan-open">' + icon('sparkle', 'ic18') + 'Xếp việc hôm nay</button>' : '') + '</div>' +
+    rows + intr + late + '</section>';
+};
+
+/* Kế hoạch hôm nay: bản nháp ui.plan = { ids, first, keep, skipped, split } do app tạo từ App.plan.suggest.
+   Bỏ bớt, đổi thứ tự (nút lên / xuống), thêm từ kho, rồi Chốt. Việc đã dời từ 3 lần phải chọn cách xử lý trước khi chốt. */
+App.views.planPanel = function (state, ui, ctx) {
+  var L = App.logic, P = App.plan, C = App.comp, icon = App.ui.icon, esc = App.util.esc, D = App.date, f = L.fmtMin;
+  var today = D.today(), plan = ui.plan, byId = {};
+  state.tasks.forEach(function (t) { byId[t.id] = t; });
+  var items = plan.ids.map(function (id) { return byId[id]; }).filter(function (t) { return t && !L.isDone(t); });
+  var ld = P.load(state, today), goals = ld.goals, used = {};
+  ld.buckets.forEach(function (b) { used[b.key] = b.done; });
+  items.forEach(function (t) { used[P.bucketOf(t, goals, today)] += L.duration(t); });
+  var pending = items.filter(function (t) { return L.deferCount(t) >= 3 && !plan.keep[t.id]; });
+  var sums = ld.buckets.map(function (b) {
+    var o = used[b.key] - b.avail;
+    return '<span class="pl-sum' + (o > 0 ? ' is-over' : '') + '">' + b.short + ': <span class="num">' + f(used[b.key]) + ' / ' + f(b.avail) + '</span>' +
+      (o > 0 ? ' <b>quá <span class="num">' + o + '</span> phút</b>' : '') + '</span>';
+  }).join('');
+  var rows = items.map(function (t, i) {
+    var why = P.reasons(t, today);
+    if (plan.first === t.id && i === 0) why.unshift('Việc lớn nhất, làm đầu tiên');
+    var hard = L.deferCount(t) >= 3 && !plan.keep[t.id];
+    var b = P.bucketOf(t, goals, today);
+    return '<li class="pl-item' + (hard ? ' is-hard' : '') + '"><span class="rank num" aria-hidden="true">' + (i + 1) + '</span>' +
+      '<div class="pl-body"><button type="button" class="pl-title" data-action="open-task" data-id="' + esc(t.id) + '">' + esc(t.title) + '</button>' +
+      C.firstStep(t) +
+      '<span class="meta">' + C.tag('tplain', b === 'work' ? 'brief' : b === 'evening' ? 'moon' : 'home', P.BUCKETS[b].short) + C.durTag(t) +
+      why.map(function (w) { return C.tag(/Quá hạn|Hạn hôm nay|dời [3-9]|dời \d\d/.test(w) ? 'tq1' : /Hạn|dời/.test(w) ? 'twarm' : 'tplain', /Hạn|Quá/.test(w) ? 'clock' : /dời/.test(w) ? 'refresh' : /kho/.test(w) ? 'box' : /Quan trọng/.test(w) ? 'heart' : 'sparkle', App.util.numify(w)); }).join('') + '</span>' +
+      (hard ? '<div class="pl-choose" role="group" aria-label="Việc đã dời ' + L.deferCount(t) + ' lần, chọn cách xử lý"><p>' + icon('alert', 'ic14') + 'Đã dời <span class="num">' + L.deferCount(t) + '</span> lần. Chọn một cách:</p>' +
+        '<button type="button" class="btn btn-soft" data-action="pl-split" data-id="' + esc(t.id) + '">' + icon('list', 'ic14') + 'Chia nhỏ</button>' +
+        '<button type="button" class="btn btn-soft" data-action="pl-ask" data-id="' + esc(t.id) + '">' + icon('users', 'ic14') + 'Hỏi lại người giao</button>' +
+        '<button type="button" class="btn btn-danger" data-action="pl-drop" data-id="' + esc(t.id) + '">' + icon('trash', 'ic14') + 'Bỏ</button>' +
+        '<button type="button" class="btn btn-soft" data-action="pl-keep" data-id="' + esc(t.id) + '">' + icon('check', 'ic14') + 'Vẫn giữ</button></div>' : '') +
+      '</div><div class="pl-acts">' +
+      '<button type="button" class="icon-btn" data-action="pl-move" data-dir="-1" data-id="' + esc(t.id) + '"' + (i ? '' : ' disabled') + ' aria-label="Đưa lên trên: ' + esc(t.title) + '">' + icon('up', 'ic18') + '</button>' +
+      '<button type="button" class="icon-btn" data-action="pl-move" data-dir="1" data-id="' + esc(t.id) + '"' + (i < items.length - 1 ? '' : ' disabled') + ' aria-label="Đưa xuống dưới: ' + esc(t.title) + '">' + icon('down', 'ic18') + '</button>' +
+      '<button type="button" class="icon-btn" data-action="pl-remove" data-id="' + esc(t.id) + '" aria-label="Bỏ khỏi kế hoạch: ' + esc(t.title) + '">' + icon('close', 'ic18') + '</button></div></li>';
+  }).join('');
+  var inPlan = {};
+  items.forEach(function (t) { inPlan[t.id] = true; });
+  var addable = state.tasks.filter(function (t) {
+    return !inPlan[t.id] && !L.isDone(t) && !L.isTemplate(t) && !ctx.kids[t.id] && !L.needsSplit(t, state.tasks) &&
+      (L.inInbox(t) || L.doDate(t) === today);
+  }).sort(function (a, b) { return L.impRank(a) - L.impRank(b) || (L.dueKey(a) < L.dueKey(b) ? -1 : 1); });
+  var split = (plan.split || []).map(function (id) { return byId[id]; }).filter(function (t) { return t && !L.isDone(t) && !ctx.kids[t.id]; });
+  return '<section class="card plan" aria-labelledby="pl-title"><div class="pl-head"><h2 id="pl-title" class="pl-h">' + icon('sparkle', 'ic18') + 'Kế hoạch hôm nay</h2>' +
+    '<button type="button" class="icon-btn" data-action="plan-close" aria-label="Đóng kế hoạch, để sau">' + icon('close', 'ic18') + '</button></div>' +
+    '<p class="hint">' + icon('sparkle', 'ic14') + 'Web gợi ý theo thứ tự: quá hạn hoặc hạn hôm nay, quan trọng và gấp, quan trọng đã đặt hôm nay, quan trọng trong kho, gấp. Không vượt quỹ giờ. Bỏ bớt, đổi thứ tự, thêm từ kho rồi bấm Chốt.</p>' +
+    '<p class="pl-sums">' + sums + '</p>' +
+    (items.length ? '<ol class="pl-list">' + rows + '</ol>' : '<p class="muted">Chưa có việc nào trong kế hoạch. Thêm từ kho ở dưới.</p>') +
+    (plan.skipped && plan.skipped.length ? '<p class="pl-note">' + icon('box', 'ic14') + '<span><span class="num">' + plan.skipped.length + '</span> việc khác không vừa quỹ, vẫn nằm trong kho.</span></p>' : '') +
+    (split.length ? '<div class="pl-split"><p>' + icon('alert', 'ic14') + 'Cần chia nhỏ trước khi xếp vào ngày:</p><ul>' + split.map(function (t) {
+      return '<li><span>' + esc(t.title) + ' <span class="num">' + f(L.duration(t)) + '</span></span><button type="button" class="btn btn-soft" data-action="split-task" data-id="' + esc(t.id) + '">' + icon('list', 'ic14') + 'Chia nhỏ</button></li>';
+    }).join('') + '</ul></div>' : '') +
+    (addable.length ? '<div class="pl-add"><label class="field"><span>' + icon('box', 'ic14') + 'Thêm từ kho</span><select class="select" id="pl-add-sel">' +
+      addable.map(function (t) { return '<option value="' + esc(t.id) + '">' + esc(t.title) + ' (' + f(L.duration(t)) + (L.isImportant(t) ? ', quan trọng' : '') + ')</option>'; }).join('') +
+      '</select></label><button type="button" class="btn btn-soft" data-action="pl-add">' + icon('plus', 'ic18') + 'Thêm</button></div>' : '') +
+    '<div class="pl-foot">' + (pending.length ? '<p class="form-error">Còn <span class="num">' + pending.length + '</span> việc đã dời nhiều lần chưa chọn cách xử lý.</p>' : '') +
+    '<button type="button" class="btn btn-soft" data-action="plan-close">Để sau</button>' +
+    '<button type="button" class="btn btn-primary" data-action="plan-commit"' + (pending.length ? ' disabled' : '') + '>' + icon('check', 'ic18') + 'Chốt kế hoạch</button></div></section>';
+};
+
+// Cảnh báo việc quá hạn chót chưa xong (không nằm trong danh sách của ngày đang xem)
+App.views.overdueCard = function (list, ctx) {
+  var C = App.comp, icon = App.ui.icon, esc = App.util.esc, day = ctx.day;
+  return '<section class="card over-card" aria-labelledby="ov-warn"><h3 id="ov-warn" class="over-h">' + icon('alert', 'ic18') +
+    '<span>Quá hạn chót <span class="num">' + list.length + '</span> việc</span></h3><ul>' +
+    list.map(function (t) {
+      return '<li>' + C.tickButton(t, ctx) + '<button type="button" class="qname" data-action="open-task" data-id="' + esc(t.id) + '">' +
+        '<span>' + esc(t.title) + '</span></button>' + C.dueTag(t, day) +
+        (day >= ctx.today ? '<button type="button" class="btn btn-soft over-do" data-action="do-day" data-id="' + esc(t.id) + '" data-day="' + day + '">' +
+          icon('calendar', 'ic14') + (day === ctx.today ? 'Làm hôm nay' : 'Làm ngày này') + '</button>' : '') + '</li>';
+    }).join('') + '</ul></section>';
+};
+
+// Nhắc xem lại kho mỗi tuần (mặc định Thứ Sáu 16h30), hiện đến khi xem xong hoặc bấm Để sau
+App.views.inboxBanner = function (state, ui) {
+  var icon = App.ui.icon;
+  var n = App.app.inboxReviewDue();
+  if (!n) return '';
+  return '<section class="card remind inbox-remind" aria-label="Nhắc xem lại kho">' + icon('box', 'ic18 rm-ic') +
+    '<div class="rm-body"><h2 class="rm-h">Đến giờ xem lại kho</h2><p class="rm-line">Kho đang có <span class="num">' + n + '</span> việc. Xem từng việc: Giữ, Đặt ngày làm hoặc Bỏ.</p>' +
+    '<div class="rm-acts"><button type="button" class="btn btn-primary" data-action="inbox-review">' + icon('box', 'ic18') + 'Xem lại kho</button>' +
+    '<button type="button" class="btn btn-soft" data-action="inbox-later">Để tuần sau</button></div></div></section>';
 };
 
 /* Lời nhắc từ review (GĐ5):
@@ -145,13 +278,20 @@ App.views.bloom = function (level, size, cls) {
     '<circle cx="' + hx + '" cy="' + hy + '" r="' + (lv >= 3 ? 3 : 2.4) + '" fill="' + (lv >= 3 ? '#f6c453' : '#9a7a5c') + '"/></g></svg>';
 };
 
-// Sắp xếp bảng theo cột: done, title, due, priority, quad. dir 1 tăng, -1 giảm
-App.views.sortRows = function (list, sort, day) {
+// Sắp xếp bảng theo cột: plan (thứ tự đã chốt), done, title, due, imp, quad, star. dir 1 tăng, -1 giảm
+App.views.sortRows = function (list, sort, day, order) {
   var L = App.logic, key = sort && sort.key || 'due', dir = sort && sort.dir === -1 ? -1 : 1;
+  if (key === 'plan') {
+    var rest = list.slice().sort(function (a, b) {
+      return ((L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0)) || L.impRank(a) - L.impRank(b) || (L.dueKey(a) < L.dueKey(b) ? -1 : L.dueKey(a) > L.dueKey(b) ? 1 : 0);
+    });
+    var out = App.plan.ordered(rest, order || []);
+    return dir === -1 ? out.reverse() : out;
+  }
   function val(t) {
     if (key === 'done') return L.isDone(t) ? 1 : 0;
     if (key === 'title') return String(t.title || '').toLowerCase();
-    if (key === 'priority') return L.priorityRank(t.priority);
+    if (key === 'imp') return L.impRank(t);
     if (key === 'quad') return L.quadrant(t, day);
     if (key === 'star') return L.isTop3Today(t, App.date.today()) ? 0 : 1;
     return L.dueKey(t);
@@ -167,25 +307,27 @@ App.views.sortRows = function (list, sort, day) {
 };
 
 /* Bảng tác vụ (tab Agenda và tab Task). ctx.sort = { key, dir }, ctx.scope = 'agenda' | 'task'.
-   Bấm tiêu đề cột để sắp xếp: bấm lần nữa thì đảo chiều. */
+   Bấm tiêu đề cột để sắp xếp: bấm lần nữa thì đảo chiều. Agenda mặc định theo thứ tự kế hoạch đã chốt. */
 App.views.taskTable = function (list, ctx) {
   var C = App.comp, L = App.logic, icon = App.ui.icon, esc = App.util.esc;
   var day = ctx.day || ctx.today;
-  var PRI = { 'Cao': ['tpri', 'up'], 'Thấp': ['tplain', 'down'] };
   var sort = ctx.sort || { key: 'due', dir: 1 };
-  var rowsList = App.views.sortRows(list, sort, day);
+  var rowsList = App.views.sortRows(list, sort, day, ctx.order);
   var rows = rowsList.map(function (t) {
     var done = L.isDone(t), q = L.quadrant(t, day);
     var g = t.goal_id ? ctx.goalsById[t.goal_id] : null;
-    var p = PRI[t.priority] || ['tplain', 'flag'];
     var hm = L.isTime(t.due_time) ? ' <span class="num tm">' + t.due_time + '</span>' : '';
+    var kids = ctx.kids && ctx.kids[t.id];
+    var size = kids && kids.length ? '<span class="num">' + kids.filter(L.isDone).length + '/' + kids.length + '</span> việc con' : '<span class="num">' + L.fmtMin(L.duration(t)) + '</span>';
     return '<tr class="' + (done ? 'is-done' : 'tq-row' + q) + '">' +
       '<td class="c-tick">' + C.tickButton(t, ctx) + '</td>' +
       '<td class="c-name"><button type="button" class="tt-name" data-action="open-task" data-id="' + esc(t.id) + '">' +
       icon(L.iconOf(t), 'ic14') + '<span class="tt-text"><span class="tt-title">' + esc(t.title) + '</span>' +
-      '<span class="tt-sub">' + (t.status === 'Đang làm' ? 'Đang làm · ' : '') + (g ? esc(g.name) : esc(App.C.MISC)) + '</span></span></button></td>' +
+      (t.first_step && !done ? '<span class="tt-step">' + icon('play', 'ic12') + esc(t.first_step) + '</span>' : '') +
+      '<span class="tt-sub">' + (t.status === 'Đang làm' ? 'Đang làm · ' : '') + size + ' · ' + (g ? esc(g.name) : esc(App.C.MISC)) +
+      (L.deferCount(t) ? ' · dời <span class="num">' + L.deferCount(t) + '</span> lần' : '') + '</span></span></button></td>' +
       '<td class="c-due">' + (done ? C.tag('tok', 'check', 'Xong' + (t.due_date ? ' · <span class="num">' + App.date.fmt(t.due_date).slice(0, 5) + '</span>' + hm : '')) : C.dueTag(t, day)) + '</td>' +
-      '<td class="c-pri">' + C.tag(p[0], p[1], esc(t.priority || 'Trung bình')) + '</td>' +
+      '<td class="c-pri">' + (L.isImportant(t) ? C.tag('tpri', 'heart', 'Quan trọng') : '<span class="muted" aria-label="Không quan trọng">–</span>') + '</td>' +
       '<td class="c-q">' + C.quadTag(q) + '</td>' +
       '<td class="c-star">' + C.starButton(t, ctx) + '</td></tr>';
   }).join('');
@@ -196,10 +338,11 @@ App.views.taskTable = function (list, ctx) {
       ' aria-label="Sắp xếp theo ' + label + '">' + html + (on ? icon(sort.dir === -1 ? 'down' : 'up', 'ic12') : icon('sort', 'ic12 th-idle')) + '</button></th>';
   }
   return '<div class="tt-wrap"><table class="ttable"><thead><tr>' +
-    th('done', 'c-tick', '<span class="sr-only">Xong</span>', 'trạng thái hoàn thành') + th('title', 'c-name', 'Việc', 'tên việc') + th('due', 'c-due', 'Hạn', 'ngày giờ hạn') +
-    th('priority', 'c-pri', 'Ưu tiên', 'mức ưu tiên') + th('quad', 'c-q', '<span class="th-long">Ô ma trận</span><span class="th-short">Ô</span>', 'ô ma trận') +
-    th('star', 'c-star', '<span class="sr-only">Top 3</span>', 'Top 3') +
-    '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    th('done', 'c-tick', '<span class="sr-only">Xong</span>', 'trạng thái hoàn thành') + th('title', 'c-name', 'Việc', 'tên việc') + th('due', 'c-due', 'Hạn chót', 'hạn chót') +
+    th('imp', 'c-pri', 'Quan trọng', 'mức quan trọng') + th('quad', 'c-q', '<span class="th-long">Ô ma trận</span><span class="th-short">Ô</span>', 'ô ma trận') +
+    th('star', 'c-star', '<span class="sr-only">3 việc chính</span>', '3 việc chính hôm nay') +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    (ctx.scope === 'agenda' && sort.key !== 'plan' && ctx.order && ctx.order.length ? '<p class="hint">' + icon('list', 'ic14') + '<button type="button" class="link-btn" data-action="tt-sort" data-scope="agenda" data-key="plan">Xếp lại theo thứ tự kế hoạch</button></p>' : '');
 };
 
 // Chia % cho các phần sao cho tổng đúng 100 (làm tròn theo phần dư lớn nhất)

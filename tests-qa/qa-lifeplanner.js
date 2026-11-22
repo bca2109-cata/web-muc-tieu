@@ -12,7 +12,8 @@ async function mk(browser, o = {}) {
   const p = await ctx.newPage();
   p.on('pageerror', e => errors.push('pageerror: ' + e.message));
   p.on('console', m => { if (m.type() === 'error' && !/fonts\.g|ERR_INTERNET|Failed to load resource|ERR_NAME/.test(m.text())) errors.push('console: ' + m.text()); });
-  await p.goto(URL + (o.q === undefined ? '?today=' + TODAY : o.q));
+  const q = o.q === undefined ? '?today=' + TODAY : o.q;
+  await p.goto(URL + q + (/now=/.test(q) ? '' : (q.includes('?') ? '&' : '?') + 'now=09:00'));
   await p.waitForSelector('.site-head');
   await p.waitForTimeout(500);
   return { ctx, p };
@@ -25,14 +26,18 @@ async function pc(p, sel) {
 // Việc hiện trên màn hình: bỏ việc lặp mẫu và lần lặp đã qua ngày mà chưa làm (GĐ2)
 const T = p => p.evaluate(() => { const td = App.date.today(); return JSON.parse(JSON.stringify(App.store.get().tasks.filter(t => !App.logic.isTemplate(t) && !App.logic.isMissed(t, td)))); });
 const G = p => p.evaluate(() => JSON.parse(JSON.stringify(App.store.get().goals)));
+// GĐ6: việc của ngày D = Ngày sẽ làm là D (lần lặp cũ chưa có do_date: theo hạn), hoặc xong trong ngày D. Bỏ việc cha đã chia nhỏ.
+const doDate = t => t.do_date || (t.parent_recurring_id ? t.due_date : '');
 function dayList(ts, D) {
-  return ts.filter(t => (t.status === 'Xong' && String(t.done_at).slice(0, 10) === D) || t.due_date === D ||
-    (t.due_date && t.due_date < D && (t.status !== 'Xong' || String(t.done_at).slice(0, 10) > D) && !t.parent_recurring_id && !t.recurring_rule));
+  return ts.filter(t => !(t.recurring_rule && !t.parent_recurring_id) && !ts.some(k => k.parent_id === t.id) &&
+    ((t.status === 'Xong' && String(t.done_at).slice(0, 10) === D) || doDate(t) === D));
 }
+// GĐ6: Quan trọng do người dùng đánh dấu (trống thì theo ưu tiên Cao), gấp = hạn chót trong 2 ngày tới hoặc quá hạn
 function quad(t) {
-  const imp = t.priority === 'Cao', urg = !!t.due_date && t.due_date <= addDays(TODAY, 1);
+  const imp = t.is_important === 'TRUE' || (!t.is_important && t.priority === 'Cao'), urg = !!t.due_date && t.due_date <= addDays(TODAY, 2);
   return imp && urg ? 1 : imp ? 2 : urg ? 3 : 4;
 }
+function fmtMin(m) { const h = Math.floor(m / 60), r = m % 60; return h ? h + 'h' + (r ? String(r).padStart(2, '0') : '') : r + 'p'; }
 async function matrixDOM(p) {
   return p.evaluate(() => {
     const out = {};
@@ -72,7 +77,7 @@ async function small(p, sel, min, label) {
   console.log('view mặc định:', await p.locator('.seg-switch .on').innerText());
   let tasks = await T(p);
   const top = await p.locator('#top3-title').evaluate(e => e.closest('section').innerText.replace(/\n/g, ' | '));
-  ok('Top 3 có 3/3 (mẫu + giữ từ hôm qua + tự điền việc trễ hạn)', /3\/3/.test(top) && /Làm bài kiểm tra cuối khóa/.test(top) && /Vẽ biểu đồ/.test(top) && /Gửi bảng KPI/.test(top), top);
+  ok('GĐ6: 3 việc chính trống trước khi chốt, Kế hoạch hôm nay mở sẵn', /0\/3/.test(top) && await p.locator('.plan').count() === 1, top);
   async function checkMatrix(label) {
     const dom = await matrixDOM(p); const ts = await T(p);
     // GĐ5: ma trận = việc của ngày (hạn đúng ngày, quá hạn chưa xong trừ lần lặp, xong trong ngày)
@@ -89,19 +94,27 @@ async function small(p, sel, min, label) {
   }
   await checkMatrix('ban đầu');
   const nowExp = tasks.filter(t => t.status !== 'Xong' && quad(t) === 1).length;
-  // Biểu đồ tổng quan: tính tay rồi so với số trên màn hình
+  // GĐ6: Quỹ giờ (TODAY là Thứ Bảy: một quỹ cuối tuần). Tổng thời lượng việc có Ngày sẽ làm hôm nay, tính tay
   async function checkOverview(label) {
     const ts = await T(p);
-    const work = dayList(ts, TODAY);
-    const done = work.filter(t => t.status === 'Xong').length;
-    const big = await p.locator('.ov-big .num').innerText();
-    const over = work.filter(t => t.due_date && t.due_date < TODAY).length;
-    const legend = await p.locator('.sr-row').first().innerText();
-    ok('Biểu đồ tổng quan khớp tính tay (' + label + ')', big === done + '/' + work.length && +(legend.match(/(\d+)/) || [])[1] === over, big + ' vs ' + done + '/' + work.length + '; ' + legend + ' vs ' + over);
+    const sum = ts.filter(t => doDate(t) === TODAY && !ts.some(k => k.parent_id === t.id)).reduce((a, t) => a + (+t.duration_min || 30), 0);
+    const fig = await p.locator('.bd-fig').first().innerText();
+    ok('Quỹ giờ "Đã xếp" khớp tính tay (' + label + ')', fig.includes(fmtMin(sum) + ' /'), fig + ' vs ' + fmtMin(sum));
   }
   await checkOverview('ban đầu');
+  // Chốt kế hoạch (việc đã dời 3 lần: chọn Vẫn giữ)
+  for (const b of await p.locator('[data-action="pl-keep"]').all()) { await b.click(); await p.waitForTimeout(100); }
+  await pc(p, '[data-action="plan-commit"]');
+  await p.waitForTimeout(250);
+  ok('GĐ6: chốt xong có 3 việc chính', /3\/3/.test(await p.locator('#top3-title').innerText()));
+  await checkMatrix('sau chốt');
+  await checkOverview('sau chốt');
+  // Kế hoạch cuối tuần chỉ giữ việc vừa quỹ: đưa lại 2 việc mẫu dùng ở các bước sau vào hôm nay
+  await p.evaluate(() => App.store.get().tasks.filter(t => ['Trả lời email khách hàng', 'Cập nhật file theo dõi đơn hàng'].includes(t.title)).forEach(t => App.store.upsert('Tasks', Object.assign({}, t, { do_date: App.date.today(), inbox_since: '' }))));
+  await p.evaluate(() => App.app.render && App.app.render());
+  await p.waitForTimeout(300);
   void nowExp;
-  const mtask = tasks.find(t => t.title === 'Chạy 3 km buổi tối'); // GĐ5: việc hạn hôm nay
+  const mtask = (await T(p)).find(t => t.title === 'Trả lời email khách hàng'); // GĐ6: việc có Ngày sẽ làm hôm nay
   await pc(p, `.matrix [data-action="toggle-task"][data-id="${mtask.id}"]`);
   await p.waitForTimeout(150);
   ok('Tick ở ma trận -> task Xong', (await T(p)).find(t => t.id === mtask.id).status === 'Xong');
@@ -116,7 +129,7 @@ async function small(p, sel, min, label) {
   const after = (await T(p)).find(t => t.id === mtask.id);
   ok('Bỏ tick ở ma trận -> Cần làm, done_at rỗng', after.status === 'Cần làm' && after.done_at === '', after.status + '/' + after.done_at);
   await checkMatrix('sau bỏ tick');
-  const topT = tasks.find(t => t.title === 'Vẽ biểu đồ so sánh các quý');
+  const topT = { id: await p.getAttribute('.notes [data-action="toggle-task"]', 'data-id') };
   await pc(p, `.notes [data-action="toggle-task"][data-id="${topT.id}"]`);
   await p.waitForTimeout(150);
   ok('Tick ở Top 3 -> Xong', (await T(p)).find(t => t.id === topT.id).status === 'Xong');
@@ -136,7 +149,7 @@ async function small(p, sel, min, label) {
   await small(p, '.tabbar .tab', 44, 'Tab');
   const bodyTxt = await p.innerText('.today-side');
   console.log(bodyTxt.replace(/\n+/g, ' | ').slice(0, 900));
-  const lt = tasks.find(t => t.title === 'Mua giấy in cho phòng');
+  const lt = { id: await p.getAttribute('.ttable tr:not(.is-done) [data-action="toggle-task"]', 'data-id') };
   await pc(p, `.ttable [data-action="toggle-task"][data-id="${lt.id}"]`);
   await p.waitForTimeout(150);
   const lt2 = (await T(p)).find(t => t.id === lt.id);
@@ -155,16 +168,16 @@ async function small(p, sel, min, label) {
   const cases = [['Chạy bộ', 'shoe'], ['Đọc sách', 'book'], ['Gọi điện cho mẹ', 'phone'], ['Họp nhóm', 'users'], ['Uống nước', 'drop'], ['Đi ngủ sớm', 'moon'], ['Làm gì đó lạ', 'note'], ['Tập gym', 'dumbbell'], ['Gửi email', 'mail'], ['Nấu cơm', 'food']];
   for (const [ti, ic] of cases) { const t = await qa(ti); ok('Thêm nhanh "' + ti + '" -> icon ' + ic, t && t.icon === ic, t && t.icon); }
   const nt = (await T(p)).find(t => t.title === 'Chạy bộ');
-  ok('Thêm nhanh mặc định: hạn hôm nay, TB, Cần làm', nt.due_date === TODAY && nt.priority === 'Trung bình' && nt.status === 'Cần làm' && nt.goal_id === '');
-  ok('"Chạy bộ" vào ô Xử lý sau (Q3)', (await matrixDOM(p))[3].ids.includes(nt.id));
+  ok('GĐ6 thêm nhanh mặc định: làm hôm nay, 30p, không quan trọng, chưa có hạn', nt.do_date === TODAY && nt.duration_min === '30' && nt.is_important === 'FALSE' && nt.due_date === '' && nt.status === 'Cần làm' && nt.goal_id === '', JSON.stringify([nt.do_date, nt.duration_min, nt.is_important, nt.due_date]));
+  ok('"Chạy bộ" vào ô Dời hôm sau (Q4)', (await matrixDOM(p))[4].ids.includes(nt.id));
   await checkMatrix('sau thêm nhanh');
   await p.click('[data-action="today-view"][data-view="list"]');
   await p.waitForTimeout(100);
   // Top 3 đã tự điền đủ 3: bỏ sao một việc tự điền trước, và nó không tự quay lại
-  const auto1 = (await T(p)).find(t => t.title === 'Gửi bảng KPI nháp cho anh Minh');
+  const auto1 = { id: await p.getAttribute('.notes [data-action="toggle-top3"]', 'data-id') };
   await p.click(`.notes [data-action="toggle-top3"][data-id="${auto1.id}"]`);
   await p.waitForTimeout(150);
-  ok('Bỏ sao việc tự điền -> Top 3 còn 2', (await T(p)).filter(t => t.is_top3 === 'TRUE' && t.top3_date === TODAY).length === 2);
+  ok('Bỏ sao một việc chính -> còn 2', (await T(p)).filter(t => t.is_top3 === 'TRUE' && t.top3_date === TODAY).length === 2);
   await p.click(`.ttable [data-action="toggle-top3"][data-id="${nt.id}"]`);
   await p.waitForTimeout(150);
   let t3 = (await T(p)).filter(t => t.is_top3 === 'TRUE' && t.top3_date === TODAY).length;
@@ -184,17 +197,18 @@ async function small(p, sel, min, label) {
   await ctx.close();
 
   // ===== B. Top 3 hôm qua giữ sang
-  ({ ctx, p } = await mk(browser, { q: '?today=2026-11-22' }));
-  const topTxt22 = await p.locator('#top3-title').evaluate(e => e.closest('section').innerText.replace(/\n/g, ' | '));
-  console.log('Top3 ngày 22:', topTxt22);
-  ok('Giả lập ngày 22: Top 3 hôm trước chưa xong còn hiện', /Làm bài kiểm tra cuối khóa/.test(topTxt22), topTxt22);
+  ({ ctx, p } = await mk(browser));
+  const open21 = (await T(p)).filter(t => t.do_date === TODAY && t.status !== 'Xong' && !t.parent_recurring_id).map(t => [t.id, +t.defer_count || 0]);
+  await p.goto(URL + '?today=' + addDays(TODAY, 1) + '&now=09:00'); await p.waitForSelector('.budget'); await p.waitForTimeout(400);
+  const ts22 = await T(p);
+  ok('GĐ6: sang ngày mới, ' + open21.length + ' việc chưa xong về kho, dời +1', open21.length > 0 && open21.every(([id, d]) => { const t = ts22.find(x => x.id === id); return t && t.do_date === '' && +t.defer_count === d + 1 && t.inbox_since === addDays(TODAY, 1); }));
   await ctx.close();
 
   // ===== C. Hiệu ứng 100%
   ({ ctx, p } = await mk(browser));
   tasks = await T(p);
   const last = tasks.find(t => t.title === 'Làm bài kiểm tra cuối khóa');
-  await pc(p, `.notes [data-action="toggle-task"][data-id="${last.id}"]`);
+  await pc(p, `.matrix [data-action="toggle-task"][data-id="${last.id}"]`);
   await p.waitForTimeout(200);
   const nfx = await p.locator('.fx').count();
   const tmsg = await p.locator('.toast').first().innerText();
@@ -204,7 +218,7 @@ async function small(p, sel, min, label) {
   await ctx.close();
   ({ ctx, p } = await mk(browser));
   tasks = await T(p);
-  const nn = tasks.find(t => t.title === 'Chạy 3 km buổi tối');
+  const nn = tasks.find(t => t.title === 'Trả lời email khách hàng');
   await p.click('[data-action="today-view"][data-view="list"]'); await p.waitForTimeout(100);
   await pc(p, `.ttable [data-action="toggle-task"][data-id="${nn.id}"]`);
   await p.waitForTimeout(150);
@@ -214,14 +228,14 @@ async function small(p, sel, min, label) {
   await ctx.close();
   ({ ctx, p } = await mk(browser, { reduce: true }));
   tasks = await T(p);
-  const rt = tasks.find(t => t.title === 'Mua giấy in cho phòng');
+  const rt = tasks.find(t => t.title === 'Cập nhật file theo dõi đơn hàng');
   await pc(p, `.matrix [data-action="toggle-task"][data-id="${rt.id}"]`);
   await p.waitForTimeout(200);
   ok('reduced-motion: không sinh .fx', await p.locator('.fx').count() === 0);
   ok('reduced-motion: vẫn có toast động viên', await p.locator('.toast.is-cheer').count() === 1);
   // reduced + 100%
   const last2 = tasks.find(t => t.title === 'Làm bài kiểm tra cuối khóa');
-  await pc(p, `.notes [data-action="toggle-task"][data-id="${last2.id}"]`);
+  await pc(p, `.matrix [data-action="toggle-task"][data-id="${last2.id}"]`);
   await p.waitForTimeout(200);
   ok('reduced-motion + đạt 100%: không .fx, có toast 100%', await p.locator('.fx').count() === 0 && /100%/.test(await p.locator('.toast').first().innerText()));
   await ctx.close();
@@ -245,6 +259,7 @@ async function small(p, sel, min, label) {
   await p.click('[data-action="today-view"][data-view="list"]'); await p.waitForTimeout(100);
   tasks = await T(p);
   const et = tasks.find(t => t.title === 'Mua giấy in cho phòng');
+  await p.click('.tab[data-tab="task"]'); await p.waitForTimeout(200);
   await p.click(`.ttable [data-action="open-task"][data-id="${et.id}"]`);
   await p.waitForSelector('.modal form [name="title"]');
   await p.screenshot({ path: SS + '/lp-07-form-task-390.png' });
@@ -268,7 +283,8 @@ async function small(p, sel, min, label) {
   ok('Lưu xong icon = gift (chọn tay)', saved.icon === 'gift' && saved.title === 'Mua quà sinh nhật', saved.icon);
   const rowIcon = await p.evaluate(id => { const b = document.querySelector('[data-action="open-task"][data-id="' + id + '"]'); const s = b && (b.closest('li') ? b.closest('li').querySelector('.ticon svg') : b.querySelector('svg.icon')); return s ? s.outerHTML.length : 0; }, et.id);
   ok('Dòng task hiện ô icon sau khi lưu', rowIcon > 50, '' + rowIcon);
-  const et2 = (await T(p)).find(t => t.title === 'Chạy 3 km buổi tối'); // GĐ5: phải là việc của hôm nay
+  await p.click('.tab[data-tab="today"]'); await p.waitForTimeout(200);
+  const et2 = (await T(p)).find(t => t.title === 'Trả lời email khách hàng'); // GĐ6: việc có Ngày sẽ làm hôm nay
   await p.click('[data-action="today-view"][data-view="matrix"]'); await p.waitForTimeout(100);
   await p.click(`.matrix [data-action="open-task"][data-id="${et2.id}"]`);
   await p.waitForSelector('.modal form [name="title"]');
@@ -277,10 +293,8 @@ async function small(p, sel, min, label) {
   ok('Task có icon tự đoán: đổi tên thì icon đổi (grad)', ic2 === 'grad', ic2);
   await p.click('.modal form button[type="submit"]'); await p.waitForTimeout(250);
   ok('Lưu icon grad', (await T(p)).find(t => t.id === et2.id).icon === 'grad');
-  // Top3 trong form: đang 2, bật task thứ 3 OK, task thứ 4 báo lỗi
-  const autoT = (await T(p)).find(t => t.title === 'Gửi bảng KPI nháp cho anh Minh' && t.is_top3 === 'TRUE' && t.top3_date === TODAY);
-  if (autoT) { await p.click(`.notes [data-action="toggle-top3"][data-id="${autoT.id}"]`); await p.waitForTimeout(150); }
-  const A = dayList(await T(p), TODAY).filter(t => t.status !== 'Xong' && !(t.is_top3 === 'TRUE' && t.top3_date === TODAY)).slice(0, 2);
+  // 3 việc chính trong form: chưa chốt nên đang 0; bật 3 việc OK, việc thứ 4 báo lỗi
+  const A = dayList(await T(p), TODAY).filter(t => t.status !== 'Xong' && !(t.is_top3 === 'TRUE' && t.top3_date === TODAY)).slice(0, 4);
   const results = [];
   for (const x of A) {
     await p.click(`[data-action="open-task"][data-id="${x.id}"]`);
@@ -290,7 +304,7 @@ async function small(p, sel, min, label) {
     if (await p.locator('.modal form').count()) { results.push('lỗi top3 hiện=' + await p.locator('[data-err="top3"]').isVisible()); await p.screenshot({ path: SS + '/lp-09-form-top3-day.png' }); await p.click('[data-close]'); await p.waitForTimeout(150); }
     else results.push('đã lưu');
   }
-  ok('Form: task Top3 thứ 3 lưu được, thứ 4 bị chặn có báo lỗi', results[0] === 'đã lưu' && /lỗi top3 hiện=true/.test(results[1]), results.join(' ; '));
+  ok('Form: việc chính thứ 1 đến 3 lưu được, thứ 4 bị chặn có báo lỗi', results.slice(0, 3).every(r => r === 'đã lưu') && /lỗi top3 hiện=true/.test(results[3]), results.join(' ; '));
   await ctx.close();
 
   // ===== F. Mục tiêu
@@ -308,7 +322,7 @@ async function small(p, sel, min, label) {
   for (const g of goals2) {
     const c = cards.find(x => x.id === g.id);
     const metric = g.progress_mode === 'metric', habitMode = g.progress_mode === 'habit';
-    const mine = tasks.filter(t => t.goal_id === g.id), done = mine.filter(t => t.status === 'Xong').length;
+    const mine = tasks.filter(t => t.goal_id === g.id && !tasks.some(k => k.parent_id === t.id)), done = mine.filter(t => t.status === 'Xong').length;
     // Theo thói quen: tự đếm ngày cần làm từ đầu kỳ đến hôm nay (hôm nay chỉ tính khi đã tick)
     const hp = habitMode ? await p.evaluate(gid => {
       const st = App.store.get(), td = App.date.today(), g = st.goals.find(x => x.id === gid);
@@ -345,9 +359,11 @@ async function small(p, sel, min, label) {
   await p.click(`[data-action="open-goal"][data-id="${g1c.id}"]`); await p.waitForSelector('.goal-detail'); await p.waitForTimeout(300);
   await p.screenshot({ path: SS + '/lp-11-chitiet-390.png', fullPage: true });
   await layoutChecks(p, 'Chi tiết mục tiêu 390');
-  ok('Chi tiết: 6 task', await p.locator('.task-list > li').count() === 6, '' + await p.locator('.task-list > li').count());
+  const g1all = tasks.filter(t => t.goal_id === g1c.id), g1leaf = g1all.filter(t => !tasks.some(k => k.parent_id === t.id)), g1done = g1leaf.filter(t => t.status === 'Xong').length;
+  ok('Chi tiết: ' + g1all.length + ' task', await p.locator('.task-list > li').count() === g1all.length, '' + await p.locator('.task-list > li').count());
   await p.fill('#quick-add-goal', 'Task thử trong mục tiêu'); await p.press('#quick-add-goal', 'Enter'); await p.waitForTimeout(200);
-  ok('Thêm task trong chi tiết: 7 task, 29%', await p.locator('.task-list > li').count() === 7 && /29%/.test(await p.locator('.goal-detail .pct').innerText()), await p.locator('.goal-detail .pct').innerText());
+  const g1pct = Math.round(g1done / (g1leaf.length + 1) * 100) + '%';
+  ok('Thêm task trong chi tiết: ' + (g1all.length + 1) + ' task, ' + g1pct, await p.locator('.task-list > li').count() === g1all.length + 1 && (await p.locator('.goal-detail .pct').innerText()).includes(g1pct), await p.locator('.goal-detail .pct').innerText());
   await p.click('[data-action="edit-goal"]'); await p.waitForSelector('form [name="name"]');
   await p.screenshot({ path: SS + '/lp-12-form-muctieu-390.png' });
   ok('Form mục tiêu có 3 mức quan trọng', await p.locator('input[name="importance"]').count() === 3);
@@ -438,7 +454,7 @@ async function small(p, sel, min, label) {
   // ===== H. Lưu lỗi
   ({ ctx, p } = await mk(browser, { q: '?today=' + TODAY + '&fail=1' }));
   await p.fill('#quick-add-today', 'Việc sẽ lỗi'); await p.press('#quick-add-today', 'Enter');
-  await p.waitForTimeout(1800);
+  await p.waitForTimeout(5600); // GĐ6: thông báo vượt quỹ tắt sau 5 giây thì thông báo lỗi lưu hiện lại
   const syncTxt = await p.innerText('#sync').catch(() => '');
   const toastTxt = await p.locator('.toast').first().innerText().catch(() => '');
   console.log('sync:', syncTxt, '| toast:', toastTxt);
@@ -487,7 +503,7 @@ async function small(p, sel, min, label) {
     await p.click('.tab[data-tab="today"]', { timeout: 4000 }).catch(() => {}); await p.waitForTimeout(250);
     async function tickTest(name, scopeSel, title, ensureView) {
       if (ensureView) { await p.click('[data-action="today-view"][data-view="' + ensureView + '"]'); await p.waitForTimeout(150); }
-      const tk = (await T(p)).find(t => t.title === title);
+      const tk = title ? (await T(p)).find(t => t.title === title) : { id: await p.getAttribute(scopeSel + ' [data-action="toggle-task"]', 'data-id') };
       const sel = scopeSel + ' [data-action="toggle-task"][data-id="' + tk.id + '"]';
       const relF = () => p.evaluate(s => { const e = document.querySelector(s); const r = e.getBoundingClientRect(), l = e.closest('li,tr').getBoundingClientRect(); return [Math.round(r.left - l.left), Math.round(r.top - l.top), Math.round(r.top + r.height / 2 - l.top - l.height / 2)]; }, sel);
       const box0 = await relF();
@@ -504,9 +520,8 @@ async function small(p, sel, min, label) {
       ok(L + name + ': bấm lại bằng click thật -> bỏ tick', good && (await T(p)).find(t => t.id === tk.id).status !== 'Xong', msg);
       await p.waitForTimeout(3300);
     }
-    await tickTest('ma trận', '.matrix', 'Chạy 3 km buổi tối', 'matrix');
-    await tickTest('Top 3', '.notes', 'Vẽ biểu đồ so sánh các quý', null);
-    await tickTest('bảng', '.ttable', 'Mua giấy in cho phòng', 'list');
+    await tickTest('ma trận', '.matrix', 'Trả lời email khách hàng', 'matrix');
+    await tickTest('bảng', '.ttable', 'Cập nhật file theo dõi đơn hàng', 'list');
     await p.click('#btn-bg', { timeout: 4000 }); await p.waitForTimeout(200);
     let g1 = true, m1 = '';
     try { await p.click('[data-bg="plain"]', { timeout: 4000 }); } catch (e) { g1 = false; m1 = e.message.split('\n')[0]; }
@@ -561,8 +576,9 @@ async function small(p, sel, min, label) {
     await p.waitForTimeout(120);
     // Ngày đã qua: gồm cả lần lặp có hạn đúng ngày đó (T() đã lọc lần lặp bỏ lỡ nên lấy thẳng từ store)
     const exp = dayList(await p.evaluate(() => JSON.parse(JSON.stringify(App.store.get().tasks.filter(t => !App.logic.isTemplate(t))))), D);
-    const big = await p.locator('.ov-big .num').innerText();
-    ok('GĐ5: Agenda ngày ' + D + ' tổng việc khớp tính tay', big === exp.filter(t => t.status === 'Xong' && String(t.done_at).slice(0, 10) <= D).length + '/' + exp.length, big + ' vs ' + exp.length);
+    if (await p.locator('.today-side [data-action="today-view"][data-view="matrix"].on').count() === 0) { await p.click('[data-action="today-view"][data-view="matrix"]'); await p.waitForTimeout(100); }
+    const shownN = await p.locator('.today-side .matrix [data-action="toggle-task"]').count();
+    ok('GĐ6: Agenda ngày ' + D + ' số việc (Ngày sẽ làm) khớp tính tay', shownN === exp.length, shownN + ' vs ' + exp.length);
     ok('GĐ5: Top 3 ẩn khi không xem hôm nay (' + D + ')', await p.locator('#top3-title').count() === 0);
   }
   await p.click('[data-action="day-today"]'); await p.waitForTimeout(120);
@@ -571,7 +587,7 @@ async function small(p, sel, min, label) {
   await p.click('[data-action="day-shift"][data-dir="1"]'); await p.waitForTimeout(100);
   await p.fill('#quick-add-today', 'Việc ngày mai GĐ5'); await p.press('#quick-add-today', 'Enter'); await p.waitForTimeout(150);
   const nm = (await T(p)).find(t => t.title === 'Việc ngày mai GĐ5');
-  ok('GĐ5: thêm nhanh điền ngày đang xem + 17:00', !!nm && nm.due_date === addDays(TODAY, 1) && nm.due_time === '17:00', nm && nm.due_date + ' ' + nm.due_time);
+  ok('GĐ6: thêm nhanh khi xem ngày mai -> Ngày sẽ làm = ngày mai, hạn chót để trống', !!nm && nm.do_date === addDays(TODAY, 1) && nm.due_date === '', nm && nm.do_date + ' / ' + nm.due_date);
   await p.click('[data-action="day-today"]'); await p.waitForTimeout(100);
   // Bảng: sắp theo cột
   await p.click('[data-action="today-view"][data-view="list"]'); await p.waitForTimeout(100);
@@ -587,8 +603,8 @@ async function small(p, sel, min, label) {
   ok('GĐ5: cột Hạn xếp theo ngày rồi giờ', keys.join() === keys.slice().sort().join(), keys.join());
   // Form việc có giờ
   await p.click('.qa-full'); await p.waitForSelector('.modal [name="due_time"]');
-  ok('GĐ5: form việc mới điền sẵn 17:00', await p.inputValue('.modal [name="due_time"]') === '17:00');
-  await p.fill('.modal [name="title"]', 'Có giờ GĐ5'); await p.fill('.modal [name="due_time"]', '08:15');
+  ok('GĐ6: form việc mới để trống giờ hạn (không bắt buộc)', await p.inputValue('.modal [name="due_time"]') === '');
+  await p.fill('.modal [name="title"]', 'Có giờ GĐ5'); await p.fill('.modal [name="due_date"]', TODAY); await p.fill('.modal [name="due_time"]', '08:15');
   await p.click('.modal form button[type="submit"]'); await p.waitForTimeout(200);
   ok('GĐ5: lưu giờ hạn', ((await T(p)).find(t => t.title === 'Có giờ GĐ5') || {}).due_time === '08:15');
   await layoutChecks(p, 'GĐ5 Agenda bảng 390');
@@ -632,13 +648,13 @@ async function small(p, sel, min, label) {
   const rvd = await p.evaluate(td => App.store.get().reviews.find(r => r.period_type === 'Ngày' && r.period_value === td), TODAY);
   ok('GĐ5: lưu review ngày (rating 5, next)', !!rvd && rvd.rating === '5' && rvd.next === 'Mang áo mưa', JSON.stringify(rvd));
   await p.click('.tab[data-tab="today"]'); await p.waitForTimeout(150);
-  ok('GĐ5: hôm nay chưa có lời nhắc của chính hôm nay', await p.locator('.remind').count() === 0);
+  ok('GĐ5: hôm nay chưa có lời nhắc của chính hôm nay', await p.locator('.reminders .remind').count() === 0);
   await p.click('[data-action="day-shift"][data-dir="1"]'); await p.waitForTimeout(120);
   ok('GĐ5: ngày sau hiện lời nhắc', /Mang áo mưa/.test(await p.locator('.reminders').innerText().catch(() => '')));
   await p.click('[data-action="rem-hide"]'); await p.waitForTimeout(150);
-  ok('GĐ5: Ẩn lời nhắc -> hide_from = ngày đang xem', (await p.evaluate(id => App.store.get().reviews.find(r => r.id === id).hide_from, rvd.id)) === addDays(TODAY, 1) && await p.locator('.remind').count() === 0);
+  ok('GĐ5: Ẩn lời nhắc -> hide_from = ngày đang xem', (await p.evaluate(id => App.store.get().reviews.find(r => r.id === id).hide_from, rvd.id)) === addDays(TODAY, 1) && await p.locator('.reminders .remind').count() === 0);
   await p.click('[data-action="rem-show"]'); await p.waitForTimeout(150);
-  ok('GĐ5: Hiện lại lời nhắc', await p.locator('.remind').count() === 1);
+  ok('GĐ5: Hiện lại lời nhắc', await p.locator('.reminders .remind').count() === 1);
   // Review tuần trước -> nhắc suốt tuần này
   await p.evaluate(td => { const v = App.summary.shift('Tuần', App.period.valueOf('Tuần', td), -1); App.store.upsert('Reviews', { id: 'rv-w-test', period_type: 'Tuần', period_value: v, good: '', bad: 'Ngủ muộn', next: 'Ngủ trước 23h', rating: '2', created_at: td }); }, TODAY);
   await p.click('[data-action="day-today"]'); await p.waitForTimeout(150);

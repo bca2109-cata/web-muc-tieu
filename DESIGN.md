@@ -53,11 +53,15 @@ Chế độ tối (làm ở Giai đoạn 4): giữ tên biến, đổi giá tr�
 - **Top 3**: 3 tờ giấy note màu bơ, bạc hà, da trời, xoay nhẹ, có số thứ tự và một bông hoa ghim. Ô trống là khung nét đứt.
 - **Ma trận**: lưới 2×2 có 2 trục kèm mũi tên (trên: Khẩn cấp / Không khẩn cấp; trái: Quan trọng / Không quan trọng), mỗi ô có icon, tên ô (Baloo 2), mô tả, số việc chưa xong. Tên việc dài xuống tối đa 2 dòng rồi cắt bằng "…". Điện thoại (dưới 560px) xếp 4 ô thành 1 cột.
 - **Biểu đồ tổng quan** (GĐ5: Trạng thái hoàn thành, Trạng thái đến hạn, Mức độ quan trọng; hai loại sau là 3 thanh ngang xếp chồng, dài theo số việc của hàng): thanh cao 14px, khe 2px giữa các đoạn, bo 4px. Dưới mỗi thanh có chú thích: ô màu, tên, số việc và %. Không chỉ dựa vào màu.
-- **Bảng tác vụ**: tick, Việc (tên + mục tiêu và "Đang làm" ở dòng nhỏ), Hạn, Ưu tiên, Ô ma trận. Vạch trái theo ô ma trận. Điện thoại ẩn cột Ưu tiên, ô ma trận chỉ còn icon.
+- **Bảng tác vụ**: tick, Việc (tên + mục tiêu, "Đang làm", thời lượng, số việc con, số lần dời ở dòng nhỏ; bước đầu tiên ở dòng riêng), Hạn, Quan trọng, Ô ma trận. Vạch trái theo ô ma trận. Điện thoại ẩn cột Quan trọng, ô ma trận chỉ còn icon.
 - **Ô chọn ngày**: dưới ô có dòng nhỏ ghi ngày kiểu Việt Nam (`.date-read`), vì ô chọn ngày hiện theo ngôn ngữ trình duyệt.
 - **Mốc bề ngang**: 560px (ma trận 2 cột, bảng hiện đủ cột), 620px, 900px (2 cột tab Hôm nay).
 - **Ngoại lệ màu viết thẳng**: `src/favicon.svg` và icon trong `src/icons/` (file riêng, không dùng được biến), hình mặt trời và hoa trang trí (màu cố định), màu nền trong `manifest.json` và thẻ `theme-color` của `index.html` (trình duyệt đọc trước khi có CSS; sau khi tải, web tự đổi theo `--bg`).
 - **Thẻ mục tiêu**: băng dính washi sọc theo màu nhóm, sticker icon nhóm xoay nghiêng, nhãn kỳ, nhãn "Còn N ngày", trái tim, thanh tiến độ có sọc chéo, câu trạng thái ("Cần tăng tốc", "Sắp tới đích", "Đạt rồi, giỏi quá!").
+- **Quỹ giờ** (GĐ6): mỗi quỹ (Giờ làm, Buổi tối; cuối tuần 1 quỹ Cá nhân) là 1 thanh cao 14px gồm Đã xong (`--cv-done`), Đã xếp (`--cv-tmr`), Đột xuất (sọc chéo `--cv-doing`) và vạch đen đánh dấu mức quỹ. Vượt quỹ thì phần Đã xếp đổi `--warn-bar` và có dòng cảnh báo kèm icon. Số "Đã xếp 4h30 / 5h15" luôn hiện chữ.
+- **Kế hoạch hôm nay** (GĐ6): khung viền `--accent-soft`, danh sách có số thứ tự, mỗi việc có lý do, thời lượng, nút lên / xuống / bỏ (44px). Việc dời 3 lần nền `--hot-bg`, phải chọn trước khi chốt.
+- **Nhãn chip** (GĐ6, thêm nhanh và form): viên thuốc viền 2px, chọn thì nền `--accent-soft` viền `--accent`. Cao 36px, màn cảm ứng 44px.
+- **Nút nổi Đột xuất** (GĐ6): viên thuốc 52px ở góc phải dưới, nằm trên thanh tab ở điện thoại.
 - **Nút**: chính (nền accent, chữ trắng, bóng đặc), phụ (nền trắng, viền accent nhạt), nguy hiểm (chữ đỏ). Nút nào cũng có icon.
 - **Thông báo**: viên thuốc màu `--ink`, chữ trắng, ở đáy màn hình. Thông báo chúc mừng có 2 bông hoa phía trước.
 

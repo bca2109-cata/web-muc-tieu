@@ -69,7 +69,8 @@ App.ui = (function () {
     bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
     eyeoff: '<path d="M3 3l18 18"/><path d="M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 9 6 9 6a16 16 0 0 1-3 3.4M6.6 7.6C4.4 9.2 3 12 3 12s4 6 9 6a8.6 8.6 0 0 0 4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
     eye: '<path d="M3 12s4-6 9-6 9 6 9 6-4 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.6"/>',
-    sort: '<path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/>'
+    sort: '<path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/>',
+    box: '<path d="M3.5 8 12 4l8.5 4v8.5L12 20.5l-8.5-4z"/><path d="M3.5 8 12 12l8.5-4M12 12v8.5"/>'
   };
 
   function icon(name, cls) {
@@ -77,14 +78,16 @@ App.ui = (function () {
   }
 
   /* ---------- Thông báo ---------- */
-  var toastEl = null, toastTimer = null;
+  // Thông báo dính (lỗi lưu, có nút Thử lại) không bị thông báo thường che mất: thông báo thường tắt thì hiện lại
+  var toastEl = null, toastTimer = null, stuck = null;
   function toast(msg, opts) {
     opts = opts || {};
-    hideToast();
+    if (opts.sticky) stuck = [msg, opts];
+    hideToast(true);
     toastEl = document.createElement('div');
     toastEl.className = 'toast';
     toastEl.setAttribute('role', opts.sticky ? 'alert' : 'status');
-    toastEl.className = 'toast' + (opts.cheer ? ' is-cheer' : '');
+    toastEl.className = 'toast' + (opts.cheer ? ' is-cheer' : '') + (opts.sticky ? ' is-sticky' : '');
     toastEl.innerHTML = (opts.cheer ? App.flowers.html('sakura', 22, 1) + App.flowers.html('daisy', 20, 4, 'overlap') : '') + '<span class="msg">' + esc(msg) + '</span>' +
       (opts.actionLabel ? '<button type="button" class="btn" data-t="act">' + icon(opts.actionIcon || 'refresh', 'ic18') + esc(opts.actionLabel) + '</button>' : '') +
       '<button type="button" class="icon-btn" data-t="close" aria-label="Đóng thông báo">' + icon('close', 'icon-sm') + '</button>';
@@ -92,18 +95,22 @@ App.ui = (function () {
       var b = e.target.closest('[data-t]');
       if (!b) return;
       var act = b.getAttribute('data-t') === 'act';
+      if (opts.sticky) stuck = null;
       hideToast();
       if (act && opts.action) opts.action();
     });
     document.body.appendChild(toastEl);
     if (!opts.sticky) toastTimer = setTimeout(hideToast, opts.duration || 3200);
   }
-  function hideToast() {
+  function hideToast(replacing) {
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = null;
+    var wasSticky = toastEl && toastEl.classList.contains('is-sticky');
     if (toastEl) toastEl.remove();
     toastEl = null;
+    if (!replacing && !wasSticky && stuck) toast(stuck[0], stuck[1]);
   }
+  function clearSticky() { stuck = null; if (toastEl && toastEl.classList.contains('is-sticky')) hideToast(); }
 
   /* ---------- Hộp thoại ---------- */
   var current = null;
@@ -167,7 +174,7 @@ App.ui = (function () {
     });
   }
 
-  return { icon: icon, toast: toast, hideToast: hideToast, openModal: openModal, closeModal: closeModal, ask: ask };
+  return { icon: icon, toast: toast, hideToast: hideToast, clearSticky: clearSticky, openModal: openModal, closeModal: closeModal, ask: ask };
 })();
 
 /* Chế độ sáng / tối: "auto" theo cài đặt máy, hoặc chọn tay. Lưu trên từng thiết bị. */

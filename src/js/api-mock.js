@@ -1,11 +1,12 @@
 /* Bản giả của lớp dữ liệu: lưu trong localStorage, có sẵn dữ liệu mẫu.
    Trên địa chỉ trang có thể thêm:
    ?today=2026-11-25  giả lập ngày hôm nay
+   ?now=17:45         giả lập giờ hiện tại
    ?fail=1            mọi lần lưu đều lỗi (thử thông báo lỗi và nút Thử lại); ?fail=0.5 lỗi một nửa số lần */
 var App = window.App || (window.App = {});
 
 App.createMockApi = function (options) {
-  var KEY = 'muctieu_mock_db_v4';
+  var KEY = 'muctieu_mock_db_v6';
   var failRate = options.failRate || 0;
   var DELAY = 150;
 

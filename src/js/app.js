@@ -5,8 +5,9 @@ App.app = (function () {
   var view = document.getElementById('view');
   var ui = {
     groupFilter: '', periodType: '', periodValue: '', flashId: null, todayView: readPref('lp_today_view', 'matrix'),
-    day: '', agendaSort: { key: 'due', dir: 1 }, taskSort: { key: 'due', dir: 1 },
-    taskFilter: { status: 'open', priority: '', goal: '', due: '', quad: '', from: '', to: '' },
+    day: '', agendaSort: { key: 'plan', dir: 1 }, taskSort: { key: 'due', dir: 1 },
+    taskFilter: { status: 'open', imp: '', goal: '', due: '', quad: '', from: '', to: '' },
+    taskView: 'all', inboxSort: 'age', inboxGoal: '', plan: null, qa: {},
     habitView: readPref('lp_habit_view', 'week'), habitShift: 0,
     revType: readPref('lp_review_type', 'Tuần'), revValue: '', revChart: readPref('lp_review_chart', 'day')
   };
@@ -112,12 +113,21 @@ App.app = (function () {
     ui.flashId = done ? null : id;
     clearTimeout(flashTimer);
     flashTimer = setTimeout(function () { ui.flashId = null; }, 400);
-    App.store.upsert('Tasks', Object.assign({}, t, {
-      status: done ? 'Cần làm' : App.C.DONE,
-      done_at: done ? '' : App.date.today()
-    }));
+    var row = Object.assign({}, t, { status: done ? 'Cần làm' : App.C.DONE, done_at: done ? '' : App.date.today() });
+    App.store.batch([{ type: 'upsert', table: 'Tasks', row: row }].concat(parentSync(row)));
     // Nút cũ đã bị vẽ lại, nên truyền vị trí đã đo trước đó
     if (!done) celebrate(t, rect ? { getBoundingClientRect: function () { return rect; } } : null);
+  }
+
+  /* Việc cha đã chia nhỏ: mọi việc con xong thì việc cha tự Xong, một việc con mở lại thì việc cha về Cần làm */
+  function parentSync(child) {
+    if (!child.parent_id) return [];
+    var tasks = App.store.get().tasks, p = tasks.find(function (x) { return x.id === child.parent_id; });
+    if (!p) return [];
+    var kids = tasks.map(function (x) { return x.id === child.id ? child : x; }).filter(function (x) { return x.parent_id === p.id; });
+    var allDone = kids.length && kids.every(App.logic.isDone), pDone = App.logic.isDone(p);
+    if (allDone === pDone) return [];
+    return [{ type: 'upsert', table: 'Tasks', row: Object.assign({}, p, { status: allDone ? App.C.DONE : 'Cần làm', done_at: allDone ? App.date.today() : '' }) }];
   }
 
   function toggleTop3(id) {
@@ -129,7 +139,7 @@ App.app = (function () {
       return;
     }
     if (top3Count() >= App.C.TOP3_MAX) {
-      App.ui.toast('Top 3 hôm nay đã đủ 3 việc. Bỏ bớt một việc trước.');
+      App.ui.toast('3 việc chính hôm nay đã đủ. Bỏ bớt một việc trước.');
       return;
     }
     App.store.upsert('Tasks', Object.assign({}, t, { is_top3: 'TRUE', top3_date: today }));
@@ -149,22 +159,169 @@ App.app = (function () {
     if (!on && rect && rect.width) App.flowers.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, false);
   }
 
+  /* Lựa chọn của ô thêm nhanh (thời lượng, Ngày sẽ làm, Quan trọng, mục tiêu), giữ theo từng ô.
+     def: ngày chọn sẵn của màn đang xem; đổi ngày xem thì chọn lại theo ngày đó. */
+  function quickPrefs(id, def, goalId) {
+    var q = ui.qa[id];
+    if (!q || q.def !== def) q = ui.qa[id] = { dur: q ? q.dur : App.C.DEFAULT_DURATION, day: def, def: def, imp: q ? q.imp : false, goal: q ? q.goal : '' };
+    if (goalId) q.goal = goalId;
+    return q;
+  }
   function quickAdd(form) {
-    var input = form.elements.title;
+    var input = form.elements.title, L = App.logic, today = App.date.today();
     var title = input.value.trim();
     if (!title) { input.focus(); return; }
-    var goalId = form.getAttribute('data-goal') || '';
-    var d = {title: title, goal_id: goalId };
-    if (App.date.isValid(form.getAttribute('data-day'))) d.due_date = form.getAttribute('data-day');
-    App.store.upsert('Tasks', App.logic.newTask(d));
+    var q = quickPrefs(form.getAttribute('data-qa'), (ui.qa[form.getAttribute('data-qa')] || {}).def || 'kho');
+    var goalId = form.getAttribute('data-goal') || q.goal || '';
+    var day = App.date.isValid(q.day) ? q.day : '';
+    var big = day && q.dur >= App.C.BIG_MIN;
+    var t = L.newTask({ title: title, goal_id: goalId, duration_min: String(q.dur), is_important: q.imp ? 'TRUE' : 'FALSE', do_date: big ? '' : day });
+    var fit = day && !big ? App.plan.fit(App.store.get(), day, t) : null;
+    App.store.upsert('Tasks', t);
     input.value = '';
     var el = document.getElementById(input.id);
     if (el) { el.value = ''; el.focus(); }
+    if (big) App.ui.toast('Việc ' + L.fmtMin(q.dur) + ' phải chia nhỏ trước khi xếp vào ngày, nên đã vào Kho.', { actionLabel: 'Chia nhỏ', actionIcon: 'list', action: function () { splitTask(t.id); }, duration: 6000 });
+    else if (fit && fit.over > 0) App.ui.toast(day === today ? 'Hôm nay ' + fit.label.toLowerCase() + ' đã xếp ' + L.fmtMin(fit.total) + ' / ' + L.fmtMin(fit.avail) + ', quá tải ' + fit.over + ' phút. Hãy dời bớt về kho.' :
+      App.date.weekday(day) + ' ' + App.date.fmt(day).slice(0, 5) + ' đã xếp ' + L.fmtMin(fit.total) + ' / ' + L.fmtMin(fit.avail) + ' (' + fit.label.toLowerCase() + '). Sáng hôm đó web sẽ gợi ý xếp lại.', { duration: 5000 });
   }
+
+  function splitTask(id) {
+    var t = findTask(id);
+    if (!t) return;
+    App.forms.openSplit(t, function (n) {
+      if (ui.plan) ui.plan.ids = ui.plan.ids.filter(function (x) { return x !== id; });
+      App.ui.toast('Đã chia thành ' + n + ' việc con, nằm trong Kho. Đặt ngày cho từng việc con' + (ui.plan ? ' hoặc thêm vào kế hoạch ở mục Thêm từ kho.' : '.'));
+    });
+  }
+
+  // Đặt Ngày sẽ làm cho một việc (từ Kho, từ cảnh báo quá hạn). Việc lớn chưa chia thì mở form chia nhỏ.
+  function setDoDate(id, day) {
+    var t = findTask(id), L = App.logic;
+    if (!t || !App.date.isValid(day)) return;
+    if (L.needsSplit(t, App.store.get().tasks)) { App.ui.toast('Việc từ 2 giờ trở lên cần chia nhỏ trước khi xếp vào ngày.'); splitTask(id); return; }
+    var row = Object.assign({}, t, { do_date: day, inbox_since: '' });
+    var fit = App.plan.fit(App.store.get(), day, row);
+    App.store.upsert('Tasks', row);
+    var when = day === App.date.today() ? 'hôm nay' : App.date.weekday(day) + ' ' + App.date.fmt(day).slice(0, 5);
+    App.ui.toast(fit.over > 0 ? 'Đã xếp vào ' + when + '. ' + fit.label + ' đã ' + L.fmtMin(fit.total) + ' / ' + L.fmtMin(fit.avail) + ', quá tải ' + fit.over + ' phút.' : 'Đã xếp vào ' + when + '.');
+  }
+
+  /* ---------- Kế hoạch hôm nay (GĐ6) ---------- */
+  function readJson(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  // Thứ tự đã chốt của ngày (chỉ giữ ngày gần nhất)
+  function planOrder(day) {
+    var o = readJson('lp_plan_order');
+    return o && o.day === day && Array.isArray(o.ids) ? o.ids : [];
+  }
+  function buildPlan() {
+    var today = App.date.today(), s = App.plan.suggest(App.store.get(), today);
+    var first = s.items.find(function (p) { return p.first; });
+    return { day: today, ids: s.items.map(function (p) { return p.t.id; }), first: first ? first.t.id : '', keep: {},
+      skipped: s.skipped.map(function (p) { return p.t.id; }), split: s.split.map(function (t) { return t.id; }) };
+  }
+  function openPlan() { ui.plan = buildPlan(); render(); var p = view.querySelector('.plan'); if (p && p.scrollIntoView) p.scrollIntoView({ block: 'nearest' }); }
+  function closePlan() { ui.plan = null; writePref('lp_plan_seen', App.date.today()); render(); }
+  function movePlan(id, dir) {
+    var ids = ui.plan.ids, i = ids.indexOf(id), j = i + dir;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    ids.splice(i, 1); ids.splice(j, 0, id);
+    render();
+    var b = view.querySelector('[data-action="pl-move"][data-id="' + id + '"][data-dir="' + dir + '"]');
+    if (b && !b.disabled) b.focus();
+  }
+  /* Chốt: việc trong danh sách có Ngày sẽ làm = hôm nay, 3 việc đầu thành 3 việc chính.
+     Việc đã đặt hôm nay mà bị bỏ khỏi danh sách thì về kho (không tính là dời). */
+  function commitPlan() {
+    var L = App.logic, today = App.date.today(), tasks = App.store.get().tasks, byId = {};
+    tasks.forEach(function (t) { byId[t.id] = t; });
+    var parents = L.parentIds(tasks);
+    var ids = ui.plan.ids.filter(function (id) { return byId[id] && !L.isDone(byId[id]); });
+    var top = ids.slice(0, App.C.TOP3_MAX), ops = [];
+    tasks.forEach(function (t) {
+      var i = ids.indexOf(t.id), row = null;
+      if (i >= 0) row = Object.assign({}, t, { do_date: L.doDate(t) === today ? (t.do_date || today) : today, inbox_since: '' });
+      else if (!L.isDone(t) && L.doDate(t) === today && !t.parent_recurring_id && !parents[t.id] && !L.isTemplate(t)) row = App.plan.toInbox(t, today, false);
+      var isTop = top.indexOf(t.id) >= 0, was = L.isTop3Today(t, today);
+      if (isTop !== was) { row = row || Object.assign({}, t); row.is_top3 = isTop ? 'TRUE' : 'FALSE'; row.top3_date = isTop ? today : ''; }
+      if (row && JSON.stringify(row) !== JSON.stringify(t)) ops.push({ type: 'upsert', table: 'Tasks', row: row });
+    });
+    try { localStorage.setItem('lp_plan_order', JSON.stringify({ day: today, ids: ids })); } catch (e) { /* bỏ qua */ }
+    writePref('lp_plan_done', today);
+    ui.plan = null;
+    ui.agendaSort = { key: 'plan', dir: 1 };
+    App.store.batch(ops);
+    var ld = App.plan.load(App.store.get(), today);
+    App.ui.toast('Đã chốt kế hoạch: ' + ids.length + ' việc. ' + ld.buckets.map(function (b) { return b.short + ' ' + L.fmtMin(b.planned) + ' / ' + L.fmtMin(b.avail); }).join(', ') + '.', { duration: 4500 });
+  }
+  // Việc đã dời từ 3 lần: Hỏi lại người giao (ghi chú, về kho), Bỏ (xóa, hoàn tác được), Vẫn giữ
+  function planAsk(id) {
+    var t = findTask(id);
+    if (!t) return;
+    App.forms.askNote(t, function (text) {
+      var line = 'Hỏi lại người giao (' + App.date.fmt(App.date.today()) + ')' + (text ? ': ' + text : '');
+      var row = App.plan.toInbox(Object.assign({}, t, { note: (t.note ? t.note + '\n' : '') + line }), App.date.today(), false);
+      if (ui.plan) ui.plan.ids = ui.plan.ids.filter(function (x) { return x !== id; });
+      App.store.upsert('Tasks', row);
+      App.ui.toast('Đã ghi chú và để việc trong kho.');
+    });
+  }
+  function planDrop(id) {
+    var t = findTask(id);
+    if (!t) return;
+    var kids = App.store.get().tasks.filter(function (x) { return x.parent_id === id; });
+    if (ui.plan) ui.plan.ids = ui.plan.ids.filter(function (x) { return x !== id; });
+    App.store.batch([{ type: 'delete', table: 'Tasks', id: id }].concat(kids.map(function (k) { return { type: 'upsert', table: 'Tasks', row: Object.assign({}, k, { parent_id: '' }) }; })));
+    App.ui.toast('Đã bỏ "' + t.title + '".', { actionLabel: 'Hoàn tác', actionIcon: 'refresh', duration: 7000, action: function () {
+      App.store.batch([{ type: 'upsert', table: 'Tasks', row: t }].concat(kids.map(function (k) { return { type: 'upsert', table: 'Tasks', row: k }; })));
+      if (ui.plan && ui.plan.ids.indexOf(id) < 0) { ui.plan.ids.push(id); render(); }
+    } });
+  }
+  // Đưa các việc không kịp hôm nay về kho (dời +1)
+  function overflowToInbox(list) {
+    var today = App.date.today();
+    list = list || App.plan.overflow(App.store.get(), today, planOrder(today));
+    if (!list.length) return;
+    App.store.batch(list.map(function (t) { return { type: 'upsert', table: 'Tasks', row: App.plan.toInbox(t, today, true) }; }));
+    App.ui.toast('Đã đưa ' + list.length + ' việc về kho.', { actionLabel: 'Hoàn tác', actionIcon: 'refresh', duration: 6000, action: function () {
+      App.store.batch(list.map(function (t) { return { type: 'upsert', table: 'Tasks', row: t }; }));
+    } });
+  }
+  // Ghi việc đột xuất, rồi báo việc nào cuối danh sách sẽ không kịp
+  function newInterruption() {
+    App.forms.openInterruption(function (row) {
+      App.store.upsert('Interruptions', row);
+      var L = App.logic, today = App.date.today(), nf = App.plan.overflow(App.store.get(), today, planOrder(today));
+      var ld = App.plan.load(App.store.get(), today), b = ld.buckets[0];
+      if (!nf.length) { App.ui.toast('Đã ghi việc đột xuất ' + L.fmtMin(L.duration(row)) + '. ' + b.label + ' còn ' + L.fmtMin(b.avail - b.planned) + ' chưa xếp.'); return; }
+      App.ui.ask('Quỹ giờ không đủ', 'Đã ghi việc đột xuất ' + L.fmtMin(L.duration(row)) + '. ' + b.label + ' còn ' + L.fmtMin(b.avail) + ' cho việc đã xếp, nên các việc cuối danh sách sẽ không kịp hôm nay: ' +
+        nf.map(function (t) { return t.title + ' (' + L.fmtMin(L.duration(t)) + ')'; }).join(', ') + '. Đưa về kho?', [
+        { label: 'Đưa ' + nf.length + ' việc về kho', value: 'yes', kind: 'primary' }, { label: 'Để sau', value: null }
+      ]).then(function (v) { if (v === 'yes') overflowToInbox(nf); });
+    });
+  }
+  function delInterruption(id) {
+    var x = App.store.get().interruptions.find(function (r) { return r.id === id; });
+    if (!x) return;
+    App.store.remove('Interruptions', id);
+    App.ui.toast('Đã xóa việc đột xuất.', { actionLabel: 'Hoàn tác', actionIcon: 'refresh', duration: 6000, action: function () { App.store.upsert('Interruptions', x); } });
+  }
+
+  /* Xem lại kho mỗi tuần: từ giờ đã đặt (mặc định Thứ Sáu 16h30) đến hết tuần, nếu tuần đó chưa xem. Trả về số việc trong kho, 0 = không nhắc. */
+  function weekKey(d) { var w = App.date.isoWeek(d); return w.year + '-W' + w.week; }
+  function inboxReviewDue() {
+    var D = App.date, today = D.today(), s = App.plan.settings(App.store.get());
+    if (readPref('lp_inbox_review', '') === weekKey(today)) return 0;
+    var wd = +s.review_weekday, dow = D.parse(today).getUTCDay();
+    var idx = function (x) { return (x + 6) % 7; }; // thứ Hai = 0
+    if (idx(dow) < idx(wd) || (dow === wd && D.nowHM() < s.review_time)) return 0;
+    return App.store.get().tasks.filter(App.logic.inInbox).length;
+  }
+  function inboxReviewDone() { writePref('lp_inbox_review', weekKey(App.date.today())); }
 
   // Sinh các lần lặp còn thiếu (đến hôm nay)
   function generateRecurring() {
-    var list = App.logic.recurringToCreate(App.store.get().tasks, App.date.today());
+    var list = App.logic.recurringToCreate(App.store.get().tasks, App.date.today(), App.store.get().habits);
     if (!list.length) return;
     App.store.batch(list.map(function (t) { return { type: 'upsert', table: 'Tasks', row: t }; }));
   }
@@ -215,33 +372,19 @@ App.app = (function () {
     App.ui.toast(day ? 'Đã ẩn lời nhắc. Muốn xem lại thì bấm "Hiện lại".' : 'Đã hiện lại lời nhắc.');
   }
 
-  // Top 3 hôm trước chưa xong: chuyển sang hôm nay
-  function carryOverTop3() {
-    var today = App.date.today();
-    var list = App.logic.top3CarryOver(App.store.get().tasks, today);
-    if (!list.length) return;
-    var room = App.C.TOP3_MAX - top3Count();
-    var ops = list.slice(0, Math.max(0, room)).map(function (t) {
-      return { type: 'upsert', table: 'Tasks', row: Object.assign({}, t, { top3_date: today }) };
-    });
-    App.store.batch(ops);
+  // Sang ngày mới / hết giờ làm: việc chưa xong về kho
+  function rollover() {
+    var rows = App.plan.rolloverRows(App.store.get(), App.date.today(), App.date.nowHM());
+    if (!rows.length) return;
+    App.store.batch(rows.map(function (r) { return { type: 'upsert', table: 'Tasks', row: r }; }));
+    App.ui.toast('Đã đưa ' + rows.length + ' việc chưa xong về kho. Số lần dời đã tăng thêm 1.', { duration: 5000 });
   }
-
-  /* Mỗi ngày một lần: Top 3 còn chỗ thì tự điền việc trễ hạn, rồi việc Khẩn cấp.
-     Chỉ chạy một lần mỗi ngày trên mỗi máy, để bỏ sao một việc thì nó không tự quay lại. */
-  function autoFillTop3() {
+  // Lần đầu mở web trong ngày: mở sẵn Kế hoạch hôm nay (đã chốt hoặc đã bấm Để sau thì thôi)
+  function autoPlan() {
     var today = App.date.today();
-    if (readPref('lp_top3_auto', '') === today) return;
-    var room = App.C.TOP3_MAX - top3Count();
-    var tasks = App.store.get().tasks.filter(function (t) { return !App.logic.isTemplate(t) && !App.logic.isMissed(t, today); });
-    var list = App.logic.top3Suggest(tasks, today, room);
-    // Chưa có việc nào để điền thì chưa đánh dấu, lần mở sau trong ngày thử lại
-    if (room > 0 && !list.length) return;
-    writePref('lp_top3_auto', today);
-    if (!list.length) return;
-    App.store.batch(list.map(function (t) {
-      return { type: 'upsert', table: 'Tasks', row: Object.assign({}, t, { is_top3: 'TRUE', top3_date: today }) };
-    }));
+    if (ui.plan || readPref('lp_plan_done', '') === today || readPref('lp_plan_seen', '') === today) return;
+    var p = buildPlan();
+    if (p.ids.length || p.split.length) ui.plan = p;
   }
 
   view.addEventListener('click', function (e) {
@@ -271,8 +414,28 @@ App.app = (function () {
       case 'new-task':
         var td = {};
         if (el.getAttribute('data-goal')) td.goal_id = el.getAttribute('data-goal');
-        if (App.date.isValid(el.getAttribute('data-day'))) td.due_date = el.getAttribute('data-day');
+        if (App.date.isValid(el.getAttribute('data-day'))) td.do_date = el.getAttribute('data-day');
         App.forms.openTask(null, td); break;
+      case 'plan-open': openPlan(); break;
+      case 'plan-close': closePlan(); break;
+      case 'plan-commit': commitPlan(); break;
+      case 'pl-move': movePlan(id, +el.getAttribute('data-dir') || 0); break;
+      case 'pl-remove': ui.plan.ids = ui.plan.ids.filter(function (x) { return x !== id; }); render(); break;
+      case 'pl-add':
+        var sel = document.getElementById('pl-add-sel');
+        if (sel && sel.value && ui.plan.ids.indexOf(sel.value) < 0) { ui.plan.ids.push(sel.value); render(); }
+        break;
+      case 'pl-keep': ui.plan.keep[id] = true; render(); break;
+      case 'pl-ask': planAsk(id); break;
+      case 'pl-drop': planDrop(id); break;
+      case 'pl-split': case 'split-task': splitTask(id); break;
+      case 'do-day': setDoDate(id, el.getAttribute('data-day')); break;
+      case 'intr-new': newInterruption(); break;
+      case 'intr-del': delInterruption(id); break;
+      case 'overflow-inbox': overflowToInbox(); break;
+      case 'task-view': ui.taskView = el.getAttribute('data-view'); render(); break;
+      case 'inbox-review': App.forms.inboxReview(inboxReviewDone); break;
+      case 'inbox-later': inboxReviewDone(); render(); App.ui.toast('Đã ẩn lời nhắc tới tuần sau. Mở lúc nào cũng được ở tab Task, màn Kho.'); break;
       case 'day-shift': ui.day = App.date.addDays(ui.day || App.date.today(), +el.getAttribute('data-dir') || 0); render(); break;
       case 'day-today': ui.day = ''; render(); break;
       case 'tt-sort':
@@ -297,7 +460,7 @@ App.app = (function () {
         ui.revValue = rv > rcur ? rcur : rv; render(); break;
       case 'rev-chart': ui.revChart = el.getAttribute('data-chart'); writePref('lp_review_chart', ui.revChart); render(); break;
       case 'rev-open': ui.revType = el.getAttribute('data-type'); ui.revValue = el.getAttribute('data-value'); render(); window.scrollTo(0, 0); break;
-      case 'task-reset': ui.taskFilter = { status: 'open', priority: '', goal: '', due: '', quad: '', from: '', to: '' }; render(); break;
+      case 'task-reset': ui.taskFilter = { status: 'open', imp: '', goal: '', due: '', quad: '', from: '', to: '' }; render(); break;
       case 'go': go(el.getAttribute('data-href')); break;
       case 'reload': reload(); break;
     }
@@ -306,6 +469,19 @@ App.app = (function () {
   view.addEventListener('change', function (e) {
     var el = e.target;
     if (el.name === 'period-value') { ui.periodValue = el.value; render(); }
+    else if (/^qa-/.test(el.name || '')) {
+      var qf = el.closest('[data-form="quick-add"]'), q = qf && ui.qa[qf.getAttribute('data-qa')];
+      if (!q) return;
+      if (el.name === 'qa-dur') q.dur = +el.value;
+      else if (el.name === 'qa-day') q.day = el.value;
+      else if (el.name === 'qa-imp') q.imp = el.checked;
+      else if (el.name === 'qa-goal') q.goal = el.value;
+      render();
+      var back = document.getElementById(el.id);
+      if (back) back.focus();
+    }
+    else if (el.name === 'inbox-sort') { ui.inboxSort = el.value; render(); }
+    else if (el.name === 'inbox-goal') { ui.inboxGoal = el.value; render(); }
     else if (el.name === 'agenda-day') { if (App.date.isValid(el.value)) { ui.day = el.value === App.date.today() ? '' : el.value; render(); } }
     else if (el.getAttribute && el.getAttribute('data-filter')) { ui.taskFilter[el.getAttribute('data-filter')] = el.value; render(); }
   });
@@ -381,8 +557,8 @@ App.app = (function () {
     return App.store.load().then(function () {
       loaded = true;
       generateRecurring();
-      carryOverTop3();
-      autoFillTop3();
+      rollover();
+      autoPlan();
       render();
     }, function (err) {
       if (err && (err.code === 'NO_TOKEN' || err.code === 'BAD_TOKEN')) {
@@ -416,7 +592,8 @@ App.app = (function () {
     reload();
   }
 
-  return { start: start, go: go, render: render, reload: reload, top3Count: top3Count, celebrate: celebrate, generateRecurring: generateRecurring };
+  return { start: start, go: go, render: render, reload: reload, top3Count: top3Count, celebrate: celebrate, generateRecurring: generateRecurring,
+    quickPrefs: quickPrefs, planOrder: planOrder, inboxReviewDue: inboxReviewDue, parentSync: parentSync, splitTask: splitTask };
 })();
 
 App.app.start();

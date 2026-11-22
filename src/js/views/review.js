@@ -125,6 +125,18 @@ App.views.charts = (function () {
 })();
 App.views.charts.bind();
 
+/* Việc đột xuất 14 ngày gần nhất (GĐ6): trung bình mỗi ngày làm việc, gợi ý % dự phòng cho sát thực tế */
+App.views.intrStat = function (state, today) {
+  var L = App.logic, icon = App.ui.icon, x = App.plan.interruptionStats(state, today), f = L.fmtMin;
+  var body = x.count
+    ? '<p class="is-main"><span class="num is-big">' + f(x.avg) + '</span> mỗi ngày làm việc</p>' +
+      '<p class="muted">' + '<span class="num">' + x.count + '</span> việc, tổng <span class="num">' + f(x.sum) + '</span> trong <span class="num">' + x.days + '</span> ngày làm việc (từ <span class="num">' + App.date.fmt(x.from).slice(0, 5) + '</span>).</p>' +
+      '<p class="info-line">' + icon('sparkle', 'ic14') + '<span>Dự phòng đang đặt <span class="num">' + x.currentPct + '%</span> (khoảng <span class="num">' + f(x.net * x.currentPct / 100) + '</span> mỗi ngày). ' +
+      (x.count < 5 ? 'Ghi thêm việc đột xuất vài ngày nữa (ít nhất 5 việc) để web gợi ý % dự phòng sát thực tế.' : Math.abs(x.suggestPct - x.currentPct) < 5 ? 'Khớp với thực tế, giữ nguyên.' : 'Theo số thực tế, nên đặt khoảng <b class="num">' + x.suggestPct + '%</b>. Đổi ở Cài đặt, mục Quỹ giờ.') + '</span></p>'
+    : '<p class="muted">Chưa ghi việc đột xuất nào trong 14 ngày gần nhất. Mỗi khi có việc chen ngang, bấm nút Đột xuất ở Agenda để ghi lại.</p>';
+  return '<section class="card intr-stat" aria-labelledby="is-title"><h2 id="is-title" class="ov-h">' + icon('bolt', 'ic14') + ' Việc đột xuất, 14 ngày gần nhất</h2>' + body + '</section>';
+};
+
 App.views.review = function (state, ui) {
   var S = App.summary, L = App.logic, D = App.date, P = App.period, esc = App.util.esc, icon = App.ui.icon, fl = App.flowers.html, Ch = App.views.charts;
   var today = D.today();
@@ -162,6 +174,9 @@ App.views.review = function (state, ui) {
     stat('target', s.avg === null ? '–' : s.avg + '%', 'trung bình mục tiêu',
       s.goals.length ? '<span class="num">' + s.goals.length + '</span> mục tiêu trong kỳ' : 'Không có mục tiêu trong kỳ') +
     '</ul>';
+  html += App.views.intrStat(state, today);
+  // Kỳ Ngày: biểu đồ tổng quan của ngày (GĐ6 chuyển từ Agenda sang đây)
+  if (isDay) html += App.views.overview(L.dayStats2(L.dayList(state.tasks, value).concat(L.overdueList(state.tasks, value)), value), 'ngày <span class="num">' + D.fmt(value) + '</span>');
 
   // Biểu đồ đường mượt: tỷ lệ hoàn thành theo mốc (gộp theo Ngày / Tuần / Tháng, không lớn hơn kỳ)
   var grans = S.GRANS[type], gran = grans.indexOf(ui.revChart) >= 0 ? ui.revChart : S.GRAN_DEFAULT[type];

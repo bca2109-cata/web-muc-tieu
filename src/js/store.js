@@ -15,7 +15,7 @@ App.store = (function () {
   var listeners = [];
   var statusListeners = [];
 
-  function empty() { return { goals: [], tasks: [], habits: [], habitLogs: [], reviews: [] }; }
+  function empty() { return { goals: [], tasks: [], habits: [], habitLogs: [], reviews: [], interruptions: [], settings: [] }; }
   function readJson(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
   function writeJson(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* đầy bộ nhớ thì bỏ qua */ } }
 
@@ -41,6 +41,7 @@ App.store = (function () {
     emitStatus();
     App.api.batch(ops).then(function () {
       queue = queue.slice(sending);
+      if (App.ui.clearSticky) App.ui.clearSticky();
       sending = 0;
       writeJson(QUEUE_KEY, queue);
       flush();

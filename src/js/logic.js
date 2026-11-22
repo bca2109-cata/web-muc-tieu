@@ -16,13 +16,22 @@ App.C = {
   TOP3_MAX: 3,
   COLUMNS: {
     Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
-    Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time'],
+    // GĐ6 thêm 7 cột cuối. Cột priority giữ dữ liệu cũ, không dùng nữa (chỉ đọc khi is_important còn trống)
+    Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time',
+      'do_date', 'duration_min', 'is_important', 'parent_id', 'first_step', 'defer_count', 'inbox_since'],
     Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
     HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
-    Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from']
+    Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from'],
+    Interruptions: ['id', 'date', 'title', 'duration_min', 'created_at'],
+    Settings: ['id', 'work_start', 'work_end', 'lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'review_weekday', 'review_time', 'weekend_min']
   },
   // Tên sheet -> khóa trong state
-  TABLES: { Goals: 'goals', Tasks: 'tasks', Habits: 'habits', HabitLogs: 'habitLogs', Reviews: 'reviews' }
+  TABLES: { Goals: 'goals', Tasks: 'tasks', Habits: 'habits', HabitLogs: 'habitLogs', Reviews: 'reviews', Interruptions: 'interruptions', Settings: 'settings' },
+  // Thời lượng chọn nhanh (phút). Việc con chỉ chọn 15 / 30 / 60
+  DURATIONS: [15, 30, 60, 120, 240],
+  CHILD_DURATIONS: [15, 30, 60],
+  DEFAULT_DURATION: 30,
+  BIG_MIN: 120
 };
 
 App.util = {
@@ -69,6 +78,12 @@ App.date = (function () {
     var d = new Date();
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
+  // Giờ hiện tại HH:mm (bản mock giả lập được bằng ?now=17:45)
+  function nowHM() {
+    if (App.config && App.config.nowOverride) return App.config.nowOverride;
+    var d = new Date();
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
   function addDays(s, n) { var d = parse(s); return toStr(new Date(d.getTime() + n * DAY)); }
   function diffDays(a, b) { return Math.round((parse(b) - parse(a)) / DAY); }
   function fmt(s) {
@@ -94,7 +109,7 @@ App.date = (function () {
   }
 
   return {
-    toStr: toStr, parse: parse, isValid: isValid, today: today, addDays: addDays, diffDays: diffDays,
+    toStr: toStr, parse: parse, isValid: isValid, today: today, nowHM: nowHM, addDays: addDays, diffDays: diffDays,
     fmt: fmt, weekday: weekday, lastDayOfMonth: lastDayOfMonth, isoWeek: isoWeek, isoWeekMonday: isoWeekMonday
   };
 })();
@@ -181,7 +196,9 @@ App.logic = {
       return { mode: 'metric', done: actual, total: target, unit: goal.unit || '',
         pct: target > 0 ? Math.min(100, Math.max(0, Math.round(actual / target * 100))) : 0 };
     }
-    var mine = tasks.filter(function (t) { return t.goal_id === goal.id && !App.logic.isTemplate(t); });
+    // Việc cha đã chia nhỏ không tính, chỉ tính các việc con (tránh đếm hai lần)
+    var parents = App.logic.parentIds(tasks);
+    var mine = tasks.filter(function (t) { return t.goal_id === goal.id && !App.logic.isTemplate(t) && !parents[t.id]; });
     var done = mine.filter(function (t) { return t.status === App.C.DONE; }).length;
     var total = mine.length;
     var pct = total ? Math.round(done / total * 100) : 0;
@@ -202,8 +219,9 @@ App.logic = {
       p.approx = !D.isValid(upd) || upd > asOf;
       return p;
     }
+    var parents = L.parentIds(tasks);
     var mine = tasks.filter(function (t) {
-      if (t.goal_id !== goal.id || L.isTemplate(t)) return false;
+      if (t.goal_id !== goal.id || L.isTemplate(t) || parents[t.id]) return false;
       var born = t.parent_recurring_id ? t.due_date : String(t.created_at || '').slice(0, 10);
       return !D.isValid(born) || born <= asOf;
     });
@@ -278,12 +296,16 @@ App.logic = {
     var p = App.logic.parseRule(rule), d = App.date.parse(date);
     return !!p && !!d && p.days.indexOf(d.getUTCDay()) >= 0;
   },
-  // Các lần lặp cần sinh thêm: từ ngày bắt đầu của mẫu (tối đa 30 ngày gần nhất) đến hôm nay
-  recurringToCreate: function (tasks, today) {
+  /* Các lần lặp cần sinh thêm: từ ngày bắt đầu của mẫu (tối đa 30 ngày gần nhất) đến hôm nay.
+     GĐ6: mỗi lần lặp có Ngày sẽ làm = đúng ngày đó, thời lượng và mức quan trọng lấy theo mẫu.
+     Việc lặp hằng ngày trùng tên với một thói quen đang theo thì không sinh (chỉ hiện ở phần Thói quen). */
+  recurringToCreate: function (tasks, today, habits) {
     var L = App.logic, D = App.date, have = {}, out = [];
     tasks.forEach(function (t) { have[t.id] = true; });
     var floor = D.addDays(today, 1 - L.RECUR_BACKFILL_DAYS);
     tasks.filter(L.isTemplate).forEach(function (tpl) {
+      var rule = L.parseRule(tpl.recurring_rule);
+      if (rule && rule.daily && L.similarHabit(tpl.title, habits || [])) return;
       var start = D.isValid(tpl.due_date) ? tpl.due_date : String(tpl.created_at || '').slice(0, 10);
       if (!D.isValid(start)) start = today;
       if (start < floor) start = floor;
@@ -292,8 +314,9 @@ App.logic = {
         if (have[id] || !L.ruleMatches(tpl.recurring_rule, d)) continue;
         have[id] = true;
         out.push(L.newTask({
-          id: id, title: tpl.title, goal_id: tpl.goal_id, due_date: d, due_time: tpl.due_time || L.DEFAULT_TIME, priority: tpl.priority, icon: tpl.icon,
-          parent_recurring_id: tpl.id
+          id: id, title: tpl.title, goal_id: tpl.goal_id, due_date: d, due_time: L.isTime(tpl.due_time) ? tpl.due_time : '', icon: tpl.icon,
+          parent_recurring_id: tpl.id, do_date: d, duration_min: String(L.duration(tpl)), is_important: L.isImportant(tpl) ? 'TRUE' : 'FALSE',
+          first_step: tpl.first_step || '', inbox_since: ''
         }));
       }
     });
@@ -365,118 +388,119 @@ App.logic = {
   },
   isTop3Today: function (t, today) { return App.util.isTrue(t.is_top3) && t.top3_date === today && !App.logic.isMissed(t, today); },
 
-  /* Danh sách việc hôm nay (bảng và biểu đồ): việc chưa xong có hạn đến ngày mai (gồm trễ hạn) hoặc nằm trong Top 3,
-     cộng việc đã xong hôm nay. Chưa xong xếp trước, rồi theo hạn sớm nhất, rồi theo ưu tiên. */
-  workList: function (tasks, today) {
-    var L = App.logic, tmr = App.date.addDays(today, 1);
-    return tasks.filter(function (t) {
-      if (L.isDone(t)) return t.done_at === today;
-      return L.isTop3Today(t, today) || (!!t.due_date && t.due_date <= tmr);
-    }).sort(function (a, b) {
-      var d = (L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0);
-      if (d) return d;
-      var da = a.due_date || '9999', db = b.due_date || '9999';
-      if (da !== db) return da < db ? -1 : 1;
-      return L.priorityRank(a.priority) - L.priorityRank(b.priority);
-    });
+  /* Ưu tiên (GĐ6): mỗi việc chỉ có Quan trọng có / không. Cột is_important còn trống (dữ liệu trước GĐ6) thì đọc theo ưu tiên Cao.
+     Gấp do web tự tính: chưa xong và hạn chót trong 2 ngày tới hoặc đã quá hạn. */
+  isImportant: function (t) {
+    var v = String(t.is_important == null ? '' : t.is_important).toUpperCase();
+    return v === '' ? t.priority === 'Cao' : v === 'TRUE';
   },
-  // Đếm tỷ trọng cho biểu đồ. Độ khẩn cấp chỉ tính việc chưa xong.
-  dayStats: function (list, today) {
-    var L = App.logic, tmr = App.date.addDays(today, 1);
-    var s = { total: list.length, done: 0, status: { done: 0, doing: 0, todo: 0 }, pri: { hi: 0, mid: 0, low: 0 },
-      urg: { over: 0, today: 0, tmr: 0, other: 0 } };
-    list.forEach(function (t) {
-      if (L.isDone(t)) { s.done++; s.status.done++; }
-      else if (t.status === 'Đang làm') s.status.doing++;
-      else s.status.todo++;
-      s.pri[t.priority === 'Cao' ? 'hi' : t.priority === 'Thấp' ? 'low' : 'mid']++;
-      if (L.isDone(t)) return;
-      s.urg[!t.due_date ? 'other' : t.due_date < today ? 'over' : t.due_date === today ? 'today' : t.due_date === tmr ? 'tmr' : 'other']++;
-    });
-    return s;
+  isUrgent: function (t, today) {
+    return !!t.due_date && t.status !== App.C.DONE && t.due_date <= App.date.addDays(today, App.logic.SOON_DAYS);
   },
-  // Việc sắp đến hạn (xem isDueSoon), hạn sớm trước rồi ưu tiên cao trước
-  upcoming: function (tasks, today) {
-    var L = App.logic;
-    return tasks.filter(function (t) { return L.isDueSoon(t, today); })
-      .sort(function (a, b) { return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : L.priorityRank(a.priority) - L.priorityRank(b.priority); });
+  impRank: function (t) { return App.logic.isImportant(t) ? 0 : 1; },
+  // Thời lượng (phút), để trống thì 30 phút
+  duration: function (t) {
+    var n = parseInt(t && t.duration_min, 10);
+    return n > 0 ? n : App.C.DEFAULT_DURATION;
   },
-  // Gợi ý điền Top 3 còn trống: việc trễ hạn trước, rồi việc ô Khẩn cấp
-  top3Suggest: function (tasks, today, room) {
-    var L = App.logic;
-    var pool = tasks.filter(function (t) { return !L.isDone(t) && !L.isTop3Today(t, today); });
-    var byDue = function (a, b) {
-      return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : L.priorityRank(a.priority) - L.priorityRank(b.priority);
-    };
-    var over = pool.filter(function (t) { return L.isOverdue(t, today); }).sort(byDue);
-    var urgent = pool.filter(function (t) { return !L.isOverdue(t, today) && L.quadrant(t, today) === 1; }).sort(byDue);
-    return over.concat(urgent).slice(0, Math.max(0, room));
+  deferCount: function (t) { var n = parseInt(t && t.defer_count, 10); return n > 0 ? n : 0; },
+  // Việc cha: có ít nhất một việc con (parent_id trỏ tới). Trả về { id: số việc con }
+  parentIds: function (tasks) {
+    var m = {};
+    tasks.forEach(function (t) { if (t.parent_id) m[t.parent_id] = (m[t.parent_id] || 0) + 1; });
+    return m;
   },
+  children: function (tasks, id) { return tasks.filter(function (t) { return t.parent_id === id; }); },
+  // Việc từ 2 giờ trở lên chưa chia nhỏ thì không xếp được vào ngày
+  needsSplit: function (t, tasks) {
+    return App.logic.duration(t) >= App.C.BIG_MIN && !App.logic.parentIds(tasks)[t.id];
+  },
+  // Ngày sẽ làm. Lần lặp sinh trước GĐ6 chưa có do_date thì coi là đúng ngày của nó
+  doDate: function (t) {
+    if (App.date.isValid(t.do_date)) return t.do_date;
+    return t.parent_recurring_id && App.date.isValid(t.due_date) ? t.due_date : '';
+  },
+  // Kho: việc chưa xong, chưa có Ngày sẽ làm (không tính việc lặp mẫu)
+  inInbox: function (t) { return !App.logic.isTemplate(t) && t.status !== App.C.DONE && !App.logic.doDate(t); },
+  inboxDays: function (t, today) {
+    var s = String(t.inbox_since || t.created_at || '').slice(0, 10);
+    return App.date.isValid(s) ? Math.max(0, App.date.diffDays(s, today)) : 0;
+  },
+  // Viết thời lượng: 15p, 1h, 1h30, 5h15
+  fmtMin: function (m) {
+    m = Math.round(m || 0);
+    var neg = m < 0; m = Math.abs(m);
+    var h = Math.floor(m / 60), r = m % 60;
+    return (neg ? '-' : '') + (h ? h + 'h' + (r ? App.util.pad(r) : '') : r + 'p');
+  },
+  DURATION_LABELS: { 15: '15p', 30: '30p', 60: '1h', 120: '2h', 240: 'Nửa ngày' },
 
-  // Top 3 hôm trước chưa xong thì giữ lại sang hôm nay
-  top3CarryOver: function (tasks, today) {
-    return tasks.filter(function (t) {
-      return App.util.isTrue(t.is_top3) && t.top3_date && t.top3_date < today && t.status !== App.C.DONE && !App.logic.isMissed(t, today);
-    });
-  },
-
-  priorityRank: function (p) { return { 'Cao': 0, 'Trung bình': 1, 'Thấp': 2 }[p] != null ? { 'Cao': 0, 'Trung bình': 1, 'Thấp': 2 }[p] : 1; },
-
-  // Việc chưa xong lên trước, rồi theo ưu tiên, rồi theo hạn
+  // Việc chưa xong lên trước, rồi việc quan trọng, rồi theo hạn
   sortTasks: function (list) {
     var L = App.logic;
     return list.slice().sort(function (a, b) {
       var d = (L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0);
       if (d) return d;
-      d = L.priorityRank(a.priority) - L.priorityRank(b.priority);
+      d = L.impRank(a) - L.impRank(b);
       if (d) return d;
       d = (a.due_date || '9999') < (b.due_date || '9999') ? -1 : (a.due_date || '9999') > (b.due_date || '9999') ? 1 : 0;
       if (d) return d;
       return (a.created_at || '') < (b.created_at || '') ? -1 : 1;
     });
   },
+  // Việc sắp đến hạn (xem isDueSoon), hạn sớm trước rồi việc quan trọng trước
+  upcoming: function (tasks, today) {
+    var L = App.logic;
+    return tasks.filter(function (t) { return L.isDueSoon(t, today); })
+      .sort(function (a, b) { return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : L.impRank(a) - L.impRank(b); });
+  },
 
-  /* Ma trận 4 ô. Quan trọng = ưu tiên Cao. Gấp = trễ hạn, hạn hôm nay hoặc ngày mai.
-     1 Khẩn cấp, 2 Lên lịch, 3 Xử lý sau, 4 Xem xét */
+  /* Ma trận 4 ô, web tự xếp (GĐ6): Quan trọng do người dùng đánh dấu, Gấp = quá hạn hoặc hạn chót trong 2 ngày tới.
+     1 Khẩn cấp, 2 Làm sau, 3 Làm trong ngày / Nhượng quyền, 4 Dời hôm sau */
   quadrant: function (t, today) {
-    var imp = t.priority === 'Cao';
-    var urg = !!t.due_date && t.due_date <= App.date.addDays(today, 1);
+    var imp = App.logic.isImportant(t);
+    var urg = !!t.due_date && t.due_date <= App.date.addDays(today, App.logic.SOON_DAYS);
     return imp && urg ? 1 : imp ? 2 : urg ? 3 : 4;
   },
   QUADRANTS: {
-    1: { label: 'Khẩn cấp', short: 'Khẩn cấp', icon: 'flame', hint: 'Quan trọng và khẩn cấp', act: 'Việc cần làm ngay' },
-    2: { label: 'Làm sau', short: 'Làm sau', icon: 'calendar', hint: 'Quan trọng, chưa khẩn cấp', act: 'Sắp phải làm, đưa vào lịch' },
-    3: { label: 'Làm trong ngày / Nhượng quyền', short: 'Trong ngày', icon: 'hourglass', hint: 'Khẩn cấp, không quan trọng', act: 'Làm nhanh trong ngày hoặc nhờ người khác' },
-    4: { label: 'Dời hôm sau', short: 'Dời', icon: 'refresh', hint: 'Không quan trọng, không khẩn cấp', act: 'Dời lại hoặc bỏ qua' }
+    1: { label: 'Khẩn cấp', short: 'Khẩn cấp', icon: 'flame', hint: 'Quan trọng và gấp', act: 'Việc cần làm ngay' },
+    2: { label: 'Làm sau', short: 'Làm sau', icon: 'calendar', hint: 'Quan trọng, chưa gấp', act: 'Chọn ngày làm, đừng để tới sát hạn' },
+    3: { label: 'Làm trong ngày / Nhượng quyền', short: 'Trong ngày', icon: 'hourglass', hint: 'Gấp, không quan trọng', act: 'Làm nhanh trong ngày hoặc nhờ người khác' },
+    4: { label: 'Dời hôm sau', short: 'Dời', icon: 'refresh', hint: 'Không quan trọng, không gấp', act: 'Dời lại hoặc bỏ qua' }
   },
 
-  /* Agenda theo ngày (GĐ5). Mọi việc có ngày + giờ hạn, giờ mặc định 17:00. */
-  DEFAULT_TIME: '17:00',
+  /* Giờ hạn chót (GĐ5) không còn bắt buộc từ GĐ6 */
   isTime: function (v) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(v || '')); },
   // Khóa sắp xếp theo ngày rồi giờ; việc không có hạn xếp cuối
   dueKey: function (t) {
     return t.due_date ? t.due_date + ' ' + (App.logic.isTime(t.due_time) ? t.due_time : '23:59') : '9999';
   },
   doneDay: function (t) { return String(t.done_at || '').slice(0, 10); },
-  /* Việc của ngày D: hạn đúng ngày D (kể cả lần lặp), quá hạn (hạn trước D) mà chưa xong tính đến D, và việc đã xong trong ngày D.
-     Lần lặp quá hạn chỉ hiện ở đúng ngày của nó, không kéo sang các ngày sau (xem isMissed). */
+  /* Việc của ngày D (GĐ6): việc có Ngày sẽ làm = D, cộng việc đã xong trong ngày D.
+     Việc cha đã chia nhỏ không hiện (từng việc con có ngày riêng). Việc quá hạn chót hiện riêng (overdueList). */
   dayList: function (tasks, day) {
-    var L = App.logic;
+    var L = App.logic, parents = L.parentIds(tasks);
     return tasks.filter(function (t) {
-      if (L.isTemplate(t)) return false;
-      var dd = L.isDone(t) ? L.doneDay(t) : '';
-      if (dd === day) return true;
-      if (!t.due_date) return false;
-      if (t.due_date === day) return true;
-      var openAtDay = !L.isDone(t) || (dd && dd > day);
-      return t.due_date < day && openAtDay && !t.parent_recurring_id;
-    }).sort(function (a, b) { var x = L.dueKey(a), y = L.dueKey(b); return x < y ? -1 : x > y ? 1 : L.priorityRank(a.priority) - L.priorityRank(b.priority); });
+      if (L.isTemplate(t) || parents[t.id]) return false;
+      if (L.isDone(t) && L.doneDay(t) === day) return true;
+      return L.doDate(t) === day;
+    }).sort(function (a, b) { var x = L.dueKey(a), y = L.dueKey(b); return x < y ? -1 : x > y ? 1 : L.impRank(a) - L.impRank(b); });
+  },
+  // Việc quá hạn chót tính đến ngày D, chưa xong, không nằm trong danh sách của ngày D (cảnh báo ở Agenda)
+  overdueList: function (tasks, day) {
+    var L = App.logic, parents = L.parentIds(tasks);
+    return tasks.filter(function (t) {
+      if (L.isTemplate(t) || parents[t.id] || t.parent_recurring_id || !t.due_date || t.due_date >= day) return false;
+      var dd = L.doneDay(t);
+      if (L.isDone(t) && (!dd || dd <= day)) return false;
+      return L.doDate(t) !== day;
+    }).sort(function (a, b) { return L.dueKey(a) < L.dueKey(b) ? -1 : 1; });
   },
   // Trạng thái đến hạn so với ngày D: over (hạn trước D), due (hạn ngày D), later (hạn sau D hoặc chưa có hạn)
   dueState: function (t, day) { return !t.due_date || t.due_date > day ? 'later' : t.due_date < day ? 'over' : 'due'; },
   // Việc đã xong tính đến hết ngày D
   doneBy: function (t, day) { var d = App.logic.doneDay(t); return App.logic.isDone(t) && (!d || d <= day); },
-  // Số liệu biểu đồ tổng quan của ngày D
+  // Số liệu biểu đồ tổng quan của ngày D (tab Tổng kết, kỳ Ngày)
   dayStats2: function (list, day) {
     var L = App.logic, s = { total: list.length, done: 0, due: {}, quad: {} };
     ['over', 'due', 'later'].forEach(function (k) { s.due[k] = { done: 0, open: 0 }; s.quad[k] = [0, 0, 0, 0]; });
@@ -487,6 +511,21 @@ App.logic = {
       s.quad[k][L.quadrant(t, day) - 1]++;
     });
     return s;
+  },
+
+  // Tên việc gần giống tên thói quen: so từ (bỏ dấu), chỉ số Jaccard từ 0,6
+  similar: function (a, b) {
+    var L = App.logic;
+    function set(s) { var m = {}; L.plain(s).split(' ').forEach(function (w) { if (w) m[w] = true; }); return m; }
+    var x = set(a), y = set(b), inter = 0, uni = {};
+    Object.keys(x).forEach(function (k) { uni[k] = true; if (y[k]) inter++; });
+    Object.keys(y).forEach(function (k) { uni[k] = true; });
+    var n = Object.keys(uni).length;
+    return n ? inter / n : 0;
+  },
+  similarHabit: function (title, habits) {
+    var L = App.logic;
+    return habits.filter(L.habitActive).find(function (h) { return L.similar(title, h.name) >= 0.6; }) || null;
   },
 
   // Mức quan trọng của mục tiêu: 1 đến 3 trái tim, để trống thì coi là 2
@@ -561,12 +600,15 @@ App.logic = {
   newTask: function (fields) {
     var now = App.util.now();
     var t = {
-      id: App.util.uuid(), title: '', goal_id: '', due_date: App.date.today(), due_time: App.logic.DEFAULT_TIME, priority: 'Trung bình',
+      id: App.util.uuid(), title: '', goal_id: '', due_date: '', due_time: '', priority: '',
       status: 'Cần làm', is_top3: 'FALSE', top3_date: '', recurring_rule: '', parent_recurring_id: '',
-      done_at: '', note: '', created_at: now, updated_at: now, icon: ''
+      done_at: '', note: '', created_at: now, updated_at: now, icon: '',
+      do_date: '', duration_min: String(App.C.DEFAULT_DURATION), is_important: 'FALSE', parent_id: '', first_step: '', defer_count: '0', inbox_since: ''
     };
     Object.assign(t, fields || {});
     if (!t.icon) t.icon = App.logic.guessIcon(t.title);
+    // Không có Ngày sẽ làm thì vào kho từ hôm nay
+    if (!t.do_date && !t.inbox_since && !App.logic.isTemplate(t)) t.inbox_since = App.date.today();
     return t;
   },
 

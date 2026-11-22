@@ -5,10 +5,11 @@ App.backup = (function () {
   var TABLES = App.C.TABLES; // tên sheet -> khóa trong state
 
   function counts(db) {
-    return { goals: db.goals.length, tasks: db.tasks.length, habits: db.habits.length, habitLogs: db.habitLogs.length, reviews: db.reviews.length };
+    return { goals: db.goals.length, tasks: db.tasks.length, habits: db.habits.length, habitLogs: db.habitLogs.length, reviews: db.reviews.length,
+      interruptions: (db.interruptions || []).length, settings: (db.settings || []).length };
   }
   function countText(c) {
-    return c.goals + ' mục tiêu, ' + c.tasks + ' task, ' + c.habits + ' thói quen, ' + c.habitLogs + ' ngày tick, ' + c.reviews + ' review';
+    return c.goals + ' mục tiêu, ' + c.tasks + ' task, ' + c.habits + ' thói quen, ' + c.habitLogs + ' ngày tick, ' + c.reviews + ' review, ' + c.interruptions + ' việc đột xuất';
   }
 
   function exportFile(suffix) {
@@ -27,13 +28,13 @@ App.backup = (function () {
 
   /* Kiểm định dạng từng ô: ngày phải là yyyy-mm-dd, các cột chọn từ danh sách phải đúng giá trị tiếng Việt.
      Ô sai thì sửa về giá trị an toàn (ngày để trống, lựa chọn về mặc định) và đếm lại để báo trước khi nhập. */
-  var DATE_COLS = { Goals: ['start_date', 'end_date'], Tasks: ['due_date', 'top3_date', 'done_at'], HabitLogs: ['date'], Reviews: ['hide_from'] };
+  var DATE_COLS = { Goals: ['start_date', 'end_date'], Tasks: ['due_date', 'top3_date', 'done_at', 'do_date', 'inbox_since'], HabitLogs: ['date'], Reviews: ['hide_from'], Interruptions: ['date'] };
   function choiceCols() {
     var C = App.C;
     return {
       Goals: { group: [C.GROUPS.map(function (g) { return g.key; }), 'Công việc'], period_type: [C.PERIOD_TYPES, 'Tháng'],
         progress_mode: [['task', 'metric', 'habit'], 'task'], status: [C.GOAL_STATUS, 'Đang làm'], importance: [['1', '2', '3'], '2'] },
-      Tasks: { priority: [C.PRIORITY, 'Trung bình'], status: [C.TASK_STATUS, 'Cần làm'], is_top3: [['TRUE', 'FALSE'], 'FALSE'] },
+      Tasks: { status: [C.TASK_STATUS, 'Cần làm'], is_top3: [['TRUE', 'FALSE'], 'FALSE'] },
       Habits: { active: [['TRUE', 'FALSE'], 'TRUE'] },
       HabitLogs: { done: [['TRUE', 'FALSE'], 'FALSE'] }
     };
@@ -69,6 +70,20 @@ App.backup = (function () {
       issues.push(table + ' "' + (row.title || row.id) + '": due_time = "' + row.due_time + '"');
       row.due_time = '';
     }
+    // GĐ6: Quan trọng TRUE / FALSE (trống: đọc theo ưu tiên cũ), thời lượng và số lần dời là số nguyên
+    if (table === 'Tasks') {
+      var imp = String(row.is_important).toUpperCase();
+      if (imp && imp !== 'TRUE' && imp !== 'FALSE') { issues.push(table + ' "' + (row.title || row.id) + '": is_important = "' + row.is_important + '"'); imp = 'FALSE'; }
+      row.is_important = imp;
+      if (row.priority && App.C.PRIORITY.indexOf(row.priority) < 0) row.priority = '';
+    }
+    if (table === 'Tasks' || table === 'Interruptions') ['duration_min', 'defer_count'].forEach(function (c) {
+      if (!(c in row) || row[c] === '' || /^\d{1,4}$/.test(row[c])) return;
+      issues.push(table + ' "' + (row.title || row.id) + '": ' + c + ' = "' + row[c] + '"');
+      row[c] = '';
+    });
+    if (table === 'Interruptions' && !row.date) row.drop = true;
+    if (table === 'Settings' && row.id !== 'main') row.drop = true;
     // Mức hài lòng 1 đến 5
     if (table === 'Reviews' && row.rating && ['1', '2', '3', '4', '5'].indexOf(String(row.rating)) < 0) {
       issues.push(table + ' "' + row.id + '": rating = "' + row.rating + '"');

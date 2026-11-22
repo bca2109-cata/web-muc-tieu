@@ -8,9 +8,11 @@
 |---|---|---|---|
 | 0. Đề xuất triển khai | Xong | 21/11/2026 | Xem `docs/DE-XUAT-GD0.md`. 21/11/2026 trên admin-pc: đã chuyển 2 agent vào `.claude/agents/` (có `model: sonnet`), đã xóa `cai-dat-agents/`. Máy có Node v26.13.0, npm 11.20.0 |
 | 1. Mục tiêu và task cơ bản | Xong (đã duyệt) | 22/11/2026 | Xem mục "Giai đoạn 1" bên dưới |
-| 2. Chỉ số, kỳ, task lặp, cảnh báo, tab Task | Đang làm | | Người dùng thêm vào GĐ2: tab Task, nút "Thêm task đầy đủ" |
-| 3. Thói quen và streak | Chưa bắt đầu | | |
-| 4. Tổng kết, biểu đồ, chế độ tối, PWA | Chưa bắt đầu | | |
+| 2. Chỉ số, kỳ, task lặp, cảnh báo, tab Task | Xong (đã duyệt) | 22/11/2026 | Người dùng thêm vào GĐ2: tab Task, nút "Thêm task đầy đủ" |
+| 3. Thói quen và streak | Xong (đã duyệt) | 22/11/2026 | |
+| 4. Tổng kết, biểu đồ, chế độ tối, PWA | Xong (đã duyệt) | 22/11/2026 | |
+| 5. Góp ý sau dùng thử | Xong (đã duyệt) | 22/11/2026 | SPEC mục 4.5 |
+| 6. Lập kế hoạch ngày | Đã làm, chờ duyệt | | SPEC mục 4.6 |
 
 ## Quyết định đã chốt
 21/11/2026 (trả lời mục 4 của `docs/DE-XUAT-GD0.md`):
@@ -202,6 +204,31 @@ Góp ý sau khi dùng thử, quyết định ghi ở SPEC mục 4.5.
 
 ### Duyệt Giai đoạn 5 (22/11/2026)
 - Người dùng duyệt GĐ5 cùng lúc duyệt kế hoạch GĐ6. Dòng "hhh" ở Tasks: người dùng tự xóa.
+
+### Giai đoạn 6: đã làm (22/11/2026)
+Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: việc Công việc về kho lúc 17:30, việc buổi tối giữ tới hết ngày; báo ngay khi đặt vượt quỹ; ngày thường 5h15 giờ làm + 1h30 buổi tối, cuối tuần 1 quỹ 4h; hạn chót có giờ là tùy chọn.
+- **Dữ liệu**: Tasks thêm `do_date`, `duration_min`, `is_important`, `parent_id`, `first_step`, `defer_count`, `inbox_since` (thêm ở cuối, không đổi tên cột cũ). Sheet mới `Interruptions` và `Settings` (1 dòng `id = main`). `Code.gs` tự tạo sheet còn thiếu.
+- **Kho việc**: việc chưa có Ngày sẽ làm nằm trong kho. Tab Task có nút Kho, sắp theo lâu nhất / dời nhiều / quan trọng, lọc mục tiêu. Mỗi tuần một lần nhắc "Xem lại kho" (giữ, chia nhỏ, đặt ngày, bỏ).
+- **Quỹ giờ** ở đầu Agenda: thanh Đã xong / Đã xếp / Đột xuất so với quỹ, báo vượt quỹ. Cài đặt có mục Quỹ giờ.
+- **Kế hoạch hôm nay**: lần đầu mở web mỗi ngày hiện gợi ý vừa quỹ, mỗi việc có lý do; sắp xếp, bỏ, thêm; việc dời 3 lần phải chọn Vẫn giữ / Hỏi lại / Bỏ trước khi chốt. Chốt: 3 việc đầu thành 3 việc chính.
+- **Thêm nhanh**: chọn thời lượng, ngày, Quan trọng ngay trong ô; việc từ 2h đặt vào ngày thì vào kho và gợi ý Chia nhỏ; vượt quỹ thì báo ngay.
+- **Chia nhỏ**: việc con 15p / 30p / 1h, mục tiêu tính % theo việc con (việc cha không tính).
+- **Đột xuất**: nút nổi ở Agenda hôm nay; trừ vào quỹ; việc không còn kịp thì hỏi đưa về kho. Tổng kết có thống kê đột xuất 14 ngày.
+- **Ma trận**: Quan trọng do người dùng đánh dấu (dữ liệu cũ: ưu tiên Cao), gấp = hạn chót trong 2 ngày tới. Agenda ngày D = việc có Ngày sẽ làm là D + xong trong ngày D; việc quá hạn chót hiện ở thẻ riêng.
+- **Sang ngày mới**: việc chưa xong của hôm trước về kho, dời +1. Lần lặp không về kho.
+- Bỏ: Top 3 tự giữ / tự điền (thay bằng chốt kế hoạch), giờ hạn mặc định 17:00.
+- Kiểm thử: bộ thử chính cập nhật theo cách tính mới; thêm `tests-qa/flow-gd6.js` (luồng GĐ6) và `tests-qa/smoke-gd6.js`. Tham số mock mới `?now=HH:mm`.
+- Sửa thêm: thông báo lỗi lưu (có nút Thử lại) không còn bị thông báo khác che mất; thông báo khác tắt thì lỗi hiện lại, lưu được thì tự tắt.
+
+**Kết quả kiểm tra GĐ6**: spec-reviewer và qa-tester không có lỗi Cao về code; lỗi Cao và Trung bình đã sửa. Lỗi Thấp còn lại:
+- Đổi thứ tự việc trong Kế hoạch bằng nút lên/xuống, chưa có kéo thả.
+- Việc cha đã chia nhỏ hiện "x/y việc con", không hiện %.
+- Thanh quỹ ghi "/ quỹ trừ đột xuất".
+- Việc về kho chỉ chạy khi mở hoặc tải lại web.
+- Ô lọc cao 40px.
+- Hình trang trí có mã màu viết thẳng (có từ trước).
+- Dòng "(quỹ 4h )" có khoảng trắng thừa.
+- Ở 390px, trong "Xem lại kho", thông báo vượt quỹ cuối tuần hiện đè lên nút "Đặt ngày" khoảng 5 giây (`forms.js` dòng 434).
 
 ## Câu hỏi chờ người dùng
 - (chưa có)

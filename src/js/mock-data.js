@@ -1,4 +1,4 @@
-/* Dữ liệu mẫu cho bản mock. Ngày tính theo hôm nay để luôn có việc trễ hạn, hôm nay, ngày mai. */
+/* Dữ liệu mẫu cho bản mock. Ngày tính theo hôm nay để luôn có việc trễ hạn, hôm nay, ngày mai, việc trong kho. */
 var App = window.App || (window.App = {});
 
 App.mockData = function (today) {
@@ -26,43 +26,70 @@ App.mockData = function (today) {
   var g7 = goal('Giữ nếp sống lành mạnh', 'Sức khỏe', 'Tháng', null, 2);
   g7.progress_mode = 'habit';
 
-  // Giờ hạn mẫu, xoay vòng để thấy việc được xếp theo giờ
-  var t0 = ['09:00', '17:00', '14:30', '11:00', '17:00', '20:00', '08:30'], n = 0;
-  function task(title, g, dueOffset, priority, status, extra) {
+  /* Việc mẫu (GĐ6). Có đủ trường hợp để thử: ngày mai quá tải, một việc đã dời 3 lần,
+     một việc lớn chia thành 3 việc con, một việc lớn chưa chia, việc trong kho, việc quá hạn.
+     o: { due: số ngày so với hôm nay (null = không có hạn), do: Ngày sẽ làm (null = kho), min: thời lượng, imp, status, defer, inbox, time } */
+  function task(title, g, o, extra) {
+    o = o || {};
     var t = {
-      id: uuid(), title: title, goal_id: g ? g.id : '', due_date: dueOffset == null ? '' : D.addDays(today, dueOffset),
-      priority: priority || 'Trung bình', status: status || 'Cần làm', is_top3: 'FALSE', top3_date: '',
-      recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp, icon: '', due_time: t0[(n++) % t0.length]
+      id: uuid(), title: title, goal_id: g ? g.id : '', due_date: o.due == null ? '' : D.addDays(today, o.due), due_time: o.time || '',
+      priority: '', status: o.status || 'Cần làm', is_top3: 'FALSE', top3_date: '',
+      recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp, icon: '',
+      do_date: o.do == null ? '' : D.addDays(today, o.do), duration_min: String(o.min || 30), is_important: o.imp ? 'TRUE' : 'FALSE',
+      parent_id: '', first_step: o.step || '', defer_count: String(o.defer || 0),
+      inbox_since: o.do == null ? D.addDays(today, o.inbox == null ? -2 : o.inbox) : ''
     };
     t.icon = App.logic.guessIcon(title);
-    // Ngày xong không ở tương lai
-    if (t.status === 'Xong') t.done_at = t.due_date && t.due_date <= today ? t.due_date : D.addDays(today, -1);
+    // Ngày xong không ở tương lai: lấy Ngày sẽ làm, không có thì hôm qua
+    if (t.status === 'Xong') { t.done_at = t.do_date && t.do_date <= today ? t.do_date : D.addDays(today, -1); t.inbox_since = ''; if (!t.do_date) t.do_date = t.done_at; }
     return Object.assign(t, extra || {});
   }
+  var big = task('Chuẩn bị slide họp tổng kết quý', g1, { due: 5, min: 240, imp: true });
+  function child(title, o) { return task(title, g1, Object.assign({ due: 5, imp: true }, o), { parent_id: big.id }); }
 
   var tasks = [
-    task('Tổng hợp số liệu doanh thu tháng 10', g1, -3, 'Cao', 'Xong'),
-    task('Gửi bảng KPI nháp cho anh Minh', g1, -1, 'Cao'),
-    task('Vẽ biểu đồ so sánh các quý', g1, 0, 'Trung bình', 'Đang làm', { is_top3: 'TRUE', top3_date: today }),
-    task('Viết phần nhận xét và đề xuất', g1, 3, 'Trung bình'),
-    task('Họp chốt số liệu với phòng kế toán', g1, 1, 'Cao', 'Xong'),
-    task('Bài 1 đến 4: hàm tra cứu', g2, -10, 'Trung bình', 'Xong'),
-    task('Bài 5 đến 8: Pivot Table', g2, -6, 'Trung bình', 'Xong'),
-    task('Bài 9 đến 12: Power Query', g2, -2, 'Trung bình', 'Xong'),
-    task('Bài 13 đến 16: Dashboard', g2, -1, 'Trung bình', 'Xong'),
-    task('Làm bài kiểm tra cuối khóa', g2, 0, 'Cao', 'Cần làm', { is_top3: 'TRUE', top3_date: D.addDays(today, -1) }),
-    task('Chạy 3 km buổi sáng', g3, -1, 'Trung bình', 'Xong'),
-    task('Chạy 3 km buổi tối', g3, 0, 'Thấp'),
-    task('Chạy 5 km cuối tuần', g3, 2, 'Trung bình'),
-    task('Đọc "Nhà giả kim"', g4, -12, 'Thấp', 'Xong'),
-    task('Đọc "Đắc nhân tâm"', g4, -4, 'Thấp', 'Xong'),
-    task('Mua giấy in cho phòng', null, 0, 'Thấp'),
-    task('Gia hạn bảo hiểm xe', null, 1, 'Cao'),
-    task('Đặt lịch khám răng', null, null, 'Trung bình'),
-    task('Chuẩn bị slide họp tổng kết quý', g1, 5, 'Cao'),
+    task('Tổng hợp số liệu doanh thu tháng 10', g1, { due: -3, do: -3, min: 60, imp: true, status: 'Xong' }),
+    task('Gửi bảng KPI nháp cho anh Minh', g1, { due: -1, min: 30, imp: true, defer: 1, inbox: -1, time: '17:00' }),
+    task('Vẽ biểu đồ so sánh các quý', g1, { due: 0, do: 0, min: 60, imp: true, status: 'Đang làm', step: 'Mở file số liệu quý 3, chọn 4 chỉ số chính' }),
+    task('Viết phần nhận xét và đề xuất', g1, { due: 3, min: 60, imp: true, defer: 3, inbox: -9 }),
+    task('Họp chốt số liệu với phòng kế toán', g1, { due: 1, do: -1, min: 60, imp: true, status: 'Xong', time: '14:30' }),
+    task('Trả lời email khách hàng', g1, { do: 0, min: 30 }),
+    task('Cập nhật file theo dõi đơn hàng', g1, { do: 0, min: 60 }),
+    task('Rà soát hợp đồng nhà cung cấp', g1, { due: 6, min: 120, imp: true, inbox: -4 }),
+    big,
+    child('Lên dàn ý slide', { do: -1, min: 30, status: 'Xong' }),
+    child('Làm phần số liệu', { do: 0, min: 60 }),
+    child('Làm phần kế hoạch quý sau', { min: 60, inbox: -1 }),
+    // Ngày mai quá tải: 5h30 việc nhóm Công việc, quỹ giờ làm chỉ 5h15
+    task('Kiểm tra số liệu tồn kho', g1, { do: 1, min: 60 }),
+    task('Làm báo cáo tuần', g1, { do: 1, min: 60, imp: true }),
+    task('Họp với team sale', g1, { do: 1, min: 60, time: '10:00', due: 1 }),
+    task('Đối soát công nợ', g1, { do: 1, min: 60 }),
+    task('Soạn kế hoạch tháng 12', g1, { do: 1, min: 60, imp: true }),
+    task('Gọi điện cho đối tác vận chuyển', g1, { do: 1, min: 30 }),
+    task('Bài 1 đến 4: hàm tra cứu', g2, { due: -10, do: -10, min: 60, status: 'Xong' }),
+    task('Bài 5 đến 8: Pivot Table', g2, { due: -6, do: -6, min: 60, status: 'Xong' }),
+    task('Bài 9 đến 12: Power Query', g2, { due: -2, do: -2, min: 60, status: 'Xong' }),
+    task('Bài 13 đến 16: Dashboard', g2, { due: -1, do: -1, min: 60, status: 'Xong' }),
+    task('Làm bài kiểm tra cuối khóa', g2, { due: 0, do: 0, min: 60, imp: true, step: 'Mở đề, làm câu 1' }),
+    task('Chạy 3 km buổi sáng', g3, { due: -1, do: -1, min: 30, status: 'Xong' }),
+    task('Chạy 3 km buổi tối', g3, { due: 0, min: 30, inbox: 0 }),
+    task('Chạy 5 km cuối tuần', g3, { due: 2, min: 60 }),
+    task('Đọc "Nhà giả kim"', g4, { due: -12, do: -12, min: 60, status: 'Xong' }),
+    task('Đọc "Đắc nhân tâm"', g4, { due: -4, do: -4, min: 60, status: 'Xong' }),
+    task('Mua giấy in cho phòng', null, { due: 0, min: 15 }),
+    task('Gia hạn bảo hiểm xe', null, { due: 1, min: 30, imp: true }),
+    task('Đặt lịch khám răng', null, { min: 15, inbox: -12 }),
     // Việc lặp mẫu: lần lặp được app tự sinh khi mở
-    task('Uống đủ 2 lít nước', g3, -4, 'Thấp', 'Cần làm', { recurring_rule: 'Hằng ngày' }),
-    task('Tập yoga buổi tối', g3, -10, 'Trung bình', 'Cần làm', { recurring_rule: 'Hằng tuần: T2, T4, T6' })
+    task('Tập yoga buổi tối', g3, { due: -10, min: 30 }, { recurring_rule: 'Hằng tuần: T2, T4, T6', inbox_since: '' }),
+    // Trùng thói quen "Đọc sách 20 phút": không sinh lần lặp, chỉ hiện ở phần Thói quen
+    task('Đọc sách 20 phút mỗi tối', null, { due: -10, min: 15 }, { recurring_rule: 'Hằng ngày', inbox_since: '' })
+  ];
+
+  // Việc đột xuất: hôm nay 1 giờ, hôm qua 30 phút
+  var interruptions = [
+    { id: uuid(), date: today, title: 'Hỗ trợ sale lấy data', duration_min: '60', created_at: today + ' 10:15:00' },
+    { id: uuid(), date: D.addDays(today, -1), title: 'Sửa file báo giá gấp', duration_min: '30', created_at: D.addDays(today, -1) + ' 15:00:00' }
   ];
 
   // Thói quen và các ngày đã tick (25 ngày gần nhất)
@@ -88,5 +115,5 @@ App.mockData = function (today) {
   }
   tick(h1, 0);
 
-  return { goals: [g1, g2, g3, g4, g5, g6, g7], tasks: tasks, habits: [h1, h2, h3, h4], habitLogs: logs, reviews: [] };
+  return { goals: [g1, g2, g3, g4, g5, g6, g7], tasks: tasks, habits: [h1, h2, h3, h4], habitLogs: logs, reviews: [], interruptions: interruptions, settings: [] };
 };

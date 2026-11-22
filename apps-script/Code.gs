@@ -6,14 +6,17 @@
 
 var SHEETS = {
   Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
-  Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time'],
+  Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time',
+    'do_date', 'duration_min', 'is_important', 'parent_id', 'first_step', 'defer_count', 'inbox_since'],
   Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
   HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
-  Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from']
+  Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from'],
+  Interruptions: ['id', 'date', 'title', 'duration_min', 'created_at'],
+  Settings: ['id', 'work_start', 'work_end', 'lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'review_weekday', 'review_time', 'weekend_min']
 };
 // Cột lưu dạng số, các cột còn lại lưu dạng chữ để ngày giữ đúng yyyy-mm-dd
 var NUMBER_COLS = { Goals: ['target', 'actual'] };
-var STATE_KEYS = { Goals: 'goals', Tasks: 'tasks', Habits: 'habits', HabitLogs: 'habitLogs', Reviews: 'reviews' };
+var STATE_KEYS = { Goals: 'goals', Tasks: 'tasks', Habits: 'habits', HabitLogs: 'habitLogs', Reviews: 'reviews', Interruptions: 'interruptions', Settings: 'settings' };
 
 /* ---------- Chạy tay trong trình soạn thảo Apps Script ---------- */
 
@@ -46,12 +49,19 @@ function doiMaBiMat() {
 }
 
 // Cột mới thêm sau này: ghi tên cột vào cuối dòng tiêu đề, không đụng tới cột cũ.
+// Sheet mới (GĐ6: Interruptions, Settings) chưa có thì tạo kèm dòng tiêu đề.
 // Web tự gọi trước mỗi lần ghi, nên không cần chạy lại caiDat khi nâng cấp.
 function ensureColumns_() {
   var ss = SpreadsheetApp.getActive();
   Object.keys(SHEETS).forEach(function (name) {
     var sh = ss.getSheetByName(name);
-    if (!sh || sh.getLastColumn() < 1) return;
+    if (!sh) {
+      sh = ss.insertSheet(name);
+      sh.getRange(1, 1, 1, SHEETS[name].length).setValues([SHEETS[name]]).setFontWeight('bold');
+      sh.setFrozenRows(1);
+      return;
+    }
+    if (sh.getLastColumn() < 1) return;
     var have = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
     SHEETS[name].forEach(function (c) {
       if (have.indexOf(c) < 0) {

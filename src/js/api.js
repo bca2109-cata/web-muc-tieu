@@ -27,6 +27,9 @@ App.api = (function () {
   if (useMock) {
     var t = params.get('today');
     if (t && App.date.isValid(t)) App.config.todayOverride = t;
+    // ?now=17:45 giả lập giờ hiện tại (thử việc về kho lúc hết giờ làm)
+    var hm = params.get('now');
+    if (hm && App.logic.isTime(hm)) App.config.nowOverride = hm;
     return App.createMockApi({ failRate: parseFloat(params.get('fail')) || 0 });
   }
   return App.createSheetApi({ url: App.config.SHEET_API_URL });

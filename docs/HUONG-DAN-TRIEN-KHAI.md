@@ -6,7 +6,7 @@ Bạn chỉ làm **một lần**, khoảng 15 phút, toàn bộ trên trình duy
 Sheet dữ liệu đã được tạo sẵn: **Quản lý mục tiêu - dữ liệu**
 https://docs.google.com/spreadsheets/d/1_zdutUcr7DnRLUm5SFWd959af_h2zZTg700jxPmEK9c/edit
 
-> Lưu ý: không đổi tên 5 sheet (Goals, Tasks, Habits, HabitLogs, Reviews) và không đổi tên cột ở dòng 1.
+> Lưu ý: không đổi tên 5 sheet (Goals, Tasks, Habits, HabitLogs, Reviews, Interruptions, Settings) và không đổi tên cột ở dòng 1.
 
 ---
 
@@ -62,6 +62,8 @@ Chỉ cần khi Claude báo đã đổi `apps-script/Code.gs`. Link web app gi�
 Giai đoạn 4 (22/11/2026) có đổi Code.gs: thêm phần nhập dữ liệu từ file sao lưu. Chưa cập nhật thì mọi thứ vẫn chạy, chỉ riêng nút **Nhập JSON** báo lỗi.
 
 Giai đoạn 5 (22/11/2026) có đổi Code.gs: tự thêm cột mới (giờ hạn của việc, mức hài lòng và ẩn lời nhắc của review) vào cuối dòng tiêu đề. Chưa cập nhật thì giờ hạn, mức hài lòng và nút Ẩn lời nhắc không được lưu lên Sheet.
+
+Giai đoạn 6 (22/11/2026) có đổi Code.gs: thêm 7 cột mới cho Tasks (ngày sẽ làm, thời lượng, quan trọng, việc cha, bước đầu tiên, số lần dời, ngày vào kho) và tự tạo 2 sheet mới **Interruptions** (việc đột xuất) và **Settings** (quỹ giờ). Chưa cập nhật thì các thông tin này không được lưu lên Sheet.
 
 1. Mở Apps Script (Phần A, bước 2), dán code mới đè lên như bước 4 đến 6.
 2. Bấm **Triển khai** (Deploy) → **Quản lý các bản triển khai** (Manage deployments).
