@@ -617,8 +617,17 @@ App.app = (function () {
     App.flowers.applyBg();
     App.theme.apply();
     // PWA: cài lên màn hình chính, mở được khi mạng chập chờn (chỉ chạy trên https)
-    if ('serviceWorker' in navigator && location.protocol === 'https:') {
-      navigator.serviceWorker.register('sw.js').catch(function () { /* không có cũng vẫn dùng được */ });
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      // Tự phát hiện bản mới: kiểm khi mở lại tab và mỗi 30 phút, có bản mới thì hiện thanh "Tải lại"
+      var hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+        function check() { try { reg.update().catch(function () { /* bỏ qua */ }); } catch (e) { /* bỏ qua */ } }
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+        setInterval(check, 30 * 60 * 1000);
+      }).catch(function () { /* không có cũng vẫn dùng được */ });
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (hadController) { var bar = document.getElementById('update-bar'); if (bar) bar.hidden = false; }
+      });
     }
     if (App.api.mode === 'mock') document.getElementById('banner').hidden = false;
     if (App.store.loadCache()) { loaded = true; render(); }

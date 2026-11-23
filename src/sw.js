@@ -1,9 +1,9 @@
 /* Service worker cho PWA: mở được web khi mạng chập chờn.
-   - Trang chính: lấy bản mới trên mạng trước, mất mạng thì dùng bản đã lưu.
+   - Trang chính: lấy bản mới trên mạng trước (bỏ qua cả bộ nhớ đệm của trình duyệt, vì GitHub Pages cho giữ file 10 phút), mất mạng thì dùng bản đã lưu.
    - CSS, JS, ảnh (có ?v= theo phiên bản): dùng bản đã lưu, chưa có thì tải rồi lưu.
    - Dữ liệu Google Sheet (Apps Script) không đi qua đây: luôn gọi thẳng mạng.
    Đổi VERSION mỗi lần đưa bản mới lên để xóa bộ nhớ cũ. */
-var VERSION = 'lp-gd7h';
+var VERSION = 'lp-gd8a';
 var CORE = ['./', 'index.html', 'manifest.json', 'favicon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
@@ -24,7 +24,7 @@ self.addEventListener('fetch', function (e) {
   if (url.origin !== location.origin && !fonts) return;
 
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then(function (res) {
+    e.respondWith(fetch(req, { cache: 'no-store' }).then(function (res) {
       var copy = res.clone();
       caches.open(VERSION).then(function (c) { c.put('index.html', copy); });
       return res;

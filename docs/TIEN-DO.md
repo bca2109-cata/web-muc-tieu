@@ -269,6 +269,11 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Người dùng yêu cầu (23/11): thanh quỹ xem trước phải hiện tổng sau khi thêm việc mới và cập nhật theo phương án đang chọn. Đã làm: tab Ma trận dựng state ảo (việc mới theo phương án, việc bị đẩy sang ngày kế), nên danh sách, quỹ, giờ dự kiến đều là số sau khi thêm; tick/bỏ tick việc đẩy cập nhật ngay.
 - Lỗi Thấp còn lại phần B: hộp thoại chưa có bẫy focus (Tab chạy ra ngoài sau vài lần); "Tuần này" là từ hôm nay đến Chủ nhật.
 
+## GĐ8 mục 0: web tự cập nhật bản mới (23/11/2026, SPEC-GD8)
+- Nguyên nhân: trang chính tuy network-first nhưng `fetch` vẫn dùng bộ nhớ đệm của trình duyệt (GitHub Pages cho giữ 10 phút), nên service worker trả về HTML cũ, rồi nạp JS cũ từ cache. Sửa: điều hướng dùng `fetch(req, { cache: 'no-store' })`; đăng ký `sw.js` với `updateViaCache: 'none'`, kiểm bản mới khi mở lại tab và mỗi 30 phút; có bản mới thì hiện thanh "Có bản mới, Tải lại" (`#update-bar`). `sw.js` VERSION `lp-gd8a`.
+- Kiểm bằng máy chủ localhost giả GitHub Pages (max-age=600): đưa bản mới lên, tải lại một lần là thấy bản mới và hiện thanh Tải lại.
+- Lưu ý: máy đang giữ bản cũ có thể cần một lần Ctrl+Shift+R (hoặc chờ khoảng 10 phút) để nhận service worker mới; từ đó trở đi tự cập nhật.
+
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
 
