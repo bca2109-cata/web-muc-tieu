@@ -106,7 +106,7 @@ App.flowers = (function () {
       var near = i % 100 < 45; // khoảng 45% là lớp gần
       var size = near ? 28 + Math.round(rnd() * 28) : 14 + Math.round(rnd() * 14);
       var dur = near ? 9 + rnd() * 6 : 15 + rnd() * 7;
-      var op = near ? 0.5 + rnd() * 0.05 : 0.35 + rnd() * 0.07;
+      var op = near ? 0.5 + rnd() * 0.05 : 0.35 + rnd() * 0.1;
       var top = Math.round(rnd() * 96), petal = i % 10 < 3;
       var sw = 14 + rnd() * 26, sd = 4 + rnd() * 4, spin = (rnd() < 0.5 ? -1 : 1) * (70 + rnd() * 110);
       var name = petal ? 'petal' : NAMES[i % 11];

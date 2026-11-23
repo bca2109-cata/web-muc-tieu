@@ -245,10 +245,10 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 ## GĐ7 phần C: Hoa rơi (23/11/2026, SPEC-GD7.md)
 - Cài đặt "Hoa rơi" (Luôn bật mặc định / Theo cài đặt máy / Tắt), lưu `lp_fall` trên thiết bị, cả hoa bung khi xong việc theo cài đặt này.
 - 90 bông (45 khi rộng dưới 620px), lớp xa nhỏ mờ chậm, lớp gần to rõ nhanh, 30% là cánh hoa rời lật 3D, lắc ngang hình sin và xoay, chỉ dùng transform và opacity, dừng khi tab ẩn.
-- Giữ chữ đọc được: lớp nền giảm độ đậm (sáng .9, tối .7) và chữ ngoài thẻ có quầng màu nền.
+- Độ đậm 0.35 đến 0.55 là mức hiển thị cuối (người dùng chọn 23/11), không nhân thêm ở lớp nền. Chữ ngoài thẻ có quầng màu nền 4 lớp để vẫn đọc được.
 - `sw.js` VERSION `lp-gd7c`, `?v=gd7c`. Video minh họa: `docs/de-xuat-giao-dien/hoa-roi.gif` và `.webm`.
 - Kết quả: qa-tester đạt (hoa chuyển động đúng 2 chế độ máy, 90/45 bông, FPS 60, tab ẩn dừng). Lỗi Thấp: chữ ngoài thẻ ở chế độ tối vẫn có thể thấp tương phản ở điểm hoa sáng nhất (đã thêm quầng cho tiêu đề và đầu trang); mỗi bông có 2 lớp will-change (nên đo trên máy công ty yếu).
-- Chờ người dùng chốt độ đậm (0.35 đến 0.55 theo từng bông hay theo hiển thị cuối) và duyệt phần C rồi mới làm phần A.
+- Người dùng duyệt phần C (23/11/2026).
 
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
