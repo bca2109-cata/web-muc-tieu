@@ -274,6 +274,11 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Kiểm bằng máy chủ localhost giả GitHub Pages (max-age=600): đưa bản mới lên, tải lại một lần là thấy bản mới và hiện thanh Tải lại.
 - Lưu ý: máy đang giữ bản cũ có thể cần một lần Ctrl+Shift+R (hoặc chờ khoảng 10 phút) để nhận service worker mới; từ đó trở đi tự cập nhật.
 
+## GĐ8: Agenda thành dòng thời gian (SPEC-GD8, lưu `docs/SPEC-GD8-AGENDA-DONG-THOI-GIAN.md`)
+- Mục 0 (cập nhật bản mới): xong, đã lên `main` (xem mục GĐ8 mục 0 ở trên).
+- Mục 2 của quy trình: bản xem trước Agenda mới đã làm (`docs/de-xuat-giao-dien/preview-gd8.html`, trang mẫu `agenda-gd8.html`, 3 trạng thái x 390px và 1280px, thêm chế độ tối và ngăn Chưa xếp). **Chờ người dùng duyệt** rồi mới code mục 2 đến 7.
+- Chờ trả lời: giờ cho từng thói quen trước khi chuyển dữ liệu. Sheet thật hiện chỉ có thói quen "Uống nước 2 lít" (hằng ngày).
+
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
 
