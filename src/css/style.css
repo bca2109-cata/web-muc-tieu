@@ -718,7 +718,7 @@ html,body{overflow-x:clip}
 .chips label>span,.chip-toggle>span{display:inline-flex;align-items:center;gap:4px}
 .chips label:has(input:checked),.chip-toggle:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
 .chip-toggle .icon{color:var(--accent)}
-.qa-goal .select{min-height:40px;padding-top:4px;padding-bottom:4px;font-size:13px;max-width:240px}
+.qa-goal .select{padding-top:4px;padding-bottom:4px;font-size:13px;max-width:240px}
 .qa-msg:empty{display:none}
 .quick-add .qa-full{order:0}
 .qa-warn,.qa-ok{display:flex;align-items:flex-start;gap:6px;margin:0;font-size:13px;font-weight:800}

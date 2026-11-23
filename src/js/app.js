@@ -417,7 +417,7 @@ App.app = (function () {
         if (el.getAttribute('data-goal')) td.goal_id = el.getAttribute('data-goal');
         if (App.date.isValid(el.getAttribute('data-day'))) td.do_date = el.getAttribute('data-day');
         App.forms.openTask(null, td); break;
-      case 'qa-toggle': var qq = ui.qa[el.getAttribute('data-qa')]; if (qq) { qq.open = !qq.open; render(); var tb = view.querySelector('[data-action="qa-toggle"]'); if (tb && qq.open) tb.focus(); else if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } break;
+      case 'qa-toggle': var qq = ui.qa[el.getAttribute('data-qa')]; if (qq) { qq.open = !qq.open; render(); var tb = view.querySelector('[data-action="qa-toggle"][data-qa="' + el.getAttribute('data-qa') + '"]'); if (tb) tb.focus(); } break;
       case 'slow-toggle': ui.slowOpen = !ui.slowOpen; render(); var sb = view.querySelector('[data-action="slow-toggle"]'); if (sb) sb.focus(); break;
       case 'plan-open': openPlan(); break;
       case 'plan-close': closePlan(); break;
