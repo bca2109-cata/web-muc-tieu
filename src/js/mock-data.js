@@ -37,7 +37,7 @@ App.mockData = function (today) {
       recurring_rule: '', parent_recurring_id: '', done_at: '', note: '', created_at: stamp, updated_at: stamp, icon: '',
       do_date: o.do == null ? '' : D.addDays(today, o.do), duration_min: String(o.min || 30), is_important: o.imp ? 'TRUE' : 'FALSE',
       parent_id: '', first_step: o.step || '', defer_count: String(o.defer || 0),
-      inbox_since: o.do == null ? D.addDays(today, o.inbox == null ? -2 : o.inbox) : ''
+      inbox_since: o.do == null ? D.addDays(today, o.inbox == null ? -2 : o.inbox) : '', bucket: o.bucket || ''
     };
     t.icon = App.logic.guessIcon(title);
     // Ngày xong không ở tương lai: lấy Ngày sẽ làm, không có thì hôm qua
@@ -79,6 +79,8 @@ App.mockData = function (today) {
     task('Đọc "Đắc nhân tâm"', g4, { due: -4, do: -4, min: 60, status: 'Xong' }),
     task('Mua giấy in cho phòng', null, { due: 0, min: 15 }),
     task('Gia hạn bảo hiểm xe', null, { due: 1, min: 30, imp: true }),
+    // Việc công ty lẻ, không gắn mục tiêu: chọn Giờ làm
+    task('Gửi file cho trưởng phòng', null, { due: 1, min: 15, bucket: 'work' }),
     task('Đặt lịch khám răng', null, { min: 15, inbox: -12 }),
     // Việc lặp mẫu: lần lặp được app tự sinh khi mở
     task('Tập yoga buổi tối', g3, { due: -10, min: 30 }, { recurring_rule: 'Hằng tuần: T2, T4, T6', inbox_since: '' }),

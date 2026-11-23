@@ -239,7 +239,7 @@ App.comp = (function () {
     var state = App.store.get();
     var gid = goalId || q.goal;
     var warn = '';
-    var probe = { id: '__new', goal_id: gid, duration_min: String(q.dur), do_date: q.day === 'kho' ? '' : q.day };
+    var probe = { id: '__new', goal_id: gid, bucket: gid ? '' : q.bucket, duration_min: String(q.dur), do_date: q.day === 'kho' ? '' : q.day };
     if (q.day !== 'kho' && D.isValid(q.day)) {
       if (q.dur >= App.C.BIG_MIN) warn = '<p class="qa-warn">' + icon('alert', 'ic14') + '<span>Việc từ <span class="num">2</span> giờ trở lên phải chia nhỏ trước khi xếp vào ngày. Bấm thêm thì việc vào Kho, rồi bấm Chia nhỏ.</span></p>';
       else {
@@ -263,6 +263,7 @@ App.comp = (function () {
       chips('qa-dur', App.C.DURATIONS.map(function (m) { return { v: m, label: L.DURATION_LABELS[m] }; }), q.dur, 'Thời lượng', id + '-dur') + '</div>' +
       '<div class="qa-line"><span class="qa-lbl">' + icon('calendar', 'ic14') + 'Ngày làm</span>' + chips('qa-day', dayChoices(today, q.day !== 'kho' ? q.day : ''), q.day, 'Ngày sẽ làm', id + '-day') + '</div>' +
       '<div class="qa-line"><label class="chip-toggle"><input type="checkbox" name="qa-imp" id="' + id + '-imp"' + (q.imp ? ' checked' : '') + '><span>' + icon('heart', 'ic14') + 'Quan trọng</span></label>' + goalSel + '</div>' +
+      (gid ? '' : '<div class="qa-line"><span class="qa-lbl">' + icon('clock', 'ic14') + 'Tính vào</span>' + chips('qa-bucket', [{ v: 'work', label: 'Giờ làm' }, { v: 'evening', label: 'Buổi tối' }], q.bucket, 'Tính vào giờ làm hay buổi tối', id + '-bucket') + '</div>') +
       '<div class="qa-msg" aria-live="polite">' + warn + '</div></div></form>';
   }
 

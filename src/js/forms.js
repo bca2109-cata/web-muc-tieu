@@ -128,6 +128,8 @@ App.forms = (function () {
       '<label class="field"><span>' + icon('play', 'ic14') + 'Bước đầu tiên <small class="muted">(việc nhỏ khoảng 15 phút để bắt đầu)</small></span><input class="input" name="first_step" maxlength="150" placeholder="Ví dụ: mở file, viết 3 ý chính" value="' + esc(t.first_step) + '"></label>' +
       '<div class="field"><span>' + icon('sparkle', 'ic14') + 'Icon <small class="muted">(tự đoán theo tên, bấm để đổi)</small></span>' + iconPicker(App.logic.iconOf(t)) + '</div>' +
       '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu <small class="muted">(nhóm Công việc xếp vào giờ làm, nhóm khác xếp vào buổi tối)</small></span><select class="select" name="goal_id">' + options(goalOpts, t.goal_id) + '</select></label>' +
+      '<div class="field" data-bucket-field' + (t.goal_id ? ' hidden' : '') + '><span>' + icon('clock', 'ic14') + 'Việc này tính vào <small class="muted">(không gắn mục tiêu nên chọn tay, web nhớ lựa chọn lần trước)</small></span>' +
+      seg('bucket', [{ key: 'work', label: 'Giờ làm' }, { key: 'evening', label: 'Buổi tối' }], t.bucket === 'work' || t.bucket === 'evening' ? t.bucket : App.logic.lastBucket()) + '</div>' +
       '<label class="check-line"><input type="checkbox" name="is_important"' + (L.isImportant(t) ? ' checked' : '') + '>' + icon('heart', 'ic18') + 'Quan trọng</label>' +
       durBlock + doBlock +
       '<div class="dt-row"><label class="field"><span>' + icon('flag', 'ic14') + '<span data-due-label>' + (repeat === 'none' ? 'Hạn chót' : 'Bắt đầu lặp từ') + '</span> <small class="muted" data-due-opt' + (repeat === 'none' ? '' : ' hidden') + '>(không bắt buộc)</small></span>' + dateInput('due_date', t.due_date || (repeat === 'none' ? '' : today)) + '</label>' +
@@ -158,7 +160,7 @@ App.forms = (function () {
       if (App.date.isValid(d)) {
         if (curDur() >= App.C.BIG_MIN && !kids.length) msg = '<p class="qa-warn">' + icon('alert', 'ic14') + '<span>Việc từ <span class="num">2</span> giờ trở lên phải chia nhỏ trước khi xếp vào ngày. Để vào kho rồi bấm Chia nhỏ.</span></p>';
         else {
-          var probe = Object.assign({}, t, { goal_id: val(form, 'goal_id'), duration_min: String(curDur()), do_date: d });
+          var probe = Object.assign({}, t, { goal_id: val(form, 'goal_id'), bucket: val(form, 'bucket'), duration_min: String(curDur()), do_date: d });
           var f = App.plan.fit(store().get(), d, probe);
           msg = '<p class="' + (f.over > 0 ? 'qa-warn' : 'qa-ok') + '">' + icon(f.over > 0 ? 'alert' : 'check', 'ic14') + '<span>' + App.date.weekday(d) + ' <span class="num">' + App.date.fmt(d).slice(0, 5) + '</span>, ' + f.label.toLowerCase() + ': <span class="num">' + L.fmtMin(f.total) + ' / ' + L.fmtMin(f.avail) + '</span>' + (f.over > 0 ? ', quá tải <span class="num">' + f.over + '</span> phút' : '') + '.</span></p>';
         }
@@ -168,7 +170,10 @@ App.forms = (function () {
     form.querySelectorAll('[data-do]').forEach(function (b) {
       b.addEventListener('click', function () { form.elements.do_date.value = b.getAttribute('data-do'); refreshDates(form); syncDo(); });
     });
-    form.addEventListener('change', function (e) { if (['do_date', 'duration_min', 'goal_id'].indexOf(e.target.name) >= 0) syncDo(); });
+    form.addEventListener('change', function (e) {
+      if (e.target.name === 'goal_id') { var bf = form.querySelector('[data-bucket-field]'); if (bf) bf.hidden = !!e.target.value; }
+      if (['do_date', 'duration_min', 'goal_id', 'bucket'].indexOf(e.target.name) >= 0) syncDo();
+    });
     form.addEventListener('input', function (e) { if (e.target.name === 'do_date') syncDo(); });
     syncDo();
 
@@ -254,11 +259,12 @@ App.forms = (function () {
       errBig.hidden = !bigBlock;
       if (bigBlock) return;
       var row = Object.assign({}, t, {
-        title: title, goal_id: val(form, 'goal_id'), due_date: due, due_time: due ? dueTime : '',
+        title: title, goal_id: val(form, 'goal_id'), bucket: val(form, 'goal_id') ? '' : (val(form, 'bucket') === 'work' ? 'work' : 'evening'), due_date: due, due_time: due ? dueTime : '',
         status: val(form, 'status') || 'Cần làm', note: val(form, 'note'), first_step: val(form, 'first_step'),
         is_important: form.elements.is_important.checked ? 'TRUE' : 'FALSE', duration_min: String(minutes),
         icon: val(form, 'icon') || App.logic.guessIcon(title)
       });
+      if (!row.goal_id) App.logic.rememberBucket(row.bucket);
       if (repeatKind !== 'none' && minutes >= App.C.BIG_MIN) {
         errBig.textContent = 'Việc lặp lại mỗi lần phải dưới 2 giờ. Chọn thời lượng ngắn hơn hoặc tách thành nhiều việc lặp.';
         errBig.hidden = false;
@@ -334,7 +340,7 @@ App.forms = (function () {
         var name = r.querySelector('[name="kid"]').value.trim();
         if (!name) return;
         ops.push({ type: 'upsert', table: 'Tasks', row: L.newTask({
-          title: name, goal_id: t.goal_id, parent_id: t.id, is_important: L.isImportant(t) ? 'TRUE' : 'FALSE',
+          title: name, goal_id: t.goal_id, bucket: t.bucket || '', parent_id: t.id, is_important: L.isImportant(t) ? 'TRUE' : 'FALSE',
           due_date: t.due_date, due_time: t.due_time, duration_min: String(+val(form, 'kdur-' + i) || 60), inbox_since: today
         }) });
       });

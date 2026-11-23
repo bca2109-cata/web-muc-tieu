@@ -163,7 +163,7 @@ App.app = (function () {
      def: ngày chọn sẵn của màn đang xem; đổi ngày xem thì chọn lại theo ngày đó. */
   function quickPrefs(id, def, goalId) {
     var q = ui.qa[id];
-    if (!q || q.def !== def) q = ui.qa[id] = { dur: q ? q.dur : App.C.DEFAULT_DURATION, day: def, def: def, imp: q ? q.imp : false, goal: q ? q.goal : '' };
+    if (!q || q.def !== def) q = ui.qa[id] = { dur: q ? q.dur : App.C.DEFAULT_DURATION, day: def, def: def, imp: q ? q.imp : false, goal: q ? q.goal : '', bucket: q ? q.bucket : App.logic.lastBucket() };
     if (goalId) q.goal = goalId;
     return q;
   }
@@ -175,7 +175,8 @@ App.app = (function () {
     var goalId = form.getAttribute('data-goal') || q.goal || '';
     var day = App.date.isValid(q.day) ? q.day : '';
     var big = day && q.dur >= App.C.BIG_MIN;
-    var t = L.newTask({ title: title, goal_id: goalId, duration_min: String(q.dur), is_important: q.imp ? 'TRUE' : 'FALSE', do_date: big ? '' : day });
+    var t = L.newTask({ title: title, goal_id: goalId, duration_min: String(q.dur), is_important: q.imp ? 'TRUE' : 'FALSE', do_date: big ? '' : day, bucket: goalId ? '' : q.bucket });
+    if (!goalId) L.rememberBucket(q.bucket);
     var fit = day && !big ? App.plan.fit(App.store.get(), day, t) : null;
     App.store.upsert('Tasks', t);
     input.value = '';
@@ -476,6 +477,7 @@ App.app = (function () {
       else if (el.name === 'qa-day') q.day = el.value;
       else if (el.name === 'qa-imp') q.imp = el.checked;
       else if (el.name === 'qa-goal') q.goal = el.value;
+      else if (el.name === 'qa-bucket') q.bucket = el.value;
       render();
       var back = document.getElementById(el.id);
       if (back) back.focus();

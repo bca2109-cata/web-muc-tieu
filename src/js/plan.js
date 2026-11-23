@@ -45,12 +45,17 @@ App.plan = (function () {
     return isWeekend(day) ? { personal: Math.round(num(s.weekend_min, 240)) } : { work: workBudget(s), evening: Math.round(num(s.evening_min, 90)) };
   }
   function goalsMap(state) { var m = {}; (state.goals || []).forEach(function (g) { m[g.id] = g; }); return m; }
-  // Nhóm Công việc xếp vào giờ làm, nhóm khác và Việc lặt vặt xếp vào buổi tối. Cuối tuần chung một quỹ.
+  /* Việc thuộc mục tiêu nhóm Công việc xếp vào giờ làm, mục tiêu nhóm khác xếp vào buổi tối.
+     Việc không gắn mục tiêu (Việc lặt vặt) theo lựa chọn Giờ làm / Buổi tối của chính việc đó (cột bucket), mặc định buổi tối.
+     Cuối tuần chung một quỹ. */
   function bucketOf(t, goals, day) {
     if (isWeekend(day)) return 'personal';
     var g = t.goal_id ? goals[t.goal_id] : null;
-    return g && g.group === 'Công việc' ? 'work' : 'evening';
+    if (g) return g.group === 'Công việc' ? 'work' : 'evening';
+    return t.bucket === 'work' ? 'work' : 'evening';
   }
+  // Lần lặp của đúng ngày D: việc đã xếp sẵn theo lịch, không gợi ý bỏ và không đưa về kho
+  function isFixed(t, day) { return !!t.parent_recurring_id && App.logic.doDate(t) === day; }
   function interruptions(state, day) {
     return (state.interruptions || []).filter(function (x) { return x.date === day; })
       .sort(function (a, b) { return String(a.created_at) < String(b.created_at) ? -1 : 1; });
@@ -91,7 +96,9 @@ App.plan = (function () {
     var left = {};
     ld.buckets.forEach(function (b) { left[b.key] = b.avail - b.done; });
     var stop = {};
-    ordered(ld.tasks.filter(function (t) { return !L.isDone(t); }), order).forEach(function (t) {
+    // Lần lặp chiếm quỹ trước, không bao giờ nằm trong danh sách "không kịp" (không đưa về kho được)
+    ld.tasks.forEach(function (t) { if (!L.isDone(t) && isFixed(t, day)) left[bucketOf(t, ld.goals, day)] -= L.duration(t); });
+    ordered(ld.tasks.filter(function (t) { return !L.isDone(t) && !isFixed(t, day); }), order).forEach(function (t) {
       var k = bucketOf(t, ld.goals, day), m = L.duration(t);
       if (!stop[k] && m <= left[k]) { left[k] -= m; return; }
       stop[k] = true;
@@ -163,22 +170,26 @@ App.plan = (function () {
     pool.sort(cmp);
     var picked = {}, skipped = [];
     ld.buckets.forEach(function (b) { picked[b.key] = []; });
+    // Lần lặp của hôm nay đã xếp sẵn: trừ vào quỹ trước, luôn nằm trong danh sách, phần quỹ còn lại mới dành cho việc khác
+    pool.forEach(function (p) { if (isFixed(p.t, today)) { p.fixed = true; left[p.bucket] -= L.duration(p.t); } });
     pool.forEach(function (p) {
       var m = L.duration(p.t);
-      if (m <= left[p.bucket]) { left[p.bucket] -= m; picked[p.bucket].push(p); }
+      if (p.fixed) picked[p.bucket].push(p);
+      else if (m <= left[p.bucket]) { left[p.bucket] -= m; picked[p.bucket].push(p); }
       else skipped.push(p);
     });
     // Việc quan trọng lớn nhất làm đầu tiên sau báo cáo sáng, nếu không vướng việc hạn hôm nay
     var first = ld.weekend ? 'personal' : 'work', fl = picked[first];
     if (fl.length && !fl.some(function (p) { return p.tier === 1; })) {
       var big = null;
-      fl.forEach(function (p) { if (L.isImportant(p.t) && (!big || L.duration(p.t) > L.duration(big.t))) big = p; });
+      fl.forEach(function (p) { if (!p.fixed && L.isImportant(p.t) && (!big || L.duration(p.t) > L.duration(big.t))) big = p; });
       if (big) { fl.splice(fl.indexOf(big), 1); fl.unshift(big); big.first = true; }
     }
     var items = [];
     ld.buckets.forEach(function (b) {
       picked[b.key].forEach(function (p) {
         p.reasons = reasons(p.t, today);
+        if (p.fixed) p.reasons.unshift('Việc lặp lại, đã xếp sẵn');
         if (p.first) p.reasons.unshift('Việc lớn nhất, làm đầu tiên');
         items.push(p);
       });
@@ -240,7 +251,7 @@ App.plan = (function () {
 
   return {
     DEFAULTS: DEFAULTS, BUCKETS: BUCKETS, TIER_LABELS: TIER_LABELS, minutes: minutes, settings: settings, workNet: workNet, workBudget: workBudget,
-    isWeekend: isWeekend, caps: caps, bucketOf: bucketOf, goalsMap: goalsMap, interruptions: interruptions, load: load, ordered: ordered,
+    isFixed: isFixed, isWeekend: isWeekend, caps: caps, bucketOf: bucketOf, goalsMap: goalsMap, interruptions: interruptions, load: load, ordered: ordered,
     overflow: overflow, reasons: reasons, tier: tier, suggest: suggest, rolloverRows: rolloverRows, toInbox: toInbox, fit: fit,
     interruptionStats: interruptionStats, newInterruption: newInterruption
   };

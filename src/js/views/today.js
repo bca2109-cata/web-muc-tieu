@@ -153,6 +153,8 @@ App.views.planPanel = function (state, ui, ctx) {
     var why = P.reasons(t, today);
     if (plan.first === t.id && i === 0) why.unshift('Việc lớn nhất, làm đầu tiên');
     var hard = L.deferCount(t) >= 3 && !plan.keep[t.id];
+    var fixed = P.isFixed(t, today);
+    if (fixed) why.unshift('Việc lặp lại, đã xếp sẵn');
     var b = P.bucketOf(t, goals, today);
     return '<li class="pl-item' + (hard ? ' is-hard' : '') + '"><span class="rank num" aria-hidden="true">' + (i + 1) + '</span>' +
       '<div class="pl-body"><button type="button" class="pl-title" data-action="open-task" data-id="' + esc(t.id) + '">' + esc(t.title) + '</button>' +
@@ -167,7 +169,7 @@ App.views.planPanel = function (state, ui, ctx) {
       '</div><div class="pl-acts">' +
       '<button type="button" class="icon-btn" data-action="pl-move" data-dir="-1" data-id="' + esc(t.id) + '"' + (i ? '' : ' disabled') + ' aria-label="Đưa lên trên: ' + esc(t.title) + '">' + icon('up', 'ic18') + '</button>' +
       '<button type="button" class="icon-btn" data-action="pl-move" data-dir="1" data-id="' + esc(t.id) + '"' + (i < items.length - 1 ? '' : ' disabled') + ' aria-label="Đưa xuống dưới: ' + esc(t.title) + '">' + icon('down', 'ic18') + '</button>' +
-      '<button type="button" class="icon-btn" data-action="pl-remove" data-id="' + esc(t.id) + '" aria-label="Bỏ khỏi kế hoạch: ' + esc(t.title) + '">' + icon('close', 'ic18') + '</button></div></li>';
+      (fixed ? '' : '<button type="button" class="icon-btn" data-action="pl-remove" data-id="' + esc(t.id) + '" aria-label="Bỏ khỏi kế hoạch: ' + esc(t.title) + '">' + icon('close', 'ic18') + '</button>') + '</div></li>';
   }).join('');
   var inPlan = {};
   items.forEach(function (t) { inPlan[t.id] = true; });
