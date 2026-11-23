@@ -22,13 +22,15 @@ App.views.matrix = function (state, ui) {
   var pv = ui.mxNew;
   if (pv) list = list.concat([Object.assign({}, pv, { do_date: scope === 'inbox' ? '' : today, __new: true })]);
 
+  var allTpl = state.tasks.concat(state.templates || []), pm = L.pinMap(allTpl);
+  function dow(d) { var w = D.parse(d).getUTCDay(); return w === 0 ? 'CN' : 'T' + (w + 1); }
   var ctx = { today: today, day: today, goalsById: goalsById, kids: C.kidsMap(state.tasks), scope: 'matrix', flashId: ui.flashId, hideGoal: true };
   if (scope === 'today') {
     var seq = App.views.sortRows(L.dayList(state.tasks, today), { key: 'plan', dir: 1 }, today, App.app.planOrder(today)).map(function (t) { return t.id; });
     ctx.sched = P.schedule(state, today, D.nowHM(), seq);
-    ctx.pins = {};
-    P.pinnedOf(state, today).forEach(function (t) { ctx.pins[t.id] = true; });
   }
+  ctx.pins = {};
+  list.forEach(function (t) { if (L.pinOrder(t, pm)) ctx.pins[t.id] = true; });
 
   // Thanh quỹ của phạm vi
   function bar(label, ic, planned, cap, done) {
@@ -61,14 +63,14 @@ App.views.matrix = function (state, ui) {
     var dn = L.doDate(t), sc = ctx.sched && ctx.sched[t.id];
     return '<span class="meta mx-meta">' + (ctx.pins && ctx.pins[t.id] ? C.tag('twarm', 'flag', 'Ghim') : '') +
       (sc ? C.tag('tplain', 'clock', '<span class="num">' + C.hm(sc.start) + '</span>', 'Giờ dự kiến bắt đầu') : '') + C.durTag(t) +
-      (dn ? C.tag('tplain', 'calendar', dn === today ? 'Làm hôm nay' : 'Làm ' + D.weekday(dn).replace('Thứ ', 'T') + ' ' + D.fmt(dn).slice(0, 5)) : C.tag('tplain', 'box', 'Kho')) +
+      (dn ? C.tag('tplain', 'calendar', dn === today ? 'Làm hôm nay' : 'Làm ' + dow(dn) + ' ' + D.fmt(dn).slice(0, 5)) : C.tag('tplain', 'box', 'Kho')) +
       (t.due_date ? C.dueTag(t, today) : '') + (sc && sc.late ? C.tag('tq1', 'alert', 'Không kịp hôm nay') : '') + '</span>';
   }
   function card(t) {
     var done = L.isDone(t);
     return '<li class="mx-card' + (t.__new ? ' mx-new' : '') + (done ? ' is-done' : '') + (ctx.flashId === t.id ? ' mx-flash' : '') + '">' +
       (t.__new ? '<span class="mx-badge">Việc mới</span>' : C.tickButton(t, ctx)) +
-      '<button type="button" class="qname" data-action="mx-edit" data-id="' + esc(t.id) + '" title="Bấm để đổi nhanh: Quan trọng, Ngày làm, Hạn chót">' + icon(L.iconOf(t), 'ic14') + '<span>' + esc(t.title) + (L.isImportant(t) ? '' : '') + '</span></button>' + meta(t) + '</li>';
+      '<button type="button" class="qname" data-action="mx-edit" data-id="' + esc(t.id) + '" title="Bấm để đổi nhanh: Quan trọng, Ngày làm, Hạn chót">' + icon(L.iconOf(t), 'ic14') + '<span>' + esc(t.title) + '</span></button>' + meta(t) + '</li>';
   }
   var cells = [1, 2, 3, 4].map(function (q) {
     var Q = L.QUADRANTS[q];

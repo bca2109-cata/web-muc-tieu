@@ -435,7 +435,10 @@ App.app = (function () {
       case 'slow-toggle': ui.slowOpen = !ui.slowOpen; render(); var sb = view.querySelector('[data-action="slow-toggle"]'); if (sb) sb.focus(); break;
       case 'mx-scope': ui.mxScope = el.getAttribute('data-scope') || 'today'; writePref('lp_mx_scope', ui.mxScope); render(); break;
       case 'mx-edit': var et = findTask(id); if (et) App.forms.quickEdit(et); break;
-      case 'balance-open': App.forms.openBalance(); break;
+      case 'balance-open':
+        if (route().tab !== 'matrix') { ui.mxScope = 'today'; go('#/ma-tran'); setTimeout(function () { App.forms.openBalance(); }, 30); }
+        else App.forms.openBalance();
+        break;
       case 'plan-open': openPlan(); break;
       case 'plan-close': closePlan(); break;
       case 'plan-commit': commitPlan(); break;

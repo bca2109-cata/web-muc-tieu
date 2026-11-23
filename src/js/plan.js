@@ -316,6 +316,7 @@ App.plan = (function () {
     if (t.parent_recurring_id) return 'Việc lặp lại';
     if (t.due_date && t.due_date < today) return 'Đã quá hạn';
     if (t.due_date && t.due_date === today) return 'Hạn chót hôm nay';
+    if (t.due_date && t.due_date < nextWorkday(today)) return 'Đẩy sẽ quá hạn chót';
     if (L.isTop3Today(t, today)) return 'Trong 3 việc chính';
     return '';
   }
@@ -343,6 +344,8 @@ App.plan = (function () {
       if (da !== db) return da < db ? 1 : -1; // hạn chót xa nhất trước
       return b2.min - a.min;
     });
+    var pl = load(state, nd), pb = pl.by[bucket] || pl.by[Object.keys(pl.by)[0]];
+    out.pushFree = pb ? pb.avail - pb.planned : 0; out.pushLabel = pb ? pb.label : '';
     out.push = []; var freed = 0;
     if (out.need > 0) allowed.forEach(function (c) { if (freed < out.need) { out.push.push(c); freed += c.min; } });
     out.freed = freed;

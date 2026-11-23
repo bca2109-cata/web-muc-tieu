@@ -908,10 +908,10 @@ App.forms = (function () {
     else todayDesc = bal.label + ' còn <span class="num">' + L.fmtMin(Math.max(0, bal.free)) + '</span>, thiếu <span class="num">' + bal.need + '</span> phút. Đẩy sang ' + when(bal.pushDay) + ' (ô thấp nhất, hạn chót xa nhất):' +
       (bal.push.length ? '<ul class="mx-push">' + bal.push.map(function (c) { return row(c, true, ''); }).join('') + '</ul>' : '') +
       (bal.todayOk ? '' : '<span class="qa-warn">' + icon('alert', 'ic14') + '<span>Đẩy hết việc được phép vẫn thiếu <span class="num">' + (bal.need - bal.freed) + '</span> phút. Chọn tay thêm việc để đẩy, hoặc chọn phương án khác.</span></span>');
-    if (!bal.big && bal.need) todayDesc += '<span class="muted">Không tự đề xuất đẩy: việc ghim, đã quá hạn, hạn hôm nay, 3 việc chính.</span>' +
+    if (!bal.big && bal.need) todayDesc += '<span class="muted">Không tự đề xuất đẩy: việc ghim, việc lặp, đã quá hạn, hạn hôm nay, 3 việc chính, và việc mà đẩy sẽ quá hạn chót.</span>' +
       (manual.length ? '<details class="mx-manual"><summary>Chọn tay việc khác để đẩy</summary><ul class="mx-push">' + manual.join('') + '</ul></details>' : '');
     var urgent = L.isUrgent(nt, today);
-    var pick = bal.big ? 'inbox' : (bal.todayOk && urgent ? 'today' : bal.day ? 'day' : 'inbox');
+    var pick = bal.big ? 'inbox' : (bal.todayOk && (urgent || !bal.need) ? 'today' : bal.day ? 'day' : 'inbox');
     function opt(key, title, desc, disabled) {
       return '<label class="mx-opt' + (disabled ? ' is-off' : '') + '"><input type="radio" name="opt" value="' + key + '"' + (pick === key ? ' checked' : '') + (disabled ? ' disabled' : '') + '><span><b>' + title + '</b>' + desc + '</span></label>';
     }
@@ -936,8 +936,10 @@ App.forms = (function () {
       if (c === 'today' && bal.need) {
         var f = freedNow(); bad = f < bal.need;
         live.hidden = false;
-        live.innerHTML = icon(bad ? 'alert' : 'check', 'ic14') + '<span>Đã chọn đẩy <span class="num">' + L.fmtMin(f) + '</span>, cần <span class="num">' + L.fmtMin(bal.need) + '</span>' + (bad ? '. Chưa đủ chỗ cho việc mới.' : '.') + '</span>';
-        live.className = bad ? 'qa-warn' : 'qa-ok';
+        var over2 = f - Math.max(0, bal.pushFree);
+        live.innerHTML = icon(bad || over2 > 0 ? 'alert' : 'check', 'ic14') + '<span>Đã chọn đẩy <span class="num">' + L.fmtMin(f) + '</span>, cần <span class="num">' + L.fmtMin(bal.need) + '</span>' + (bad ? '. Chưa đủ chỗ cho việc mới.' : '.') +
+          (f > 0 && over2 > 0 ? ' ' + D.weekday(bal.pushDay) + ' ' + D.fmt(bal.pushDay).slice(0, 5) + ' (' + bal.pushLabel.toLowerCase() + ') chỉ còn <span class="num">' + L.fmtMin(Math.max(0, bal.pushFree)) + '</span>, đẩy sang sẽ quá tải <span class="num">' + over2 + '</span> phút.' : '') + '</span>';
+        live.className = bad || (freedNow() - Math.max(0, bal.pushFree) > 0 && freedNow() > 0) ? 'qa-warn' : 'qa-ok';
       } else live.hidden = true;
       conf.disabled = bad || !c;
     }
@@ -973,7 +975,7 @@ App.forms = (function () {
     var msg = choice === 'today' ? 'Đã xếp "' + nt.title + '" vào hôm nay' + (pushed.length ? ', đẩy ' + pushed.length + ' việc sang ' + D.weekday(bal.pushDay) + ' ' + D.fmt(bal.pushDay).slice(0, 5) : '') + '.'
       : choice === 'day' ? 'Đã xếp "' + nt.title + '" vào ' + D.weekday(bal.day) + ' ' + D.fmt(bal.day).slice(0, 5) + '.' : 'Đã để "' + nt.title + '" vào kho.';
     var opts = { actionLabel: 'Hoàn tác', actionIcon: 'refresh', duration: 10000, action: function () { store().batch(undo); } };
-    if (bal.big && choice === 'inbox') { msg += ' Việc từ 2 giờ trở lên cần chia nhỏ.'; }
+    if (bal.big && choice === 'inbox') { msg += ' Việc từ 2 giờ trở lên cần chia nhỏ.'; opts.actionLabel = 'Chia nhỏ'; opts.actionIcon = 'list'; opts.action = function () { App.app.splitTask(row.id); }; }
     App.ui.toast(msg, opts);
   }
 
