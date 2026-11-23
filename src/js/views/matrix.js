@@ -48,8 +48,8 @@ App.views.matrix = function (state, ui) {
   }
   var budget;
   if (scope === 'inbox') {
-    var sum = list.reduce(function (a, t) { return a + (t.id === newId ? 0 : L.duration(t)); }, 0), n = list.filter(function (t) { return t.id !== newId; }).length;
-    budget = '<p class="info-line">' + icon('box', 'ic14') + '<span>Kho có <span class="num">' + n + '</span> việc, tổng <span class="num">' + L.fmtMin(sum) + '</span>. Kho không có quỹ giờ.</span></p>';
+    var sum = list.reduce(function (a, t) { return a + L.duration(t); }, 0), n = list.length;
+    budget = '<p class="info-line">' + icon('box', 'ic14') + '<span>Kho có <span class="num">' + n + '</span> việc, tổng <span class="num">' + L.fmtMin(sum) + '</span>' + (newInView ? ' (đã tính việc mới)' : '') + '. Kho không có quỹ giờ.</span></p>';
   } else {
     var rows = {}, days = scope === 'today' ? [today] : [];
     if (scope === 'week') for (var d = today; d <= weekEnd; d = D.addDays(d, 1)) days.push(d);
