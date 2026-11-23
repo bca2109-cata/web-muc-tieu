@@ -417,7 +417,7 @@ App.app = (function () {
         if (el.getAttribute('data-goal')) td.goal_id = el.getAttribute('data-goal');
         if (App.date.isValid(el.getAttribute('data-day'))) td.do_date = el.getAttribute('data-day');
         App.forms.openTask(null, td); break;
-      case 'qa-toggle': var qq = ui.qa[el.getAttribute('data-qa')]; if (qq) { qq.open = !qq.open; render(); var tb = view.querySelector('[data-action="qa-toggle"]'); if (tb) tb.focus(); } break;
+      case 'qa-toggle': var qq = ui.qa[el.getAttribute('data-qa')]; if (qq) { qq.open = !qq.open; render(); var tb = view.querySelector('[data-action="qa-toggle"]'); if (tb && qq.open) tb.focus(); else if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } break;
       case 'slow-toggle': ui.slowOpen = !ui.slowOpen; render(); var sb = view.querySelector('[data-action="slow-toggle"]'); if (sb) sb.focus(); break;
       case 'plan-open': openPlan(); break;
       case 'plan-close': closePlan(); break;
@@ -468,6 +468,15 @@ App.app = (function () {
       case 'reload': reload(); break;
     }
   });
+  // Bấm vào ô gõ tên thì mở tùy chọn (đổi lớp ngay, không vẽ lại để không mất chữ đang gõ)
+  view.addEventListener('focusin', function (e) {
+    var el = e.target;
+    if (!el || el.name !== 'title') return;
+    var qf = el.closest && el.closest('[data-form="quick-add"]'), q = qf && ui.qa[qf.getAttribute('data-qa')];
+    if (!q || q.open) return;
+    q.open = true; qf.classList.add('is-open');
+    var tg = qf.querySelector('.qa-toggle'); if (tg) tg.setAttribute('aria-expanded', 'true');
+  });
   // Ô chọn lọc (kỳ của mục tiêu, bộ lọc tab Task)
   view.addEventListener('change', function (e) {
     var el = e.target;
@@ -475,6 +484,7 @@ App.app = (function () {
     else if (/^qa-/.test(el.name || '')) {
       var qf = el.closest('[data-form="quick-add"]'), q = qf && ui.qa[qf.getAttribute('data-qa')];
       if (!q) return;
+      q.open = true; // đang chỉnh tùy chọn thì giữ mở, để vẽ lại không làm mất focus
       if (el.name === 'qa-dur') q.dur = +el.value;
       else if (el.name === 'qa-day') q.day = el.value;
       else if (el.name === 'qa-imp') q.imp = el.checked;

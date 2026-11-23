@@ -854,5 +854,6 @@ i.bd-key{display:inline-block;width:10px;height:10px;border-radius:3px}
 .slow-more{margin-left:auto;font-size:13px;font-weight:800}
 .slow-card.is-open .slow-h{margin-bottom:6px}
 .qa-toggle{flex:1 1 100%;justify-content:flex-start;min-height:44px;font-size:14px}
-.quick-add:not(.is-open):not(:has(input[name=title]:focus)) .qa-opts{display:none}
+.quick-add:not(.is-open) .qa-opts{display:none}
+.qa-goal .select{min-height:44px}
 @media (min-width:900px){.qa-toggle{flex:none}}
