@@ -7,6 +7,14 @@ App.views.matrix = function (state, ui) {
   var C = App.comp, L = App.logic, D = App.date, P = App.plan, icon = App.ui.icon, esc = App.util.esc;
   var today = D.today();
   var scope = ui.mxScope === 'week' || ui.mxScope === 'inbox' ? ui.mxScope : 'today';
+  /* Xem trước khi đang Cân việc mới: dựng state ảo có việc mới (theo phương án đang chọn) và các việc bị đẩy,
+     nên danh sách, thanh quỹ và giờ dự kiến đều là con số sau khi thêm. */
+  var pv = ui.mxNew, newId = pv ? pv.task.id : '';
+  if (pv) {
+    var movedSet = {}; (pv.pushIds || []).forEach(function (id) { movedSet[id] = true; });
+    var newRow = Object.assign({}, pv.task, { do_date: pv.choice === 'today' ? today : pv.choice === 'day' ? pv.day : '', inbox_since: pv.choice === 'inbox' ? today : '' });
+    state = Object.assign({}, state, { tasks: state.tasks.map(function (t) { return movedSet[t.id] ? Object.assign({}, t, { do_date: pv.pushDay, inbox_since: '' }) : t; }).concat([newRow]) });
+  }
   var goalsById = {};
   state.goals.forEach(function (g) { goalsById[g.id] = g; });
   var parents = L.parentIds(state.tasks);
@@ -18,9 +26,7 @@ App.views.matrix = function (state, ui) {
   if (scope === 'today') list = L.dayList(state.tasks, today);
   else if (scope === 'week') list = state.tasks.filter(function (t) { var d = L.doDate(t); return !parents[t.id] && d && d >= today && d <= weekEnd; });
   else list = state.tasks.filter(function (t) { return !parents[t.id] && !L.isDone(t) && !L.doDate(t); });
-  // Việc mới đang cân (xem trước phía sau hộp thoại): đánh dấu nổi bật
-  var pv = ui.mxNew;
-  if (pv) list = list.concat([Object.assign({}, pv, { do_date: scope === 'inbox' ? '' : today, __new: true })]);
+  var newInView = !!pv && list.some(function (t) { return t.id === newId; });
 
   var allTpl = state.tasks.concat(state.templates || []), pm = L.pinMap(allTpl);
   function dow(d) { var w = D.parse(d).getUTCDay(); return w === 0 ? 'CN' : 'T' + (w + 1); }
@@ -42,7 +48,7 @@ App.views.matrix = function (state, ui) {
   }
   var budget;
   if (scope === 'inbox') {
-    var sum = list.reduce(function (a, t) { return a + (t.__new ? 0 : L.duration(t)); }, 0), n = list.filter(function (t) { return !t.__new; }).length;
+    var sum = list.reduce(function (a, t) { return a + (t.id === newId ? 0 : L.duration(t)); }, 0), n = list.filter(function (t) { return t.id !== newId; }).length;
     budget = '<p class="info-line">' + icon('box', 'ic14') + '<span>Kho có <span class="num">' + n + '</span> việc, tổng <span class="num">' + L.fmtMin(sum) + '</span>. Kho không có quỹ giờ.</span></p>';
   } else {
     var rows = {}, days = scope === 'today' ? [today] : [];
@@ -68,8 +74,8 @@ App.views.matrix = function (state, ui) {
   }
   function card(t) {
     var done = L.isDone(t);
-    return '<li class="mx-card' + (t.__new ? ' mx-new' : '') + (done ? ' is-done' : '') + (ctx.flashId === t.id ? ' mx-flash' : '') + '">' +
-      (t.__new ? '<span class="mx-badge">Việc mới</span>' : C.tickButton(t, ctx)) +
+    return '<li class="mx-card' + (t.id === newId ? ' mx-new' : '') + (done ? ' is-done' : '') + (ctx.flashId === t.id ? ' mx-flash' : '') + '">' +
+      (t.id === newId ? '<span class="mx-badge">Việc mới</span>' : C.tickButton(t, ctx)) +
       '<button type="button" class="qname" data-action="mx-edit" data-id="' + esc(t.id) + '" title="Bấm để đổi nhanh: Quan trọng, Ngày làm, Hạn chót">' + icon(L.iconOf(t), 'ic14') + '<span>' + esc(t.title) + '</span></button>' + meta(t) + '</li>';
   }
   var cells = [1, 2, 3, 4].map(function (q) {
@@ -78,7 +84,7 @@ App.views.matrix = function (state, ui) {
       var pa = ctx.pins && ctx.pins[a.id] ? 0 : 1, pb = ctx.pins && ctx.pins[b.id] ? 0 : 1;
       return (pa - pb) || ((L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0)) || (L.dueKey(a) < L.dueKey(b) ? -1 : L.dueKey(a) > L.dueKey(b) ? 1 : 0);
     });
-    var open = items.filter(function (t) { return !L.isDone(t) && !t.__new; }).length;
+    var open = items.filter(function (t) { return !L.isDone(t) && t.id !== newId; }).length;
     return '<section class="q q' + q + '" aria-label="' + Q.label + ': ' + Q.hint + '"><h3 title="' + Q.hint + '">' + icon(Q.icon, 'ic18') + '<span class="q-name">' + Q.label + '</span><span class="num qn">' + open + '</span></h3>' +
       '<p class="q-act">' + Q.hint + '. ' + Q.act + '</p><ul>' + (items.length ? items.map(card).join('') : '<li class="none">Trống, nhẹ nhàng ghê</li>') + '</ul></section>';
   }).join('');
@@ -87,7 +93,8 @@ App.views.matrix = function (state, ui) {
   return '<section class="mxtab"><div class="mx-head"><h1>Ma trận</h1><span class="seg-switch" role="group" aria-label="Phạm vi">' +
     scopes.map(function (s) { return '<button type="button" data-action="mx-scope" data-scope="' + s[0] + '" aria-pressed="' + (scope === s[0]) + '"' + (scope === s[0] ? ' class="on"' : '') + '>' + s[1] + '</button>'; }).join('') + '</span></div>' +
     '<button type="button" class="btn btn-primary mx-new-btn" data-action="balance-open">' + icon('plus', 'ic18') + 'Cân việc mới</button>' +
-    '<section class="card budget" aria-labelledby="mx-bd-title"><h2 id="mx-bd-title" class="bd-h">' + icon('hourglass', 'ic18') + '<span>' + title + '</span></h2>' + budget + '</section>' +
+    '<section class="card budget" aria-labelledby="mx-bd-title"><h2 id="mx-bd-title" class="bd-h">' + icon('hourglass', 'ic18') + '<span>' + title + (pv ? ' <small class="muted">(xem trước sau khi thêm)</small>' : '') + '</span></h2>' + budget + '</section>' +
+    (pv && !newInView ? '<p class="info-line">' + icon('sparkle', 'ic14') + '<span>Việc mới sẽ ' + (pv.choice === 'day' ? 'nằm ở ' + D.weekday(pv.day) + ' ' + D.fmt(pv.day).slice(0, 5) + '. Bấm Tuần này để xem.' : 'vào Kho. Bấm Kho để xem.') + '</span></p>' : '') +
     '<p class="hint">' + icon('sparkle', 'ic14') + 'Web tự xếp ô: Quan trọng do bạn đánh dấu, gấp là hạn chót trong 2 ngày tới hoặc đã quá hạn. Bấm tên việc để đổi nhanh Quan trọng, Ngày làm, Hạn chót.</p>' +
     '<div class="mx"><div class="mx-top" aria-hidden="true"><span>' + icon('flame', 'ic14') + 'Khẩn cấp</span><span>Không khẩn cấp</span></div>' +
     '<div class="mx-side" aria-hidden="true"><span>Quan trọng</span><span>Không quan trọng</span></div><div class="matrix">' + cells + '</div></div></section>';

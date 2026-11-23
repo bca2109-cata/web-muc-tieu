@@ -190,8 +190,8 @@ App.app = (function () {
   }
 
   // Việc mới đang cân (xem trước trong ma trận phía sau hộp thoại Cân việc mới)
-  function setMxPreview(t) {
-    ui.mxNew = t || null;
+  function setMxPreview(t, info) {
+    ui.mxNew = t ? Object.assign({ task: t, choice: 'inbox', day: '', pushDay: '', pushIds: [] }, info || {}) : null;
     if (route().tab === 'matrix') render();
   }
   // Nhấn mạnh một thẻ vừa thêm trong ít giây

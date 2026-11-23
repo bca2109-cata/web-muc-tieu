@@ -894,7 +894,6 @@ App.forms = (function () {
   function showResult(m, nt, vals) {
     var L = App.logic, P = App.plan, D = App.date, today = D.today(), st = store().get();
     var bal = P.balance(st, nt, today), Q = L.QUADRANTS[bal.quadrant];
-    App.app.setMxPreview(nt);
     function when(d) { return D.weekday(d) + ' <span class="num">' + D.fmt(d).slice(0, 5) + '</span>'; }
     function row(c, checked, why) {
       return '<li><label class="check-line"><input type="checkbox" name="push" value="' + esc(c.t.id) + '" data-min="' + c.min + '"' + (checked ? ' checked' : '') + '><span>' + esc(c.t.title) + ' <span class="num muted">' + L.fmtMin(c.min) + '</span> ' +
@@ -942,6 +941,8 @@ App.forms = (function () {
         live.className = bad || (freedNow() - Math.max(0, bal.pushFree) > 0 && freedNow() > 0) ? 'qa-warn' : 'qa-ok';
       } else live.hidden = true;
       conf.disabled = bad || !c;
+      // Thanh quỹ và danh sách ma trận phía sau cập nhật theo phương án đang chọn
+      App.app.setMxPreview(nt, { choice: c || 'inbox', day: bal.day, pushDay: bal.pushDay, pushIds: c === 'today' ? Array.prototype.map.call(box.querySelectorAll('input[name="push"]:checked'), function (x) { return x.value; }) : [] });
     }
     box.addEventListener('change', live); live();
     box.querySelector('[data-back]').addEventListener('click', function () { App.app.setMxPreview(null); App.ui.closeModal(); openBalance(vals); });

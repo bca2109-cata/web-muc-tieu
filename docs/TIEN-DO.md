@@ -266,7 +266,8 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Đã làm: tab Ma trận (`#/ma-tran`, `views/matrix.js`) với phạm vi Hôm nay / Tuần này / Kho, thanh quỹ theo phạm vi, bấm thẻ để đổi nhanh (Quan trọng, Ngày làm, Hạn chót; `forms.quickEdit`); nút Cân việc mới ở tab Ma trận và ở khung Quỹ giờ của Agenda (`forms.openBalance`, `plan.balance`): tối đa 3 phương án (Làm hôm nay có liệt kê việc bị đẩy sang ngày làm việc kế tiếp, +1 lần dời; Làm vào ngày gần nhất còn đủ quỹ và trước hạn chót; Để vào kho), không tự đề xuất đẩy việc ghim, lặp lại, quá hạn, hạn hôm nay, 3 việc chính (người dùng tự chọn tay vẫn được), Hoàn tác 10 giây, việc từ 2h chỉ vào kho. Công tắc Gấp ghi vào hạn chót. localStorage `lp_mx_scope`. Không đổi cột Sheet, không cần triển khai lại Code.gs.
 
 - Kiểm phần B: không lỗi Cao. Đã sửa: việc mà đẩy sẽ quá hạn chót không còn tự đề xuất đẩy; nhãn ngày làm T5, CN; lối tắt Agenda tự chuyển sang tab Ma trận rồi mở hộp thoại (thấy việc mới nổi bật); cảnh báo khi ngày được đẩy sang đã đầy quỹ; nhãn Ghim ở mọi phạm vi; phương án mặc định Làm hôm nay khi quỹ đủ; nút Chia nhỏ khi việc 2h vào kho.
-- Lỗi Thấp còn lại phần B: hộp thoại chưa có bẫy focus (Tab chạy ra ngoài sau vài lần); việc mới đang cân chưa tính vào thanh quỹ xem trước; "Tuần này" là từ hôm nay đến Chủ nhật.
+- Người dùng yêu cầu (23/11): thanh quỹ xem trước phải hiện tổng sau khi thêm việc mới và cập nhật theo phương án đang chọn. Đã làm: tab Ma trận dựng state ảo (việc mới theo phương án, việc bị đẩy sang ngày kế), nên danh sách, quỹ, giờ dự kiến đều là số sau khi thêm; tick/bỏ tick việc đẩy cập nhật ngay.
+- Lỗi Thấp còn lại phần B: hộp thoại chưa có bẫy focus (Tab chạy ra ngoài sau vài lần); "Tuần này" là từ hôm nay đến Chủ nhật.
 
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
