@@ -150,7 +150,8 @@ App.views.budget = function (state, day, ui) {
   var pinNote = ld.pins && ld.pins.length ? '<p class="bd-pin">' + icon('flag', 'ic14') + '<span>Việc ghim đầu ngày <span class="num">' + f(ld.pinMin) + '</span> đã trừ khỏi quỹ giờ làm.</span></p>' : '';
   var title = isToday ? 'Quỹ giờ hôm nay' : 'Quỹ giờ ' + D.weekday(day).toLowerCase() + ' <span class="num">' + D.fmt(day).slice(0, 5) + '</span>';
   return '<section class="card budget" aria-labelledby="bd-title"><div class="bd-head"><h2 id="bd-title" class="bd-h">' + icon('hourglass', 'ic18') + '<span>' + title + '</span></h2>' +
-    (isToday && !ui.plan ? '<button type="button" class="btn btn-soft bd-plan" data-action="plan-open">' + icon('sparkle', 'ic18') + 'Xếp việc hôm nay</button>' : '') + '</div>' +
+    (isToday && !ui.plan ? '<button type="button" class="btn btn-soft bd-plan" data-action="plan-open">' + icon('sparkle', 'ic18') + 'Xếp việc hôm nay</button>' : '') +
+    (isToday ? '<button type="button" class="btn btn-soft bd-plan" data-action="balance-open">' + icon('plus', 'ic18') + 'Cân việc mới</button>' : '') + '</div>' +
     rows + pinNote + intr + late + '</section>';
 };
 

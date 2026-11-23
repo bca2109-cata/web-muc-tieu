@@ -307,6 +307,60 @@ App.plan = (function () {
     return row;
   }
 
+  /* ---------- Cân việc mới (GĐ7 phần B) ---------- */
+  function nextWorkday(day) { var d = D.addDays(day, 1); while (isWeekend(d)) d = D.addDays(d, 1); return d; }
+  // Lý do một việc hôm nay không được tự đề xuất đẩy ('' = được phép)
+  function protectedReason(t, today, pm) {
+    var L = App.logic;
+    if (L.pinOrder(t, pm)) return 'Việc ghim';
+    if (t.parent_recurring_id) return 'Việc lặp lại';
+    if (t.due_date && t.due_date < today) return 'Đã quá hạn';
+    if (t.due_date && t.due_date === today) return 'Hạn chót hôm nay';
+    if (L.isTop3Today(t, today)) return 'Trong 3 việc chính';
+    return '';
+  }
+  /* Đặt việc mới nt (chưa lưu) vào ma trận cạnh các việc hôm nay và tính phương án:
+     today: làm hôm nay, nếu quỹ không đủ thì đề xuất đẩy sang ngày làm việc kế tiếp những việc ô thấp nhất rồi hạn chót xa nhất
+       (không bao giờ tự đề xuất việc ghim, quá hạn, hạn hôm nay, 3 việc chính; người dùng tự chọn đẩy thì vẫn được: others);
+     day: ngày làm việc gần nhất sau hôm nay còn đủ quỹ mà vẫn trước hạn chót;
+     inbox: luôn có. Việc từ 2 giờ trở lên (big) chỉ được vào kho. */
+  function balance(state, nt, today) {
+    var L = App.logic, goals = goalsMap(state), pm = L.pinMap(allT(state)), dur = L.duration(nt);
+    var bucket = bucketOf(nt, goals, today), out = { quadrant: L.quadrant(nt, today), big: dur >= App.C.BIG_MIN, dur: dur, bucket: bucket };
+    var ld = load(state, today), b = ld.by[bucket];
+    out.label = b ? b.label : '';
+    out.free = b ? b.avail - b.planned : 0;
+    out.need = Math.max(0, dur - out.free);
+    var nd = nextWorkday(today);
+    out.pushDay = nd;
+    var cands = ld.tasks.filter(function (t) { return !L.isDone(t) && bucketOf(t, goals, today) === bucket; }).map(function (t) {
+      return { t: t, reason: protectedReason(t, today, pm), q: L.quadrant(t, today), min: L.duration(t) };
+    });
+    out.others = cands.filter(function (c) { return c.reason; });
+    var allowed = cands.filter(function (c) { return !c.reason; }).sort(function (a, b2) {
+      if (a.q !== b2.q) return b2.q - a.q; // ô 4 thấp nhất trước
+      var da = a.t.due_date || '9999-12-31', db = b2.t.due_date || '9999-12-31';
+      if (da !== db) return da < db ? 1 : -1; // hạn chót xa nhất trước
+      return b2.min - a.min;
+    });
+    out.push = []; var freed = 0;
+    if (out.need > 0) allowed.forEach(function (c) { if (freed < out.need) { out.push.push(c); freed += c.min; } });
+    out.freed = freed;
+    out.todayOk = !out.big && (out.need === 0 || freed >= out.need);
+    out.allowed = allowed;
+    // Ngày làm việc gần nhất còn đủ quỹ và trước hạn chót
+    out.day = '';
+    if (!out.big) {
+      var limit = D.isValid(nt.due_date) ? nt.due_date : '';
+      for (var d = nd, i = 0; i < 21; d = nextWorkday(d), i++) {
+        if (limit && d > limit) break;
+        var l2 = load(state, d), b2 = l2.by[bucketOf(nt, goals, d)];
+        if (b2 && b2.avail - b2.planned >= dur) { out.day = d; break; }
+      }
+    }
+    return out;
+  }
+
   // Kiểm tra khi đặt một việc vào ngày D: quỹ của buổi đó sau khi thêm việc này
   function fit(state, day, t) {
     var ld = load(state, day), k = bucketOf(t, ld.goals, day), b = ld.by[k];
@@ -333,7 +387,7 @@ App.plan = (function () {
 
   return {
     DEFAULTS: DEFAULTS, BUCKETS: BUCKETS, TIER_LABELS: TIER_LABELS, minutes: minutes, settings: settings, workNet: workNet, workBudget: workBudget,
-    isFixed: isFixed, pinnedOf: pinnedOf, pinnedTemplates: pinnedTemplates, schedule: schedule, isWeekend: isWeekend, caps: caps, bucketOf: bucketOf, goalsMap: goalsMap, interruptions: interruptions, load: load, ordered: ordered,
+    isFixed: isFixed, nextWorkday: nextWorkday, balance: balance, protectedReason: protectedReason, pinnedOf: pinnedOf, pinnedTemplates: pinnedTemplates, schedule: schedule, isWeekend: isWeekend, caps: caps, bucketOf: bucketOf, goalsMap: goalsMap, interruptions: interruptions, load: load, ordered: ordered,
     overflow: overflow, reasons: reasons, tier: tier, suggest: suggest, rolloverRows: rolloverRows, toInbox: toInbox, fit: fit,
     interruptionStats: interruptionStats, newInterruption: newInterruption
   };

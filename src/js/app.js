@@ -7,7 +7,7 @@ App.app = (function () {
     groupFilter: '', periodType: '', periodValue: '', flashId: null, todayView: readPref('lp_today_view', 'matrix'),
     day: '', agendaSort: { key: 'plan', dir: 1 }, taskSort: { key: 'due', dir: 1 },
     taskFilter: { status: 'open', imp: '', goal: '', due: '', quad: '', from: '', to: '' },
-    taskView: 'all', inboxSort: 'age', inboxGoal: '', plan: null, qa: {},
+    taskView: 'all', mxScope: readPref('lp_mx_scope', 'today'), mxNew: null, inboxSort: 'age', inboxGoal: '', plan: null, qa: {},
     habitView: readPref('lp_habit_view', 'week'), habitShift: 0,
     revType: readPref('lp_review_type', 'Tuần'), revValue: '', revChart: readPref('lp_review_chart', 'day')
   };
@@ -23,6 +23,7 @@ App.app = (function () {
     if (m) return { tab: 'goals', goalId: decodeURIComponent(m[1]) };
     if (h.indexOf('#/muc-tieu') === 0) return { tab: 'goals' };
     if (h.indexOf('#/task') === 0) return { tab: 'task' };
+    if (h.indexOf('#/ma-tran') === 0) return { tab: 'matrix' };
     if (h.indexOf('#/thoi-quen') === 0) return { tab: 'habits' };
     if (h.indexOf('#/tong-ket') === 0) return { tab: 'review' };
     return { tab: 'today' };
@@ -72,6 +73,7 @@ App.app = (function () {
     if (r.tab === 'goals' && r.goalId) html = App.views.goalDetail(state, ui, r.goalId);
     else if (r.tab === 'goals') html = App.views.goals(state, ui);
     else if (r.tab === 'task') html = App.views.tasks(state, ui);
+    else if (r.tab === 'matrix') html = App.views.matrix(state, ui);
     else if (r.tab === 'habits') html = App.views.habits(state, ui);
     else if (r.tab === 'review') html = App.views.review(state, ui);
     else html = App.views.today(state, ui);
@@ -187,6 +189,18 @@ App.app = (function () {
       App.date.weekday(day) + ' ' + App.date.fmt(day).slice(0, 5) + ' đã xếp ' + L.fmtMin(fit.total) + ' / ' + L.fmtMin(fit.avail) + ' (' + fit.label.toLowerCase() + '). Sáng hôm đó web sẽ gợi ý xếp lại.', { duration: 5000 });
   }
 
+  // Việc mới đang cân (xem trước trong ma trận phía sau hộp thoại Cân việc mới)
+  function setMxPreview(t) {
+    ui.mxNew = t || null;
+    if (route().tab === 'matrix') render();
+  }
+  // Nhấn mạnh một thẻ vừa thêm trong ít giây
+  var flashT2 = null;
+  function flash(id) {
+    ui.flashId = id; render();
+    clearTimeout(flashT2);
+    flashT2 = setTimeout(function () { ui.flashId = null; render(); }, 4000);
+  }
   function splitTask(id) {
     var t = findTask(id);
     if (!t) return;
@@ -419,6 +433,9 @@ App.app = (function () {
         App.forms.openTask(null, td); break;
       case 'qa-toggle': var qq = ui.qa[el.getAttribute('data-qa')]; if (qq) { qq.open = !qq.open; render(); var tb = view.querySelector('[data-action="qa-toggle"][data-qa="' + el.getAttribute('data-qa') + '"]'); if (tb) tb.focus(); } break;
       case 'slow-toggle': ui.slowOpen = !ui.slowOpen; render(); var sb = view.querySelector('[data-action="slow-toggle"]'); if (sb) sb.focus(); break;
+      case 'mx-scope': ui.mxScope = el.getAttribute('data-scope') || 'today'; writePref('lp_mx_scope', ui.mxScope); render(); break;
+      case 'mx-edit': var et = findTask(id); if (et) App.forms.quickEdit(et); break;
+      case 'balance-open': App.forms.openBalance(); break;
       case 'plan-open': openPlan(); break;
       case 'plan-close': closePlan(); break;
       case 'plan-commit': commitPlan(); break;
@@ -607,7 +624,7 @@ App.app = (function () {
   }
 
   return { start: start, go: go, render: render, reload: reload, top3Count: top3Count, celebrate: celebrate, generateRecurring: generateRecurring,
-    quickPrefs: quickPrefs, planOrder: planOrder, inboxReviewDue: inboxReviewDue, parentSync: parentSync, splitTask: splitTask };
+    quickPrefs: quickPrefs, planOrder: planOrder, inboxReviewDue: inboxReviewDue, parentSync: parentSync, splitTask: splitTask, setMxPreview: setMxPreview, flash: flash };
 })();
 
 App.app.start();

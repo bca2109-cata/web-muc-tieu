@@ -878,3 +878,30 @@ i.bd-key{display:inline-block;width:10px;height:10px;border-radius:3px}
 .late-tag{color:var(--hot)}
 .mx-tm{display:block;font-size:12px;font-weight:700;color:var(--muted)}
 .pin-strip .note{gap:8px}
+
+/* ===== GĐ7 phần B: tab Ma trận, Cân việc mới ===== */
+.mxtab{padding:4px 0 90px}
+.mx-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.mx-head h1{flex:1;margin:0;font-size:24px}
+.mx-new-btn{width:100%;margin-bottom:10px}
+@media (min-width:620px){.mx-new-btn{width:auto}}
+.q li.mx-card{display:grid;grid-template-columns:44px 1fr;gap:0 4px;align-items:center;padding:2px 6px 8px 0;height:auto}
+.q li.mx-card .qname{grid-column:2}
+.q li.mx-card .qname span{-webkit-line-clamp:3}
+.q li.mx-card .meta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px;padding:0 0 0 12px;margin:0}
+.q li.mx-card.mx-new{grid-template-columns:auto 1fr;gap:0 8px;padding-left:8px;outline:3px solid var(--accent);background:color-mix(in srgb,var(--surface) 80%,var(--accent-soft))}
+.q li.mx-card.mx-new .meta{padding-left:0}
+.q li.mx-card.mx-flash{outline:3px solid var(--accent);outline-offset:-2px}
+.mx-badge{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--accent);color:#fff;font-size:12px;font-weight:800}
+.mx-opts{display:grid;gap:8px;margin:8px 0}
+.mx-opt{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:18px;border:2px solid var(--line);background:var(--surface);cursor:pointer}
+.mx-opt:has(input:checked){background:var(--accent-soft);border-color:var(--accent)}
+.mx-opt.is-off{opacity:.6;cursor:default}
+.mx-opt input{flex:none;width:22px;height:22px;margin-top:2px;accent-color:var(--accent)}
+.mx-opt>span{display:grid;gap:4px;min-width:0;text-align:left;font-size:14px}
+.mx-opt small{font-size:13px;font-weight:600;color:var(--muted)}
+.mx-push{list-style:none;margin:2px 0;padding:0;display:grid;gap:2px}
+.mx-push .check-line{min-height:44px}
+.mx-manual{margin-top:6px;font-size:13px;font-weight:700}
+.mx-manual summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--accent-deep)}
+.mx-result .hint{margin:8px 0 0}

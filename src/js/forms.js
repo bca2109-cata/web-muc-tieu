@@ -841,6 +841,177 @@ App.forms = (function () {
     });
   }
 
+
+  /* ---------- Cân việc mới (GĐ7 phần B) ---------- */
+  function tag(t, ic, html) { return App.comp.tag(t, ic, html); }
+  function openBalance(pre) {
+    pre = pre || {};
+    var L = App.logic, P = App.plan, D = App.date, today = D.today(), st = store().get();
+    var goalOpts = [{ value: '', label: App.C.MISC }].concat(st.goals.filter(function (g) { return g.status === 'Đang làm' || g.id === pre.goal_id; }).map(function (g) { return { value: g.id, label: g.name }; }));
+    var bucket = pre.bucket === 'work' || pre.bucket === 'evening' ? pre.bucket : L.lastBucket();
+    var body = '<form data-form="balance" novalidate>' +
+      '<p class="muted set-note">Nhập việc mới được giao. Web đặt nó vào ma trận cạnh các việc hôm nay rồi đưa tối đa 3 phương án.</p>' +
+      '<label class="field"><span>' + icon('text', 'ic14') + 'Tên việc</span><input class="input" name="title" maxlength="200" required autofocus value="' + esc(pre.title || '') + '"></label>' +
+      '<p class="form-error" hidden data-err="title">Hãy nhập tên việc.</p>' +
+      '<div class="field"><span>' + icon('hourglass', 'ic14') + 'Thời lượng</span>' + durSeg('duration_min', App.C.DURATIONS, pre.duration_min || App.C.DEFAULT_DURATION) + '</div>' +
+      '<div class="field"><span>' + icon('flag', 'ic14') + 'Hạn chót <small class="muted">(không bắt buộc)</small></span>' + dateInput('due_date', pre.due_date || '') + '</div>' +
+      '<div class="field" data-urgent-field' + (D.isValid(pre.due_date) ? ' hidden' : '') + '><label class="check-line"><input type="checkbox" name="urgent"' + (pre.urgent ? ' checked' : '') + '>' + icon('flame', 'ic18') + 'Gấp <small class="muted">(việc không có hạn)</small></label>' +
+      '<div data-urgent-when' + (pre.urgent ? '' : ' hidden') + '>' + seg('urgent_when', [{ key: 'today', label: 'Cần xong hôm nay' }, { key: 'tomorrow', label: 'Cần xong ngày mai' }], pre.urgent_when || 'tomorrow') +
+      '<small class="muted">Web ghi vào Hạn chót, nên việc tự thành Gấp (hạn trong 2 ngày). Dời ngày vẫn còn gấp, quá hạn thì thành Quá hạn.</small></div></div>' +
+      '<label class="check-line"><input type="checkbox" name="is_important"' + (pre.is_important ? ' checked' : '') + '>' + icon('heart', 'ic18') + 'Quan trọng</label>' +
+      '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu</span><select class="select" name="goal_id">' + options(goalOpts, pre.goal_id || '') + '</select></label>' +
+      '<div class="field" data-bucket-field' + (pre.goal_id ? ' hidden' : '') + '><span>' + icon('clock', 'ic14') + 'Việc này tính vào</span>' + seg('bucket', [{ key: 'work', label: 'Giờ làm' }, { key: 'evening', label: 'Buổi tối' }], bucket) + '</div>' +
+      '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>Hủy</button><button type="submit" class="btn btn-primary">' + icon('check', 'ic18') + 'Cân việc</button></div></form>';
+    var m = App.ui.openModal({ title: 'Cân việc mới', body: body });
+    var overlay = m.closest('.overlay');
+    var mo = new MutationObserver(function () { if (!document.body.contains(overlay)) { mo.disconnect(); App.app.setMxPreview(null); } });
+    mo.observe(document.body, { childList: true });
+    var form = m.querySelector('form');
+    bindDates(form);
+    function sync() {
+      var hasDue = D.isValid(val(form, 'due_date'));
+      form.querySelector('[data-urgent-field]').hidden = hasDue;
+      form.querySelector('[data-urgent-when]').hidden = hasDue || !form.elements.urgent.checked;
+      form.querySelector('[data-bucket-field]').hidden = !!val(form, 'goal_id');
+    }
+    form.addEventListener('change', sync); form.addEventListener('input', sync);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var title = val(form, 'title'), err = form.querySelector('[data-err="title"]');
+      err.hidden = !!title; if (!title) { form.elements.title.focus(); return; }
+      var due = D.isValid(val(form, 'due_date')) ? val(form, 'due_date') : '';
+      var urgent = !due && form.elements.urgent.checked, when = val(form, 'urgent_when') || 'tomorrow';
+      if (urgent) due = when === 'today' ? today : D.addDays(today, 1);
+      var gid = val(form, 'goal_id'), bk = val(form, 'bucket') === 'work' ? 'work' : 'evening';
+      var vals = { title: title, duration_min: val(form, 'duration_min'), due_date: D.isValid(val(form, 'due_date')) ? val(form, 'due_date') : '', urgent: urgent, urgent_when: when,
+        is_important: form.elements.is_important.checked, goal_id: gid, bucket: bk };
+      var nt = L.newTask({ title: title, goal_id: gid, bucket: gid ? '' : bk, duration_min: String(+vals.duration_min || App.C.DEFAULT_DURATION), is_important: vals.is_important ? 'TRUE' : 'FALSE', due_date: due });
+      if (!gid) L.rememberBucket(bk);
+      showResult(m, nt, vals);
+    });
+  }
+
+  function showResult(m, nt, vals) {
+    var L = App.logic, P = App.plan, D = App.date, today = D.today(), st = store().get();
+    var bal = P.balance(st, nt, today), Q = L.QUADRANTS[bal.quadrant];
+    App.app.setMxPreview(nt);
+    function when(d) { return D.weekday(d) + ' <span class="num">' + D.fmt(d).slice(0, 5) + '</span>'; }
+    function row(c, checked, why) {
+      return '<li><label class="check-line"><input type="checkbox" name="push" value="' + esc(c.t.id) + '" data-min="' + c.min + '"' + (checked ? ' checked' : '') + '><span>' + esc(c.t.title) + ' <span class="num muted">' + L.fmtMin(c.min) + '</span> ' +
+        '<small class="muted">ô ' + c.q + (c.t.due_date ? ', hạn ' + D.fmt(c.t.due_date).slice(0, 5) : ', không hạn') + (why ? ', <b>' + esc(why) + '</b>' : '') + '</small></span></label></li>';
+    }
+    var pickedIds = {}; bal.push.forEach(function (c) { pickedIds[c.t.id] = true; });
+    var manual = bal.allowed.filter(function (c) { return !pickedIds[c.t.id]; }).map(function (c) { return row(c, false, ''); }).concat(bal.others.map(function (c) { return row(c, false, c.reason + ', không tự đề xuất'); }));
+    var todayDesc;
+    if (bal.big) todayDesc = 'Việc từ <span class="num">2</span> giờ trở lên phải chia nhỏ trước khi xếp vào ngày.';
+    else if (!bal.need) todayDesc = bal.label + ' còn <span class="num">' + L.fmtMin(bal.free) + '</span>, đủ chỗ nên xếp luôn. Không đẩy việc nào.';
+    else todayDesc = bal.label + ' còn <span class="num">' + L.fmtMin(Math.max(0, bal.free)) + '</span>, thiếu <span class="num">' + bal.need + '</span> phút. Đẩy sang ' + when(bal.pushDay) + ' (ô thấp nhất, hạn chót xa nhất):' +
+      (bal.push.length ? '<ul class="mx-push">' + bal.push.map(function (c) { return row(c, true, ''); }).join('') + '</ul>' : '') +
+      (bal.todayOk ? '' : '<span class="qa-warn">' + icon('alert', 'ic14') + '<span>Đẩy hết việc được phép vẫn thiếu <span class="num">' + (bal.need - bal.freed) + '</span> phút. Chọn tay thêm việc để đẩy, hoặc chọn phương án khác.</span></span>');
+    if (!bal.big && bal.need) todayDesc += '<span class="muted">Không tự đề xuất đẩy: việc ghim, đã quá hạn, hạn hôm nay, 3 việc chính.</span>' +
+      (manual.length ? '<details class="mx-manual"><summary>Chọn tay việc khác để đẩy</summary><ul class="mx-push">' + manual.join('') + '</ul></details>' : '');
+    var urgent = L.isUrgent(nt, today);
+    var pick = bal.big ? 'inbox' : (bal.todayOk && urgent ? 'today' : bal.day ? 'day' : 'inbox');
+    function opt(key, title, desc, disabled) {
+      return '<label class="mx-opt' + (disabled ? ' is-off' : '') + '"><input type="radio" name="opt" value="' + key + '"' + (pick === key ? ' checked' : '') + (disabled ? ' disabled' : '') + '><span><b>' + title + '</b>' + desc + '</span></label>';
+    }
+    var dayDesc = bal.big ? '<small class="muted">Cần chia nhỏ trước.</small>' : bal.day ? '<small>Ngày làm việc gần nhất còn đủ quỹ' + (nt.due_date ? ', trước hạn chót <span class="num">' + D.fmt(nt.due_date).slice(0, 5) + '</span>' : '') + '. Không đẩy việc nào.</small>'
+      : '<small class="muted">Không có ngày làm việc nào còn đủ quỹ' + (nt.due_date ? ' trước hạn chót' : ' trong 3 tuần tới') + '.</small>';
+    var html = '<div class="mx-result"><p class="info-line">' + icon('sparkle', 'ic14') + '<span><b>' + esc(nt.title) + '</b> <span class="num">' + L.fmtMin(bal.dur) + '</span> rơi vào ô <b>' + esc(Q.label) + '</b>' + (nt.due_date ? ', hạn chót <span class="num">' + D.fmt(nt.due_date).slice(0, 5) + '</span>' : '') +
+      '. Việc mới đang được đánh dấu nổi bật trong ma trận phía sau. Chọn một phương án rồi bấm Xác nhận.</span></p>' +
+      '<div class="mx-opts" role="radiogroup" aria-label="Phương án">' +
+      opt('today', 'Làm hôm nay', '<small>' + todayDesc + '</small>', bal.big) +
+      opt('day', bal.day ? 'Làm vào ' + when(bal.day) : 'Làm vào ngày khác', dayDesc, !bal.day) +
+      opt('inbox', 'Để vào kho', '<small>Chưa xếp ngày.' + (nt.due_date ? ' Hạn chót vẫn giữ, sẽ báo quá hạn nếu chưa làm.' : '') + '</small>', false) + '</div>' +
+      '<p class="qa-warn" data-live hidden></p><p class="form-error" hidden data-err="opt"></p>' +
+      '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn btn-soft" data-back>Sửa lại</button><button type="button" class="btn btn-primary" data-confirm>' + icon('check', 'ic18') + 'Xác nhận</button></div>' +
+      '<p class="hint">' + icon('refresh', 'ic14') + 'Sau khi xác nhận có nút Hoàn tác trong 10 giây.</p></div>';
+    m.querySelector('.modal-body').innerHTML = html;
+    m.querySelector('#modal-title').textContent = 'Cân việc mới: ' + (bal.big ? '1 phương án' : '3 phương án');
+    var box = m.querySelector('.mx-result');
+    function chosen() { var r = box.querySelector('input[name="opt"]:checked'); return r ? r.value : ''; }
+    function freedNow() { var s = 0; box.querySelectorAll('input[name="push"]:checked').forEach(function (c) { s += +c.getAttribute('data-min'); }); return s; }
+    function live() {
+      var live = box.querySelector('[data-live]'), conf = box.querySelector('[data-confirm]'), c = chosen(), bad = false;
+      if (c === 'today' && bal.need) {
+        var f = freedNow(); bad = f < bal.need;
+        live.hidden = false;
+        live.innerHTML = icon(bad ? 'alert' : 'check', 'ic14') + '<span>Đã chọn đẩy <span class="num">' + L.fmtMin(f) + '</span>, cần <span class="num">' + L.fmtMin(bal.need) + '</span>' + (bad ? '. Chưa đủ chỗ cho việc mới.' : '.') + '</span>';
+        live.className = bad ? 'qa-warn' : 'qa-ok';
+      } else live.hidden = true;
+      conf.disabled = bad || !c;
+    }
+    box.addEventListener('change', live); live();
+    box.querySelector('[data-back]').addEventListener('click', function () { App.app.setMxPreview(null); App.ui.closeModal(); openBalance(vals); });
+    box.querySelector('[data-confirm]').addEventListener('click', function () {
+      var c = chosen(); if (!c) return;
+      var ids = c === 'today' ? Array.prototype.map.call(box.querySelectorAll('input[name="push"]:checked'), function (x) { return x.value; }) : [];
+      applyBalance(nt, c, bal, ids);
+    });
+  }
+
+  function applyBalance(nt, choice, bal, pushIds) {
+    var L = App.logic, D = App.date, today = D.today(), tasks = store().get().tasks, ops = [], undo = [];
+    var row = Object.assign({}, nt);
+    if (choice === 'today') { row.do_date = today; row.inbox_since = ''; }
+    else if (choice === 'day') { row.do_date = bal.day; row.inbox_since = ''; }
+    else { row.do_date = ''; row.inbox_since = today; }
+    ops.push({ type: 'upsert', table: 'Tasks', row: row });
+    var pushed = [];
+    pushIds.forEach(function (id) {
+      var t = tasks.find(function (x) { return x.id === id; });
+      if (!t) return;
+      var r = Object.assign({}, t, { do_date: bal.pushDay, inbox_since: '', defer_count: String(L.deferCount(t) + 1) });
+      if (App.util.isTrue(t.is_top3)) { r.is_top3 = 'FALSE'; r.top3_date = ''; }
+      ops.push({ type: 'upsert', table: 'Tasks', row: r }); undo.push({ type: 'upsert', table: 'Tasks', row: t }); pushed.push(t.title);
+    });
+    undo.push({ type: 'delete', table: 'Tasks', id: row.id });
+    App.app.setMxPreview(null);
+    App.ui.closeModal();
+    store().batch(ops);
+    App.app.flash(row.id);
+    var msg = choice === 'today' ? 'Đã xếp "' + nt.title + '" vào hôm nay' + (pushed.length ? ', đẩy ' + pushed.length + ' việc sang ' + D.weekday(bal.pushDay) + ' ' + D.fmt(bal.pushDay).slice(0, 5) : '') + '.'
+      : choice === 'day' ? 'Đã xếp "' + nt.title + '" vào ' + D.weekday(bal.day) + ' ' + D.fmt(bal.day).slice(0, 5) + '.' : 'Đã để "' + nt.title + '" vào kho.';
+    var opts = { actionLabel: 'Hoàn tác', actionIcon: 'refresh', duration: 10000, action: function () { store().batch(undo); } };
+    if (bal.big && choice === 'inbox') { msg += ' Việc từ 2 giờ trở lên cần chia nhỏ.'; }
+    App.ui.toast(msg, opts);
+  }
+
+  /* Đổi nhanh một thẻ ở tab Ma trận: Quan trọng, Ngày làm, Hạn chót */
+  function quickEdit(t) {
+    var L = App.logic, D = App.date, today = D.today(), isBig = L.needsSplit(t, store().get().tasks);
+    var body = '<form data-form="qedit" novalidate><p class="info-line">' + icon(L.iconOf(t), 'ic14') + '<span><b>' + esc(t.title) + '</b> <span class="num">' + L.fmtMin(L.duration(t)) + '</span></span></p>' +
+      '<label class="check-line"><input type="checkbox" name="is_important"' + (L.isImportant(t) ? ' checked' : '') + '>' + icon('heart', 'ic18') + 'Quan trọng</label>' +
+      '<div class="field"><span>' + icon('calendar', 'ic14') + 'Ngày làm <small class="muted">(trống = Kho)</small></span>' + dateInput('do_date', L.doDate(t)) +
+      '<div class="do-quick" role="group" aria-label="Chọn nhanh Ngày làm"><button type="button" class="btn btn-soft" data-do="' + today + '">Hôm nay</button><button type="button" class="btn btn-soft" data-do="' + D.addDays(today, 1) + '">Mai</button><button type="button" class="btn btn-soft" data-do="">' + icon('box', 'ic14') + 'Kho</button></div></div>' +
+      '<div class="field"><span>' + icon('flag', 'ic14') + 'Hạn chót</span>' + dateInput('due_date', t.due_date || '') + '</div>' +
+      '<p class="form-error" hidden data-err="qe"></p><p class="info-line" data-fit hidden></p>' +
+      '<div class="modal-foot"><button type="button" class="btn btn-soft" data-full>' + icon('edit', 'ic18') + 'Mở đầy đủ</button><span class="spacer"></span><button type="button" class="btn btn-soft" data-close>Hủy</button><button type="submit" class="btn btn-primary">' + icon('check', 'ic18') + 'Lưu</button></div></form>';
+    var m = App.ui.openModal({ title: 'Đổi nhanh', body: body });
+    var form = m.querySelector('form'); bindDates(form);
+    function fit() {
+      var d = val(form, 'do_date'), box = form.querySelector('[data-fit]');
+      if (!D.isValid(d) || isBig) { box.hidden = true; return; }
+      var f = P_fit(Object.assign({}, t, { do_date: d }), d);
+      box.hidden = false; box.innerHTML = icon(f.over > 0 ? 'alert' : 'check', 'ic14') + '<span>' + D.weekday(d) + ' <span class="num">' + D.fmt(d).slice(0, 5) + '</span>, ' + f.label.toLowerCase() + ': <span class="num">' + L.fmtMin(f.total) + ' / ' + L.fmtMin(f.avail) + '</span>' + (f.over > 0 ? ', quá tải <span class="num">' + f.over + '</span> phút' : '') + '.</span>';
+    }
+    function P_fit(row, d) { return App.plan.fit(store().get(), d, row); }
+    form.querySelectorAll('[data-do]').forEach(function (b) { b.addEventListener('click', function () { form.elements.do_date.value = b.getAttribute('data-do'); refreshDates(form); fit(); }); });
+    form.addEventListener('change', fit); form.addEventListener('input', fit); fit();
+    m.querySelector('[data-full]').addEventListener('click', function () { App.ui.closeModal(); openTask(t); });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var d = D.isValid(val(form, 'do_date')) ? val(form, 'do_date') : '', due = D.isValid(val(form, 'due_date')) ? val(form, 'due_date') : '';
+      var err = form.querySelector('[data-err="qe"]');
+      if (d && isBig) { err.textContent = 'Việc từ 2 giờ trở lên phải chia nhỏ trước khi xếp vào ngày. Bấm Mở đầy đủ để chia nhỏ.'; err.hidden = false; return; }
+      var row = Object.assign({}, t, { is_important: form.elements.is_important.checked ? 'TRUE' : 'FALSE', do_date: d, due_date: due,
+        inbox_since: d ? '' : (L.doDate(t) || !t.inbox_since ? today : t.inbox_since) });
+      App.ui.closeModal();
+      store().upsert('Tasks', row);
+      App.ui.toast('Đã cập nhật "' + t.title + '".', { actionLabel: 'Hoàn tác', actionIcon: 'refresh', duration: 6000, action: function () { store().upsert('Tasks', t); } });
+    });
+  }
+
   return { openTask: openTask, openGoal: openGoal, deleteGoal: deleteGoal, openSettings: openSettings, addMetric: addMetric, openHabit: openHabit,
-    openSplit: openSplit, askNote: askNote, openInterruption: openInterruption, inboxReview: inboxReview };
+    openBalance: openBalance, quickEdit: quickEdit, openSplit: openSplit, askNote: askNote, openInterruption: openInterruption, inboxReview: inboxReview };
 })();

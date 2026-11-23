@@ -260,9 +260,10 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Lỗi Thấp còn lại: việc ghim đã xong vẫn đứng đầu bảng; đột xuất ghi trước giờ bắt đầu ngày bị chèn sau việc đầu; buổi tối không tính lại từ giờ hiện tại và không có nhãn Không kịp; cuối tuần không hiện giờ và không áp quỹ ghim; giờ theo thứ tự plan kể cả khi bảng sắp theo cột khác.
 - Chuyển dữ liệu Sheet thật: tạo việc ghim "Báo cáo daily" (chỉ làm sau khi triển khai Code.gs mới).
 
-## GĐ7 phần B: Ma trận cân việc (đang chờ duyệt bản xem trước)
+## GĐ7 phần B: Ma trận cân việc (đã duyệt bản xem trước 23/11/2026, đã code)
 - Người dùng chốt (23/11/2026): công tắc "Gấp" chỉ có trong form Cân việc mới, không lưu cờ riêng: bấm Gấp thì chọn "Cần xong hôm nay" hoặc "Cần xong ngày mai", web ghi vào `due_date`. Việc đã có hạn chót thì ẩn công tắc. Dùng lại quy tắc gấp = hạn trong 2 ngày.
 - Bản xem trước: `docs/de-xuat-giao-dien/preview-b.html` (390px và 1280px).
+- Đã làm: tab Ma trận (`#/ma-tran`, `views/matrix.js`) với phạm vi Hôm nay / Tuần này / Kho, thanh quỹ theo phạm vi, bấm thẻ để đổi nhanh (Quan trọng, Ngày làm, Hạn chót; `forms.quickEdit`); nút Cân việc mới ở tab Ma trận và ở khung Quỹ giờ của Agenda (`forms.openBalance`, `plan.balance`): tối đa 3 phương án (Làm hôm nay có liệt kê việc bị đẩy sang ngày làm việc kế tiếp, +1 lần dời; Làm vào ngày gần nhất còn đủ quỹ và trước hạn chót; Để vào kho), không tự đề xuất đẩy việc ghim, lặp lại, quá hạn, hạn hôm nay, 3 việc chính (người dùng tự chọn tay vẫn được), Hoàn tác 10 giây, việc từ 2h chỉ vào kho. Công tắc Gấp ghi vào hạn chót. localStorage `lp_mx_scope`. Không đổi cột Sheet, không cần triển khai lại Code.gs.
 
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
