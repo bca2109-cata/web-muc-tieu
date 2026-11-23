@@ -422,6 +422,10 @@ App.logic = {
   },
   // Kho: việc chưa xong, chưa có Ngày sẽ làm (không tính việc lặp mẫu)
   inInbox: function (t) { return !App.logic.isTemplate(t) && t.status !== App.C.DONE && !App.logic.doDate(t); },
+  // Việc đã về kho vì chưa xong (dời ít nhất 1 lần) trong 2 ngày gần nhất
+  justReturned: function (t, today) {
+    return !App.logic.doDate(t) && App.logic.deferCount(t) > 0 && App.date.isValid(t.inbox_since) && t.inbox_since >= App.date.addDays(today, -1) && !App.logic.isDone(t);
+  },
   inboxDays: function (t, today) {
     var s = String(t.inbox_since || t.created_at || '').slice(0, 10);
     return App.date.isValid(s) ? Math.max(0, App.date.diffDays(s, today)) : 0;

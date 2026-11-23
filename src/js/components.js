@@ -90,7 +90,10 @@ App.comp = (function () {
   function impTag(t) { return L.isImportant(t) ? tag('tpri', 'heart', 'Quan trọng') : ''; }
   function deferTag(t) {
     var n = L.deferCount(t);
-    return n ? tag(n >= 3 ? 'tq1' : 'twarm', 'refresh', 'Đã dời <span class="num">' + n + '</span> lần') : '';
+    var out = n ? tag(n >= 3 ? 'tq1' : 'twarm', 'refresh', 'Đã dời <span class="num">' + n + '</span> lần') : '';
+    // Việc chưa xong vừa tự về kho (hôm qua hoặc hôm nay)
+    if (L.justReturned(t, App.date.today())) out += tag('twarm', 'box', 'Chưa xong, vừa về kho');
+    return out;
   }
   function kidsTag(t, ctx) {
     var all = ctx.kids && ctx.kids[t.id];
@@ -252,12 +255,15 @@ App.comp = (function () {
       '<option value="">' + esc(App.C.MISC) + '</option>' + state.goals.filter(function (g) { return g.status === 'Đang làm' || g.id === q.goal; }).map(function (g) {
         return '<option value="' + esc(g.id) + '"' + (g.id === q.goal ? ' selected' : '') + '>' + esc(g.name) + '</option>';
       }).join('') + '</select></label>';
-    return '<form class="quick-add" data-form="quick-add" data-qa="' + id + '"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') + '>' +
+    var dayLbl = q.day === 'kho' || !D.isValid(q.day) ? 'Kho' : q.day === today ? 'hôm nay' : D.weekday(q.day) + ' ' + D.fmt(q.day).slice(0, 5);
+    var sum = (L.DURATION_LABELS[q.dur] || L.fmtMin(q.dur)) + ', ' + dayLbl + (q.imp ? ', quan trọng' : '');
+    return '<form class="quick-add' + (q.open ? ' is-open' : '') + '" data-form="quick-add" data-qa="' + id + '"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') + '>' +
       '<label class="qa-field" for="' + id + '">' + icon('pencil') + '<span class="sr-only">Tên việc mới</span>' +
       '<input id="' + id + '" name="title" autocomplete="off" maxlength="200" placeholder="' + esc(placeholder) + '"></label>' +
       '<button type="submit" class="fab" aria-label="Thêm việc">' + icon('plus') + '</button>' +
       '<button type="button" class="btn btn-soft qa-full" data-action="new-task"' + (goalId ? ' data-goal="' + esc(goalId) + '"' : '') + ' data-day="' + esc(q.day === 'kho' ? '' : q.day) + '"' +
       ' title="Mở form đủ trường: hạn chót, bước đầu tiên, lặp lại, ghi chú">' + icon('edit', 'ic18') + 'Thêm đầy đủ</button>' +
+      '<button type="button" class="btn btn-soft qa-toggle" data-action="qa-toggle" data-qa="' + id + '" aria-expanded="' + (q.open ? 'true' : 'false') + '">' + icon('settings', 'ic14') + '<span>Tùy chọn: ' + sum + '</span></button>' +
       '<div class="qa-opts">' +
       '<div class="qa-line"><span class="qa-lbl">' + icon('hourglass', 'ic14') + 'Thời lượng</span>' +
       chips('qa-dur', App.C.DURATIONS.map(function (m) { return { v: m, label: L.DURATION_LABELS[m] }; }), q.dur, 'Thời lượng', id + '-dur') + '</div>' +

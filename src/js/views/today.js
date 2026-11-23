@@ -41,18 +41,17 @@ App.views.today = function (state, ui) {
   if (isToday) html += App.views.inboxBanner(state, ui);
 
   if (slowGoals.length) {
-    html += '<section class="card slow-card" aria-labelledby="slow-title"><h2 id="slow-title" class="slow-h">' + icon('alert', 'ic18') +
-      '<span><span class="num">' + slowGoals.length + '</span> mục tiêu đang chậm tiến độ</span></h2><ul>' +
-      slowGoals.map(function (g) {
+    var so = !!ui.slowOpen;
+    html += '<section class="card slow-card' + (so ? ' is-open' : '') + '" aria-labelledby="slow-title"><h2 id="slow-title" class="slow-h">' +
+      '<button type="button" class="slow-toggle" data-action="slow-toggle" aria-expanded="' + so + '">' + icon('alert', 'ic18') +
+      '<span><span class="num">' + slowGoals.length + '</span> mục tiêu đang chậm tiến độ</span><span class="slow-more">' + (so ? 'Thu gọn' : 'Xem') + '</span></button></h2>' +
+      (so ? '<ul>' + slowGoals.map(function (g) {
         var si = L.slowInfo(g, state.tasks, today);
         return '<li><button type="button" class="slow-row" data-action="open-goal" data-id="' + esc(g.id) + '"><span class="slow-name">' + esc(g.name) + '</span>' +
           '<span class="slow-fig">đạt <span class="num">' + si.pct + '%</span>, đã qua <span class="num">' + si.time + '%</span> thời gian</span>' + icon('back', 'ic14 flip') + '</button></li>';
-      }).join('') + '</ul></section>';
+      }).join('') + '</ul>' : '') + '</section>';
   }
   html += App.views.budget(state, day, ui);
-  if (isToday && ui.plan) html += App.views.planPanel(state, ui, ctx);
-  html += C.quickAdd('quick-add-today', isToday ? 'Hôm nay mình sẽ làm gì nè?' : 'Thêm việc cho ngày ' + D.fmt(day), '', day < today ? 'kho' : day);
-
   if (isToday) {
     html += '<section class="block" aria-labelledby="top3-title"><h2 class="sec-title" id="top3-title">' + fl('sakura', 24, 1) +
       '<span><span class="num">3</span> việc chính hôm nay</span><span class="badge num">' + top3.length + '/' + App.C.TOP3_MAX + '</span></h2>' +
@@ -62,6 +61,9 @@ App.views.today = function (state, ui) {
         : '') + '</ul>' +
       '<p class="hint">' + icon('sparkle', 'ic14') + 'Khi bấm Chốt kế hoạch, 3 việc đầu danh sách được đưa lên đây. Bấm ngôi sao để đổi.</p></section>';
   }
+  if (isToday && ui.plan) html += App.views.planPanel(state, ui, ctx);
+  html += C.quickAdd('quick-add-today', isToday ? 'Hôm nay mình sẽ làm gì nè?' : 'Thêm việc cho ngày ' + D.fmt(day), '', day < today ? 'kho' : day);
+
   html += App.views.habitToday(state, day);
 
   html += '</div><div class="today-side">';

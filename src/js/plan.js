@@ -116,6 +116,7 @@ App.plan = (function () {
       else if (L.isUrgent(t, today)) r.push(t.due_date === D.addDays(today, 1) ? 'Hạn ngày mai' : 'Hạn ngày kia');
     }
     if (L.isImportant(t)) r.push('Quan trọng');
+    if (L.justReturned(t, today)) r.push('Chưa xong hôm trước, vừa về kho');
     var dc = L.deferCount(t);
     if (dc) r.push('Đã dời ' + dc + ' lần');
     if (!L.doDate(t)) { var n = L.inboxDays(t, today); if (n) r.push('Nằm kho ' + n + ' ngày'); }

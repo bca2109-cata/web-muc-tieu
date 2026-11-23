@@ -163,7 +163,7 @@ App.app = (function () {
      def: ngày chọn sẵn của màn đang xem; đổi ngày xem thì chọn lại theo ngày đó. */
   function quickPrefs(id, def, goalId) {
     var q = ui.qa[id];
-    if (!q || q.def !== def) q = ui.qa[id] = { dur: q ? q.dur : App.C.DEFAULT_DURATION, day: def, def: def, imp: q ? q.imp : false, goal: q ? q.goal : '', bucket: q ? q.bucket : App.logic.lastBucket() };
+    if (!q || q.def !== def) q = ui.qa[id] = { dur: q ? q.dur : App.C.DEFAULT_DURATION, day: def, def: def, imp: q ? q.imp : false, open: q ? q.open : false, goal: q ? q.goal : '', bucket: q ? q.bucket : App.logic.lastBucket() };
     if (goalId) q.goal = goalId;
     return q;
   }
@@ -417,6 +417,8 @@ App.app = (function () {
         if (el.getAttribute('data-goal')) td.goal_id = el.getAttribute('data-goal');
         if (App.date.isValid(el.getAttribute('data-day'))) td.do_date = el.getAttribute('data-day');
         App.forms.openTask(null, td); break;
+      case 'qa-toggle': var qq = ui.qa[el.getAttribute('data-qa')]; if (qq) { qq.open = !qq.open; render(); var tb = view.querySelector('[data-action="qa-toggle"]'); if (tb) tb.focus(); } break;
+      case 'slow-toggle': ui.slowOpen = !ui.slowOpen; render(); var sb = view.querySelector('[data-action="slow-toggle"]'); if (sb) sb.focus(); break;
       case 'plan-open': openPlan(); break;
       case 'plan-close': closePlan(); break;
       case 'plan-commit': commitPlan(); break;

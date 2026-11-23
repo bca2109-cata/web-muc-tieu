@@ -236,12 +236,12 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 ## Sau nghiệm thu GĐ6 (23/11/2026, docs/NGHIEM-THU-GD6.md)
 - M1 đã sửa: lần lặp tính trước vào quỹ, không còn quá tải giả, không đề xuất đưa lần lặp về kho.
 - M2 đã sửa: cột `bucket`, chọn Giờ làm / Buổi tối cho việc không gắn mục tiêu. Việc cũ chưa có `bucket` chọn sẵn Buổi tối.
-- M3 (điện thoại): đã làm bản xem trước `docs/de-xuat-giao-dien/preview-m3.html`, chờ người dùng duyệt rồi mới code.
+- M3 (điện thoại) đã duyệt và làm: 3 việc chính hôm nay ngay sau Quỹ giờ (390px: từ 1318px xuống 679px), mục tiêu chậm tiến độ thu thành một dòng bấm Xem, ô thêm nhanh ẩn tùy chọn sau nút Tùy chọn (tự mở khi bấm vào ô gõ tên).
+- Nhãn "Chưa xong, vừa về kho" cho việc tự về kho trong 2 ngày gần nhất (Kho, Kế hoạch, Xem lại kho).
 - Lỗi Thấp mới: `backup.js` không kiểm giá trị `bucket` khi nhập; mỗi ô thêm nhanh giữ lựa chọn bucket riêng; lần lặp từ 2h (khó xảy ra) vẫn tính trong quỹ; ở 390px nhãn "Mục tiêu" và "Việc này tính vào" trong form xuống dòng xấu.
 
 ## Câu hỏi chờ người dùng
-- Việc không gắn mục tiêu chọn Giờ làm có về kho lúc 17h30 như việc nhóm Công việc không (code đang làm vậy).
-- Duyệt bản xem trước M3.
+- (chưa có)
 
 ## Lỗi mức Thấp của đợt đổi giao diện
 - Dữ liệu mẫu có việc "Họp chốt số liệu với phòng kế toán" đã Xong mà ngày xong ở tương lai (`mock-data.js`), nên giả lập sang ngày hôm sau sẽ thấy 1 việc xong sẵn. Chỉ ảnh hưởng bản mock.
