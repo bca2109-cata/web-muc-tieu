@@ -242,6 +242,13 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 
 - Lỗi Thấp M3: nút bật tắt thiếu `aria-controls`; `slowOpen` giữ khi đổi ngày; `tests-qa/*.js` còn đường dẫn Windows, thiếu `?mock=1`, `flow-gd6.js` chưa bấm nút Tùy chọn trước khi chọn chip.
 
+## GĐ7 phần C: Hoa rơi (23/11/2026, SPEC-GD7.md)
+- Cài đặt "Hoa rơi" (Luôn bật mặc định / Theo cài đặt máy / Tắt), lưu `lp_fall` trên thiết bị, cả hoa bung khi xong việc theo cài đặt này.
+- 90 bông (45 khi rộng dưới 620px), lớp xa nhỏ mờ chậm, lớp gần to rõ nhanh, 30% là cánh hoa rời lật 3D, lắc ngang hình sin và xoay, chỉ dùng transform và opacity, dừng khi tab ẩn.
+- Giữ chữ đọc được: lớp nền giảm độ đậm (sáng .9, tối .7) và chữ ngoài thẻ có quầng màu nền.
+- `sw.js` VERSION `lp-gd7c`, `?v=gd7c`. Video minh họa: `docs/de-xuat-giao-dien/hoa-roi.gif` và `.webm`.
+- Chờ người dùng duyệt phần C rồi mới làm phần A.
+
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
 

@@ -742,6 +742,9 @@ App.forms = (function () {
       '<section class="set-sec"><h3>' + icon('moon', 'ic18') + 'Giao diện</h3>' +
       seg('theme', [{ key: 'auto', label: 'Theo máy' }, { key: 'light', label: 'Sáng' }, { key: 'dark', label: 'Tối' }], App.theme.get()) +
       '<p class="muted set-note">Chỉ đổi trên thiết bị này.</p></section>' +
+      '<section class="set-sec"><h3>' + icon('flower', 'ic18') + 'Hoa rơi</h3>' +
+      seg('fall', [{ key: 'on', label: 'Luôn bật' }, { key: 'system', label: 'Theo cài đặt máy' }, { key: 'off', label: 'Tắt' }], App.flowers.getFall()) +
+      '<p class="muted set-note">Luôn bật: hoa rơi kể cả khi máy tắt hiệu ứng động. Theo cài đặt máy: máy bật giảm chuyển động thì hoa đứng yên. Hoa bung khi xong việc cũng theo lựa chọn này. Chỉ đổi trên thiết bị này.</p></section>' +
       '<section class="set-sec"><h3>' + icon('doc', 'ic18') + 'Sao lưu</h3>' +
       '<p class="muted set-note">Tải toàn bộ dữ liệu về máy thành một file JSON. Khi cần, nhập lại file này để thay toàn bộ dữ liệu hiện tại.</p>' +
       '<div class="set-row"><button type="button" class="btn btn-soft" data-act="export">' + icon('down', 'ic18') + 'Xuất JSON</button>' +
@@ -751,6 +754,9 @@ App.forms = (function () {
     var m = App.ui.openModal({ title: 'Cài đặt', body: body });
     bindBudget(m.querySelector('[data-form="budget"]'));
 
+    m.querySelectorAll('input[name="fall"]').forEach(function (r) {
+      r.addEventListener('change', function () { App.flowers.setFall(r.value); });
+    });
     m.querySelectorAll('input[name="theme"]').forEach(function (r) {
       r.addEventListener('change', function () { App.theme.set(r.value); });
     });

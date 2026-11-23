@@ -99,9 +99,14 @@ a{color:inherit}
 /* ---------- Nền hoa bay nhẹ ---------- */
 .bg-flowers{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .bg-flowers .fall{position:absolute;display:block;animation:fall var(--fd,20s) linear infinite;animation-delay:var(--fdl,0s);will-change:transform}
-.bg-flowers .flower{display:block;opacity:.24;animation:sway var(--d,6s) ease-in-out infinite alternate;animation-delay:var(--dl,0s)}
+.bg-flowers .flower{display:block;animation:sway var(--sd,6s) ease-in-out infinite;animation-delay:var(--sdl,0s);will-change:transform}
+.bg-flowers .flower.is-petal{animation-name:flip}
 @keyframes fall{from{transform:translateY(var(--from))}to{transform:translateY(var(--to))}}
-@keyframes sway{from{transform:translateX(-18px) rotate(-25deg)}to{transform:translateX(18px) rotate(35deg)}}
+/* Lắc ngang theo hình sin, vừa lắc vừa xoay */
+@keyframes sway{0%{transform:translateX(0) rotate(0deg)}25%{transform:translateX(var(--sw)) rotate(calc(var(--sp) * .25))}50%{transform:translateX(0) rotate(calc(var(--sp) * .5))}75%{transform:translateX(calc(var(--sw) * -1)) rotate(calc(var(--sp) * .75))}100%{transform:translateX(0) rotate(var(--sp))}}
+/* Cánh hoa rời: lật 3D */
+@keyframes flip{0%{transform:perspective(300px) translateX(0) rotateX(0deg) rotateY(0deg) rotate(0deg)}25%{transform:perspective(300px) translateX(var(--sw)) rotateX(90deg) rotateY(45deg) rotate(calc(var(--sp) * .25))}50%{transform:perspective(300px) translateX(0) rotateX(180deg) rotateY(90deg) rotate(calc(var(--sp) * .5))}75%{transform:perspective(300px) translateX(calc(var(--sw) * -1)) rotateX(270deg) rotateY(135deg) rotate(calc(var(--sp) * .75))}100%{transform:perspective(300px) translateX(0) rotateX(360deg) rotateY(180deg) rotate(var(--sp))}}
+:root.tab-hidden .bg-flowers .fall,:root.tab-hidden .bg-flowers .flower{animation-play-state:paused}
 :root[data-bg="plain"] .bg-flowers{display:none}
 .site-head{position:relative;z-index:2}
 .main{position:relative;z-index:1}
@@ -428,7 +433,8 @@ button.goal:hover{box-shadow:0 4px 0 var(--accent-soft),0 12px 28px color-mix(in
 .fx{position:fixed;left:0;top:0;z-index:70;pointer-events:none;will-change:transform,opacity}
 
 @media (prefers-reduced-motion:reduce){
-  .bg-flowers .flower,.bg-flowers .fall{animation:none}
+  /* Chỉ khi chọn "Theo cài đặt máy". Chọn "Luôn bật" thì hoa vẫn rơi */
+  :root[data-fall="system"] .bg-flowers .flower,:root[data-fall="system"] .bg-flowers .fall{animation:none}
   .tick.tick-pop .dot,.modal,.toast{animation:none}
 }
 
@@ -857,3 +863,10 @@ i.bd-key{display:inline-block;width:10px;height:10px;border-radius:3px}
 .quick-add:not(.is-open) .qa-opts{display:none}
 .qa-goal .select{min-height:44px}
 @media (min-width:900px){.qa-toggle{flex:none}}
+
+/* ===== GĐ7: hoa rơi rõ hơn, giữ chữ đọc được ===== */
+.bg-flowers{opacity:.9}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bg-flowers{opacity:.7}}
+:root[data-theme="dark"] .bg-flowers{opacity:.7}
+/* Chữ nằm ngoài thẻ có quầng màu nền, để hoa phía sau không làm mờ chữ */
+.main :is(.sec-title,.hint,.muted,.empty):not(.card *){text-shadow:0 0 4px var(--bg),0 0 9px var(--bg)}

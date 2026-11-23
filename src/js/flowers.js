@@ -46,6 +46,7 @@ App.flowers = (function () {
     '<path d="M20 15.2c-1.4 0-2.2 1.3-2.2 3l.7-.4.75.7.75-.7.7.4c0-1.7-.8-3-2-3z" opacity=".9"/></g></symbol>' +
     '<symbol id="f-hydrangea" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="6" r="3.6"/><circle cx="7" cy="9.5" r="3.6"/><circle cx="17" cy="9.5" r="3.6"/><circle cx="12" cy="12" r="3.6"/><circle cx="8" cy="15.5" r="3.6"/><circle cx="16" cy="15.5" r="3.6"/><circle cx="12" cy="18.5" r="3.3"/></g>' +
     '<g fill="#fff" opacity=".75"><circle cx="12" cy="6" r=".9"/><circle cx="7" cy="9.5" r=".9"/><circle cx="17" cy="9.5" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="8" cy="15.5" r=".9"/><circle cx="16" cy="15.5" r=".9"/><circle cx="12" cy="18.5" r=".9"/></g></symbol>' +
+    '<symbol id="f-petal" viewBox="0 0 24 24"><path d="M12 1.5C17.5 7 19 13 12 22.5 5 13 6.5 7 12 1.5z" fill="currentColor"/><path d="M12 5v13" stroke="#fff" stroke-opacity=".45" stroke-width="1" stroke-linecap="round"/></symbol>' +
     '<symbol id="f-sprig" viewBox="0 0 24 24"><path d="M4 20C9 15 14 10 20 4" stroke="' + LEAF + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
     '<g fill="#a6e3c4"><ellipse cx="9" cy="13" rx="3.2" ry="1.6" transform="rotate(-60 9 13)"/><ellipse cx="13" cy="9.5" rx="3.2" ry="1.6" transform="rotate(30 13 9.5)"/>' +
     '<ellipse cx="15.5" cy="6" rx="3" ry="1.5" transform="rotate(-60 15.5 6)"/><ellipse cx="8" cy="17.5" rx="3" ry="1.5" transform="rotate(30 8 17.5)"/></g></symbol>';
@@ -79,26 +80,60 @@ App.flowers = (function () {
     try { localStorage.setItem(BG_KEY, mode); } catch (e) { /* không lưu được thì chỉ đổi tạm */ }
     applyBg();
   }
-  function applyBg() {
-    var mode = getBg();
-    document.documentElement.setAttribute('data-bg', mode);
-    var layer = document.getElementById('bg-flowers');
-    if (mode === 'flowers' && layer && !layer.childNodes.length) {
-      /* Hoa rơi (GĐ5): 46 bông, 13 màu, rơi từ trên xuống rồi lặp lại, vừa rơi vừa đung đưa.
-         Vị trí cố định theo hạt giống. Máy bật "giảm chuyển động" thì hoa đứng yên tại chỗ (CSS). */
-      var seed = 7, rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }, out = '';
-      for (var i = 0; i < 46; i++) {
-        var size = 20 + Math.round(rnd() * 38), top = Math.round(rnd() * 96), dur = 16 + rnd() * 18;
-        out += '<span class="fall" style="left:' + (rnd() * 98).toFixed(1) + '%;top:' + top + 'vh;--from:' + (-top - 12) + 'vh;--to:' + (108 - top) + 'vh;' +
-          '--fd:' + dur.toFixed(1) + 's;--fdl:-' + (rnd() * dur).toFixed(1) + 's">' +
-          html(NAMES[i % 11], size, 1 + i % BG_TONES, '', '--d:' + (4 + rnd() * 5).toFixed(1) + 's;--dl:-' + (rnd() * 6).toFixed(1) + 's') + '</span>';
-      }
-      layer.innerHTML = out;
-    }
+  /* ---------- Hoa rơi (GĐ7) ----------
+     Cài đặt "Hoa rơi" (lưu trên thiết bị): on = luôn rơi (mặc định), system = theo "giảm chuyển động" của máy, off = tắt.
+     Khoảng 90 bông trên màn rộng, 45 bông khi rộng dưới 620px. Lớp xa nhỏ, mờ, chậm; lớp gần to, rõ, nhanh.
+     Khoảng 30% là cánh hoa rời xoay lật 3D. Chỉ dùng transform và opacity. */
+  var FALL_KEY = 'lp_fall';
+  function getFall() {
+    try { var v = localStorage.getItem(FALL_KEY); return v === 'system' || v === 'off' ? v : 'on'; } catch (e) { return 'on'; }
   }
+  function setFall(mode) {
+    try { localStorage.setItem(FALL_KEY, mode); } catch (e) { /* không lưu được thì chỉ đổi tạm */ }
+    applyBg(true);
+  }
+  function osReduced() { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  // Hoa có được chuyển động không (hoa rơi nền và hoa bung khi xong việc)
+  function motionOn() { var m = getFall(); return m === 'on' || (m === 'system' && !osReduced()); }
+
+  var builtCount = 0;
+  function buildFall(layer) {
+    var count = window.innerWidth < 620 ? 45 : 90;
+    if (layer.childNodes.length && builtCount === count) return;
+    builtCount = count;
+    var seed = 7, rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }, out = '';
+    for (var i = 0; i < count; i++) {
+      var near = i % 100 < 45; // khoảng 45% là lớp gần
+      var size = near ? 28 + Math.round(rnd() * 28) : 14 + Math.round(rnd() * 14);
+      var dur = near ? 9 + rnd() * 6 : 15 + rnd() * 7;
+      var op = near ? 0.5 + rnd() * 0.05 : 0.35 + rnd() * 0.07;
+      var top = Math.round(rnd() * 96), petal = i % 10 < 3;
+      var sw = 14 + rnd() * 26, sd = 4 + rnd() * 4, spin = (rnd() < 0.5 ? -1 : 1) * (70 + rnd() * 110);
+      var name = petal ? 'petal' : NAMES[i % 11];
+      out += '<span class="fall" style="left:' + (rnd() * 98).toFixed(1) + '%;top:' + top + 'vh;--from:' + (-top - 12) + 'vh;--to:' + (108 - top) + 'vh;' +
+        '--fd:' + dur.toFixed(1) + 's;--fdl:-' + (rnd() * dur).toFixed(1) + 's">' +
+        html(name, size, 1 + i % BG_TONES, petal ? 'is-petal' : 'is-bloom',
+          'opacity:' + op.toFixed(2) + ';--sw:' + sw.toFixed(0) + 'px;--sd:' + sd.toFixed(1) + 's;--sdl:-' + (rnd() * sd).toFixed(1) + 's;--sp:' + spin.toFixed(0) + 'deg') + '</span>';
+    }
+    layer.innerHTML = out;
+  }
+  function applyBg(force) {
+    var mode = getBg(), fall = getFall();
+    var root = document.documentElement;
+    root.setAttribute('data-bg', mode);
+    root.setAttribute('data-fall', fall);
+    var layer = document.getElementById('bg-flowers');
+    if (!layer) return;
+    if (mode === 'flowers' && fall !== 'off') buildFall(layer);
+    else if (force || fall === 'off') { layer.innerHTML = ''; builtCount = 0; }
+  }
+  // Đổi cỡ màn hình qua mốc 620px thì dựng lại số bông; tab ẩn thì dừng animation
+  var rz = null;
+  window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(function () { var l = document.getElementById('bg-flowers'); if (l && l.childNodes.length) buildFall(l); }, 200); });
+  document.addEventListener('visibilitychange', function () { document.documentElement.classList.toggle('tab-hidden', document.hidden); });
 
   /* ---------- Ăn mừng ---------- */
-  function reduced() { return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  function reduced() { return !motionOn(); }
 
   function burst(x, y, big) {
     if (reduced() || !document.body.animate) return;
@@ -125,5 +160,5 @@ App.flowers = (function () {
     'Xong rồi! Nghỉ chút rồi làm tiếp nha.', 'Bạn làm tốt lắm!'];
   function cheerText() { return CHEERS[Math.floor(Math.random() * CHEERS.length)]; }
 
-  return { NAMES: NAMES, install: install, html: html, pick: pick, getBg: getBg, setBg: setBg, applyBg: applyBg, burst: burst, cheerText: cheerText };
+  return { NAMES: NAMES, install: install, html: html, pick: pick, getBg: getBg, setBg: setBg, getFall: getFall, setFall: setFall, motionOn: motionOn, applyBg: applyBg, burst: burst, cheerText: cheerText };
 })();

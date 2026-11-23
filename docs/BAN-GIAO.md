@@ -27,7 +27,7 @@ Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sh
 - **Mỗi lần sửa CSS/JS rồi đẩy lên: đổi số `?v=...` ở các thẻ link/script trong `src/index.html`** (đang dùng mã commit gần nhất), vì GitHub Pages cho trình duyệt giữ file cũ khoảng 10 phút.
 - Bản mock: mở bằng `file:` hoặc thêm `?mock=1`. Tham số kiểm thử: `?today=yyyy-mm-dd`, `?fail=1` (giả lập lưu lỗi), `?now=HH:mm` (giả lập giờ, GĐ6).
 - `store.js`: cập nhật lạc quan, hàng đợi lưu nền, có bộ nhớ đệm để mở lại hiện ngay.
-- localStorage của người dùng: `lp_bg`, `lp_today_view`, `lp_top3_auto`, `lp_habit_view`, `lp_review_type`, `lp_review_chart`, `lp_theme`; GĐ6: `lp_plan_order` ({day, ids}), `lp_plan_done`, `lp_plan_seen` (ngày), `lp_inbox_review` (tuần ISO).
+- localStorage của người dùng: `lp_bg`, `lp_today_view`, `lp_top3_auto`, `lp_habit_view`, `lp_review_type`, `lp_review_chart`, `lp_theme`; GĐ6: `lp_plan_order` ({day, ids}), `lp_plan_done`, `lp_plan_seen` (ngày), `lp_inbox_review` (tuần ISO); GĐ7: `lp_fall` (on / system / off).
 - Định tuyến: `#/agenda` (cũ `#/hom-nay` vẫn vào Agenda), `#/task`, `#/muc-tieu`, `#/muc-tieu/<id>`, `#/thoi-quen`, `#/tong-ket`.
 
 ## 4. Quy tắc nghiệp vụ đã chốt (ngoài SPEC hoặc dễ quên)
