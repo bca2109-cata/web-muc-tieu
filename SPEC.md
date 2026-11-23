@@ -226,6 +226,34 @@ SPEC cũ có quy tắc không đổi tên cột sau giai đoạn 1. Giai đoạn
 - Giờ hạn chót (GĐ5) đổi thành không bắt buộc. Mỗi lần lặp của việc lặp lại tự có Ngày sẽ làm đúng ngày đó, thời lượng và mức quan trọng lấy theo việc mẫu.
 - Sheet `Settings` có thêm cột `id` (một dòng, id = "main") để lưu như các bảng khác.
 
+### 4.7 Giai đoạn 7: Giờ bắt đầu, việc ghim đầu ngày, Ma trận cân việc, Hoa rơi (duyệt 23/11/2026)
+
+> Nguồn: `docs/SPEC-GD7.md`. Phần nào mâu thuẫn với mục 4.6 thì mục này được ưu tiên.
+
+#### A. Giờ bắt đầu ngày và việc ghim đầu ngày
+- Cài đặt **Giờ bắt đầu ngày làm** (mặc định 08:00), **Buổi tối bắt đầu** (mặc định 20:00). Giờ kết thúc 17h30, nghỉ trưa 12h00 đến 13h30.
+- **Việc ghim đầu ngày** là việc lặp mẫu có cột `pinned` (thứ tự 1, 2, ...). Luôn đứng đầu danh sách hôm nay (và có khối "Ghim đầu ngày" trên "3 việc chính"), không bị gợi ý, không về kho, không bị đẩy khi cân việc. Cài đặt có mục Việc ghim đầu ngày (đổi thứ tự, bỏ ghim). Tạo bằng cách tạo việc lặp rồi tick "Ghim đầu ngày".
+- Quỹ giờ làm = (8 giờ − tổng việc ghim của ngày) × (100% − dự phòng). Bỏ ô "Việc cố định" (cột `fixed_min` giữ trong sheet nhưng không dùng). Việc ghim không tính vào "đã xếp". Ngày sau hôm nay chưa có lần lặp thì tính ghim từ lịch lặp của việc mẫu.
+- **Giờ dự kiến bắt đầu** từng việc chưa xong, chỉ để tham khảo (không kéo thả theo giờ): từ giờ bắt đầu ngày, cộng dồn theo thứ tự danh sách, bỏ qua nghỉ trưa (việc cắt ngang dời phần còn lại sang 13h30), đột xuất chèn tại giờ ghi, bỏ việc đã xong, muộn hơn giờ dự kiến đầu tiên thì tính lại từ bây giờ, vượt 17h30 thì nhãn "Không kịp hôm nay", buổi tối tính từ giờ tối. Cuối tuần không hiện giờ. Hiện ở Bảng, Ma trận, Kế hoạch.
+- Dữ liệu cũ: đã tạo việc ghim "Báo cáo daily" 15 phút, T2 đến T6 (23/11/2026).
+
+#### B. Tab Ma trận và nút "Cân việc mới"
+- **Tab Ma trận** (thứ 3 trên thanh tab, `#/ma-tran`): phạm vi Hôm nay / Tuần này (đến Chủ nhật) / Kho; thanh quỹ giờ của phạm vi (Kho chỉ có tổng thời lượng); 4 ô Quan trọng × Gấp web tự xếp; thẻ hiện tên, thời lượng, ngày làm, hạn chót. Bấm tên thẻ để đổi nhanh Quan trọng, Ngày làm, Hạn chót. Không có ô nhập tay chọn ô.
+- **Cân việc mới** (ở tab Ma trận và lối tắt trong khung Quỹ giờ của Agenda): nhập tên, thời lượng, hạn chót (có thể trống), Quan trọng, mục tiêu (không mục tiêu thì chọn Giờ làm / Buổi tối). Công tắc **Gấp** chỉ có trong form này, chỉ hiện khi chưa có hạn chót: chọn "Cần xong hôm nay" hoặc "Cần xong ngày mai", web ghi vào `due_date`, không lưu cờ riêng (gấp vẫn là hạn trong 2 ngày).
+- Việc mới được đặt vào ma trận, đánh dấu nổi bật; thanh quỹ và danh sách phía sau cập nhật theo phương án đang chọn. Tối đa 3 phương án, mỗi phương án nêu hệ quả: **Làm hôm nay** (quỹ thiếu thì đề xuất đẩy sang ngày làm việc kế tiếp những việc ô thấp nhất rồi hạn chót xa nhất, liệt kê tên và thời lượng, mỗi việc đẩy tính +1 lần dời); **Làm vào [ngày]** (ngày làm việc gần nhất còn đủ quỹ và trước hạn chót); **Để vào kho**.
+- Không bao giờ tự đề xuất đẩy: việc ghim, việc lặp, việc đã quá hạn, hạn chót hôm nay, việc nằm trong 3 việc chính, và việc mà đẩy sẽ quá hạn chót của nó. Người dùng tự chọn tay thì vẫn được. Cảnh báo khi ngày được đẩy sang đã đầy quỹ.
+- Xác nhận ghi dữ liệu, có **Hoàn tác** 10 giây. Việc từ 2 giờ trở lên chỉ được vào kho (có nút Chia nhỏ).
+
+#### C. Hoa rơi nền
+- Cài đặt **Hoa rơi** (lưu trên thiết bị): Luôn bật (mặc định, hoa vẫn rơi khi máy bật giảm chuyển động) / Theo cài đặt máy / Tắt. Hoa bung khi xong việc theo cài đặt này.
+- 90 bông (45 khi rộng dưới 620px), kích thước 14 đến 56px, lớp xa nhỏ mờ chậm và lớp gần to rõ nhanh, độ đậm 0.35 đến 0.55, rơi 9 đến 22 giây lệch pha, xoay và lắc ngang hình sin, khoảng 30% là cánh hoa rời lật 3D. Chỉ dùng transform và opacity, dừng khi tab ẩn. Chữ ngoài thẻ có quầng màu nền để vẫn đọc rõ. Tăng phiên bản cache `sw.js`.
+
+#### Thay đổi dữ liệu (Google Sheet)
+| Sheet | Thêm cột |
+|---|---|
+| `Tasks` | bucket (Giờ làm / Buổi tối cho việc không gắn mục tiêu, sau nghiệm thu GĐ6), pinned |
+| `Settings` | evening_start |
+
 ## 5. Màn hình
 
 | Tab | Nội dung chính |
@@ -323,6 +351,7 @@ Tên web: **LIFE PLANNER**. Chi tiết đầy đủ (vai trò từng màu, cỡ 
 | **4** | Tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA | |
 | **5** | Góp ý sau khi dùng thử (22/11/2026), xem mục 4.5 | |
 | **6** | Lập kế hoạch ngày: Ngày sẽ làm, kho, thời lượng, quỹ giờ, gợi ý buổi sáng, đột xuất, xem mục 4.6 | |
+| **7** | Giờ bắt đầu, việc ghim đầu ngày, tab Ma trận và Cân việc mới, hoa rơi nền, xem mục 4.7 | |
 
 ## 9. Tiêu chí hoàn thành mỗi giai đoạn
 

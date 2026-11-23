@@ -1,8 +1,10 @@
-# Bàn giao phiên làm việc (cập nhật 22/11/2026, Giai đoạn 6)
+# Bàn giao phiên làm việc (cập nhật 23/11/2026, Giai đoạn 7)
 
 Đọc file này trước, rồi chỉ mở thêm file nào thật sự cần. Chi tiết yêu cầu ở `SPEC.md`, quy tắc giao diện ở `DESIGN.md`, lịch sử ở `docs/TIEN-DO.md`.
 
 ## 0. Việc đang dở
+**GĐ7 (23/11/2026) đã code và qua qa-tester (phần A, B, C đều ĐẠT, người dùng duyệt A và C, B đã qua kiểm lần cuối).** Việc còn lại: gộp nhánh `claude/elegant-hawking-93s7xs` vào `main` (GitHub Pages chạy từ `main`). Ngày 23/11 17:07 người dùng đã **tạm ngưng (Suspend) ứng dụng Claude trên GitHub**, nên phiên cloud chưa đẩy được; cần người dùng bấm Unsuspend (github.com/settings/installations) hoặc tự gộp. Code.gs đã triển khai bản có cột `bucket`, `pinned`, `evening_start`. Bản B không đổi cột nên không cần triển khai lại.
+
 Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sheet thật đã chuyển. Một điều chưa kiểm: lưu thật từ web (cần mã bí mật của người dùng) và việc tự tạo sheet Interruptions, Settings ở lần lưu đầu. Nếu lỗi, chạy `caiDat` thủ công? KHÔNG: hỏi người dùng (hàm in mã bí mật). Chờ người dùng đưa góp ý GĐ7 nếu có.
 
 ## 1. Đang ở đâu
@@ -11,6 +13,7 @@ Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sh
 **Giai đoạn 4** (tổng kết, biểu đồ, review, xuất/nhập JSON, chế độ tối, PWA): xong, kể cả xử lý giới hạn.
 
 **Giai đoạn 5** (góp ý sau dùng thử, SPEC mục 4.5: Agenda theo ngày, biểu đồ mới, ma trận 2 trục, lời nhắc review, lọc Task, xem Năm, Tổng kết 4 kỳ, hoa rơi): đã duyệt 22/11/2026. `Code.gs` đổi (thêm `ensureColumns_`), Claude đã triển khai Phiên bản 3 qua Chrome (22/11/2026), link giữ nguyên. Cột mới tự thêm vào Sheet ở lần lưu đầu tiên.
+**Giai đoạn 7** (SPEC mục 4.7): A việc ghim đầu ngày + giờ dự kiến bắt đầu (`plan.schedule`, `plan.pinnedOf`, cột `pinned`, `evening_start`, bỏ `fixed_min`), B tab Ma trận `#/ma-tran` + Cân việc mới (`views/matrix.js`, `plan.balance`, `forms.openBalance`, `forms.quickEdit`), C hoa rơi (`flowers.js`, cài đặt `lp_fall`).
 **Giai đoạn 6** (Lập kế hoạch ngày, SPEC mục 4.6: kho việc, quỹ giờ, kế hoạch hôm nay, thời lượng, chia nhỏ, đột xuất, ma trận theo Quan trọng do người dùng đánh dấu): đã xong (duyệt 22/11/2026). Code.gs đổi (cột mới cho Tasks, sheet Interruptions và Settings).
 - Web: https://bca2109-cata.github.io/web-muc-tieu/ (GitHub Pages tự chạy khi đẩy `main`, phục vụ thư mục `src/`).
 - Sheet thật có dữ liệu thử, người dùng muốn **giữ lại để kiểm thử** (mục 5).
@@ -27,7 +30,7 @@ Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sh
 - **Mỗi lần sửa CSS/JS rồi đẩy lên: đổi số `?v=...` ở các thẻ link/script trong `src/index.html`** (đang dùng mã commit gần nhất), vì GitHub Pages cho trình duyệt giữ file cũ khoảng 10 phút.
 - Bản mock: mở bằng `file:` hoặc thêm `?mock=1`. Tham số kiểm thử: `?today=yyyy-mm-dd`, `?fail=1` (giả lập lưu lỗi), `?now=HH:mm` (giả lập giờ, GĐ6).
 - `store.js`: cập nhật lạc quan, hàng đợi lưu nền, có bộ nhớ đệm để mở lại hiện ngay.
-- localStorage của người dùng: `lp_bg`, `lp_today_view`, `lp_top3_auto`, `lp_habit_view`, `lp_review_type`, `lp_review_chart`, `lp_theme`; GĐ6: `lp_plan_order` ({day, ids}), `lp_plan_done`, `lp_plan_seen` (ngày), `lp_inbox_review` (tuần ISO); GĐ7: `lp_fall` (on / system / off).
+- localStorage của người dùng: `lp_bg`, `lp_today_view`, `lp_top3_auto`, `lp_habit_view`, `lp_review_type`, `lp_review_chart`, `lp_theme`; GĐ6: `lp_plan_order` ({day, ids}), `lp_plan_done`, `lp_plan_seen` (ngày), `lp_inbox_review` (tuần ISO); GĐ7: `lp_fall` (on / system / off), `lp_mx_scope` (today / week / inbox), `lp_nogoal_bucket` (work / evening).
 - Định tuyến: `#/agenda` (cũ `#/hom-nay` vẫn vào Agenda), `#/task`, `#/muc-tieu`, `#/muc-tieu/<id>`, `#/thoi-quen`, `#/tong-ket`.
 
 ## 4. Quy tắc nghiệp vụ đã chốt (ngoài SPEC hoặc dễ quên)
@@ -45,7 +48,7 @@ Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sh
 ## 5. Google Sheet
 - ID `1_zdutUcr7DnRLUm5SFWd959af_h2zZTg700jxPmEK9c`, tên "Quản lý mục tiêu - dữ liệu". Claude đọc ghi qua kết nối Google Sheets.
 - Cột đều để dạng chữ (ngày giữ `yyyy-mm-dd`), `target`/`actual` dạng số. Khi ghi bằng kết nối, ghi kiểu RAW để ngày không bị đổi thành số. Đọc lại ô để kiểm.
-- Cột mới nhất: Goals P = `importance`, Tasks O = `icon`, Tasks P = `due_time` (GĐ5), Tasks Q..W = `do_date`, `duration_min`, `is_important`, `parent_id`, `first_step`, `defer_count`, `inbox_since`, X = `bucket` (sau nghiệm thu GĐ6); sheet `Interruptions` (id, date, title, duration_min, created_at) và `Settings` (1 dòng id = main) (GĐ6), Reviews I = `rating`, J = `hide_from` (GĐ5, Apps Script tự thêm khi ghi lần đầu). Không đổi tên cột nếu chưa hỏi người dùng.
+- Cột mới nhất (GĐ7): Tasks X = `bucket`, Y = `pinned`; Settings K = `evening_start`; việc ghim mẫu "Báo cáo daily" ở Tasks dòng 29. Cột trước đó: Goals P = `importance`, Tasks O = `icon`, Tasks P = `due_time` (GĐ5), Tasks Q..W = `do_date`, `duration_min`, `is_important`, `parent_id`, `first_step`, `defer_count`, `inbox_since`, X = `bucket` (sau nghiệm thu GĐ6); sheet `Interruptions` (id, date, title, duration_min, created_at) và `Settings` (1 dòng id = main) (GĐ6), Reviews I = `rating`, J = `hide_from` (GĐ5, Apps Script tự thêm khi ghi lần đầu). Không đổi tên cột nếu chưa hỏi người dùng.
 - Dữ liệu thử: Goals dòng 2 đến 4 (3 mục tiêu), Tasks dòng 3 đến 29 (27 task), tất cả có `note` = "Dữ liệu thử". Tasks dòng 2 ("hhh") người dùng đã tự xóa (22/11/2026), dòng 2 đang trống.
 
 ## 6. Kiểm thử
