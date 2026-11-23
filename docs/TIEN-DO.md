@@ -240,10 +240,10 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Nhãn "Chưa xong, vừa về kho" cho việc tự về kho trong 2 ngày gần nhất (Kho, Kế hoạch, Xem lại kho).
 - Lỗi Thấp mới: `backup.js` không kiểm giá trị `bucket` khi nhập; mỗi ô thêm nhanh giữ lựa chọn bucket riêng; lần lặp từ 2h (khó xảy ra) vẫn tính trong quỹ; ở 390px nhãn "Mục tiêu" và "Việc này tính vào" trong form xuống dòng xấu.
 
-- Lỗi Thấp M3: nút bật tắt thiếu `aria-controls`; `slowOpen` giữ khi đổi ngày; nhãn "vừa về kho" hiện trong ngày về kho và ngày kế tiếp (chưa rõ có cần 2 ngày đủ); `tests-qa/*.js` còn đường dẫn Windows, thiếu `?mock=1`, `flow-gd6.js` chưa bấm nút Tùy chọn trước khi chọn chip.
+- Lỗi Thấp M3: nút bật tắt thiếu `aria-controls`; `slowOpen` giữ khi đổi ngày; `tests-qa/*.js` còn đường dẫn Windows, thiếu `?mock=1`, `flow-gd6.js` chưa bấm nút Tùy chọn trước khi chọn chip.
 
 ## Câu hỏi chờ người dùng
-- (chưa có)
+- (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
 
 ## Lỗi mức Thấp của đợt đổi giao diện
 - Dữ liệu mẫu có việc "Họp chốt số liệu với phòng kế toán" đã Xong mà ngày xong ở tương lai (`mock-data.js`), nên giả lập sang ngày hôm sau sẽ thấy 1 việc xong sẵn. Chỉ ảnh hưởng bản mock.
