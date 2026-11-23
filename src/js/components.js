@@ -108,8 +108,16 @@ App.comp = (function () {
     return m;
   }
 
+  function fmtHM(m) { return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2); }
   function taskMeta(t, ctx, q) {
     var meta = [quadTag(q), dueTag(t, ctx.day || ctx.today)];
+    // Giờ dự kiến bắt đầu (GĐ7), chỉ để tham khảo
+    var sc = ctx.sched && ctx.sched[t.id];
+    if (sc) {
+      meta.unshift(tag('tplain', 'clock', '<span class="num">' + fmtHM(sc.start) + '</span>', 'Giờ dự kiến bắt đầu, chỉ để tham khảo'));
+      if (sc.late) meta.push(tag('tq1', 'alert', 'Không kịp hôm nay'));
+    }
+    if (ctx.pins && ctx.pins[t.id]) meta.unshift(tag('twarm', 'flag', 'Ghim đầu ngày'));
     if (kidsTag(t, ctx)) meta.push(kidsTag(t, ctx)); else meta.push(durTag(t));
     if (impTag(t)) meta.push(impTag(t));
     if (deferTag(t)) meta.push(deferTag(t));
@@ -276,6 +284,6 @@ App.comp = (function () {
   return {
     tag: tag, groupMeta: groupMeta, progressBar: progressBar, groupTag: groupTag, periodTag: periodTag, deadlineTag: deadlineTag,
     hearts: hearts, durTag: durTag, impTag: impTag, deferTag: deferTag, kidsTag: kidsTag, kidsMap: kidsMap, firstStep: firstStep, chips: chips, dayChoices: dayChoices, taskRow: taskRow, tickButton: tickButton, starButton: starButton, dueTag: dueTag, quadTag: quadTag, taskList: taskList, topNote: topNote, matrix: matrix, goalCard: goalCard,
-    goalStatusLine: goalStatusLine, progressCount: progressCount, quickAdd: quickAdd
+    goalStatusLine: goalStatusLine, progressCount: progressCount, quickAdd: quickAdd, hm: fmtHM
   };
 })();

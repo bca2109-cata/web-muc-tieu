@@ -5,17 +5,21 @@ var App = window.App || (window.App = {});
 App.plan = (function () {
   var D = App.date;
 
-  // Cài đặt mặc định: 8h00 đến 17h30, nghỉ trưa 1h30, báo cáo daily 30 phút, dự phòng 30%, tối 1h30, cuối tuần 4 giờ, xem lại kho Thứ Sáu 16h30
+  /* Cài đặt mặc định: 8h00 đến 17h30, nghỉ trưa 12h00 (1h30), dự phòng 30%, tối 1h30 từ 20h00, cuối tuần 4 giờ, xem lại kho Thứ Sáu 16h30.
+     GĐ7: bỏ "việc cố định" (cột fixed_min giữ lại nhưng không dùng), thay bằng tổng thời lượng việc ghim đầu ngày. */
   var DEFAULTS = {
-    id: 'main', work_start: '08:00', work_end: '17:30', lunch_min: '90', fixed_min: '30', buffer_pct: '30',
-    evening_min: '90', review_weekday: '5', review_time: '16:30', weekend_min: '240'
+    id: 'main', work_start: '08:00', work_end: '17:30', lunch_min: '90', buffer_pct: '30',
+    evening_min: '90', evening_start: '20:00', review_weekday: '5', review_time: '16:30', weekend_min: '240'
   };
+  var LUNCH_START = 720; // 12:00
   var BUCKETS = {
     work: { label: 'Giờ làm', short: 'Giờ làm' },
     evening: { label: 'Buổi tối', short: 'Tối' },
     personal: { label: 'Cuối tuần', short: 'Cuối tuần' }
   };
 
+  // Màn hình bỏ việc lặp mẫu khỏi state.tasks (để riêng ở state.templates), nhưng việc ghim cần đọc cả việc mẫu
+  function allT(state) { return state.templates && state.templates.length ? state.tasks.concat(state.templates) : state.tasks; }
   function minutes(hm) { var m = /^(\d{1,2}):(\d{2})$/.exec(String(hm || '')); return m ? +m[1] * 60 + +m[2] : null; }
   function num(v, d) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && n >= 0 ? n : d; }
 
@@ -26,23 +30,23 @@ App.plan = (function () {
       var v = row[k];
       s[k] = v === '' || v == null ? DEFAULTS[k] : String(v);
     });
-    ['work_start', 'work_end', 'review_time'].forEach(function (k) { if (!App.logic.isTime(s[k])) s[k] = DEFAULTS[k]; });
+    ['work_start', 'work_end', 'review_time', 'evening_start'].forEach(function (k) { if (!App.logic.isTime(s[k])) s[k] = DEFAULTS[k]; });
     if (!(+s.review_weekday >= 0 && +s.review_weekday <= 6)) s.review_weekday = DEFAULTS.review_weekday;
     return s;
   }
-  // Quỹ giờ làm = (giờ làm − nghỉ trưa − việc cố định) × (100% − dự phòng)
-  function workNet(s) {
+  // Quỹ giờ làm = (giờ làm − nghỉ trưa − tổng việc ghim của ngày) × (100% − dự phòng)
+  function workNet(s, pinMin) {
     var span = minutes(s.work_end) - minutes(s.work_start);
     if (!(span > 0)) span = 570;
-    return Math.max(0, span - num(s.lunch_min, 90) - num(s.fixed_min, 30));
+    return Math.max(0, span - num(s.lunch_min, 90) - (pinMin || 0));
   }
-  function workBudget(s) {
+  function workBudget(s, pinMin) {
     var pct = Math.min(100, num(s.buffer_pct, 30));
-    return Math.max(0, Math.round(workNet(s) * (100 - pct) / 100));
+    return Math.max(0, Math.round(workNet(s, pinMin) * (100 - pct) / 100));
   }
   function isWeekend(day) { var d = D.parse(day); var w = d ? d.getUTCDay() : 1; return w === 0 || w === 6; }
-  function caps(s, day) {
-    return isWeekend(day) ? { personal: Math.round(num(s.weekend_min, 240)) } : { work: workBudget(s), evening: Math.round(num(s.evening_min, 90)) };
+  function caps(s, day, pinMin) {
+    return isWeekend(day) ? { personal: Math.round(num(s.weekend_min, 240)) } : { work: workBudget(s, pinMin), evening: Math.round(num(s.evening_min, 90)) };
   }
   function goalsMap(state) { var m = {}; (state.goals || []).forEach(function (g) { m[g.id] = g; }); return m; }
   /* Việc thuộc mục tiêu nhóm Công việc xếp vào giờ làm, mục tiêu nhóm khác xếp vào buổi tối.
@@ -64,21 +68,87 @@ App.plan = (function () {
   /* Quỹ giờ của ngày D: mỗi quỹ có cap (quỹ), intr (đột xuất, trừ vào giờ làm hoặc quỹ cuối tuần),
      avail = cap − intr, planned (tổng thời lượng việc có Ngày sẽ làm = D), done (phần đã xong), over (> 0 là quá tải) */
   function load(state, day) {
-    var L = App.logic, s = settings(state), goals = goalsMap(state), cp = caps(s, day), parents = L.parentIds(state.tasks);
+    var L = App.logic, s = settings(state), goals = goalsMap(state), parents = L.parentIds(state.tasks);
+    var pins = pinnedOf(state, day), pinMin = pins.reduce(function (a, t) { return a + L.duration(t); }, 0), cp = caps(s, day, pinMin);
     var intr = interruptions(state, day), intrMin = intr.reduce(function (a, x) { return a + L.duration(x); }, 0);
     var keys = Object.keys(cp), by = {};
     keys.forEach(function (k, i) {
       var iv = i === 0 ? intrMin : 0;
       by[k] = { key: k, label: BUCKETS[k].label, short: BUCKETS[k].short, cap: cp[k], intr: iv, avail: cp[k] - iv, planned: 0, done: 0, count: 0 };
     });
-    var list = state.tasks.filter(function (t) { return !L.isTemplate(t) && !parents[t.id] && L.doDate(t) === day; });
+    var pm = L.pinMap(allT(state));
+    // Việc ghim đã trừ khỏi quỹ nên không tính vào "đã xếp"
+    var list = state.tasks.filter(function (t) { return !L.isTemplate(t) && !parents[t.id] && L.doDate(t) === day && !L.pinOrder(t, pm); });
     list.forEach(function (t) {
       var b = by[bucketOf(t, goals, day)], m = L.duration(t);
       b.planned += m; b.count++;
       if (L.isDone(t)) b.done += m;
     });
     var buckets = keys.map(function (k) { var b = by[k]; b.over = b.planned - b.avail; return b; });
-    return { day: day, weekend: isWeekend(day), settings: s, buckets: buckets, by: by, intr: intr, intrMin: intrMin, tasks: list, goals: goals };
+    return { day: day, weekend: isWeekend(day), settings: s, buckets: buckets, by: by, intr: intr, intrMin: intrMin, tasks: list, goals: goals, pins: pins, pinMin: pinMin };
+  }
+
+  // Việc ghim đầu ngày của ngày D (lần lặp của việc mẫu có ghim), theo thứ tự người dùng đặt
+  function pinnedOf(state, day) {
+    var L = App.logic, pm = L.pinMap(allT(state));
+    return state.tasks.filter(function (t) { return !L.isTemplate(t) && L.doDate(t) === day && L.pinOrder(t, pm); })
+      .sort(function (a, b) { return (L.pinOrder(a, pm) - L.pinOrder(b, pm)) || (String(a.created_at) < String(b.created_at) ? -1 : 1); });
+  }
+  function pinnedTemplates(state) {
+    var L = App.logic;
+    return allT(state).filter(function (t) { return L.isTemplate(t) && L.pinOrder(t, L.pinMap(allT(state))); })
+      .sort(function (a, b) { return +a.pinned - +b.pinned; });
+  }
+
+  /* Giờ dự kiến bắt đầu từng việc chưa xong của ngày D (chỉ để tham khảo, không phải lịch cứng).
+     ids: thứ tự danh sách (việc ghim luôn đứng đầu). Bắt đầu từ giờ bắt đầu ngày, bỏ qua nghỉ trưa (12h00 + lunch_min),
+     việc đột xuất chèn tại giờ ghi làm lùi các việc sau. Bây giờ muộn hơn giờ dự kiến đầu tiên thì tính lại từ bây giờ.
+     Buổi tối tính từ evening_start. Cuối tuần không tính giờ. Trả về { id: { start, end, late } } (phút trong ngày). */
+  function schedule(state, day, nowHM, ids) {
+    var L = App.logic, s = settings(state), out = {};
+    if (isWeekend(day)) return out;
+    var goals = goalsMap(state), byId = {}, pm = L.pinMap(allT(state));
+    state.tasks.forEach(function (t) { byId[t.id] = t; });
+    var seq = (ids || []).map(function (id) { return byId[id]; }).filter(function (t) { return t && !L.isDone(t) && L.doDate(t) === day; });
+    var pins = seq.filter(function (t) { return L.pinOrder(t, pm); }), rest = seq.filter(function (t) { return !L.pinOrder(t, pm); });
+    var wStart = minutes(s.work_start), wEnd = minutes(s.work_end), lunchEnd = LUNCH_START + num(s.lunch_min, 90), eStart = minutes(s.evening_start);
+    var now = day === D.today() && nowHM && minutes(nowHM) != null ? minutes(nowHM) : null;
+    var blocks = interruptions(state, day).map(function (x) {
+      var m = /(\d{1,2}):(\d{2})/.exec(String(x.created_at || ''));
+      return m ? { at: +m[1] * 60 + +m[2], len: L.duration(x), used: false } : null;
+    }).filter(Boolean).sort(function (a, b) { return a.at - b.at; });
+    // Tiến n phút làm việc từ c, bỏ qua nghỉ trưa (chỉ buổi làm)
+    function advance(c, n, lunch) {
+      while (n > 0) {
+        if (lunch && c >= LUNCH_START && c < lunchEnd) c = lunchEnd;
+        var room = lunch && c < LUNCH_START ? LUNCH_START - c : n;
+        var step = Math.min(n, room);
+        c += step; n -= step;
+      }
+      if (lunch && c >= LUNCH_START && c < lunchEnd) c = c === LUNCH_START ? c : lunchEnd;
+      return c;
+    }
+    function run(list, start, lunch, limit) {
+      var c = start;
+      list.forEach(function (t) {
+        if (lunch && c >= LUNCH_START && c < lunchEnd) c = lunchEnd;
+        var st = c, en = advance(c, L.duration(t), lunch);
+        blocks.forEach(function (b) { if (!b.used && b.at >= st && b.at < en && lunch) { b.used = true; en = advance(en, b.len, lunch); } });
+        out[t.id] = { start: st, end: en, late: !!limit && en > limit };
+        c = en;
+        blocks.forEach(function (b) { if (!b.used && b.at <= c && lunch) { b.used = true; c = advance(c, b.len, lunch); } });
+      });
+      return c;
+    }
+    function work(list, start) { return run(list, start, true, wEnd); }
+    var first = pins.concat(rest.filter(function (t) { return bucketOf(t, goals, day) === 'work'; }));
+    var start = wStart;
+    if (now != null && now > start) start = now;
+    // Muộn hơn giờ dự kiến của việc đầu tiên thì tính lại từ bây giờ: đột xuất đã ghi trước bây giờ chỉ chặn nếu còn đang chạy
+    if (now != null) blocks.forEach(function (b) { if (b.at + b.len > start && b.at <= start) { start = b.at + b.len; } if (b.at < start) b.used = true; });
+    work(first, start);
+    run(rest.filter(function (t) { return bucketOf(t, goals, day) !== 'work'; }), eStart, false, 0);
+    return out;
   }
 
   // Xếp việc của ngày theo thứ tự đã chốt (order: danh sách id), việc chưa có trong thứ tự xếp sau
@@ -145,9 +215,9 @@ App.plan = (function () {
     var L = App.logic, ld = load(state, today), parents = L.parentIds(state.tasks);
     var left = {};
     ld.buckets.forEach(function (b) { left[b.key] = b.avail - b.done; });
-    var pool = [], split = [];
+    var pool = [], split = [], pmap = L.pinMap(allT(state));
     state.tasks.forEach(function (t) {
-      if (L.isTemplate(t) || L.isDone(t) || parents[t.id]) return;
+      if (L.isTemplate(t) || L.isDone(t) || parents[t.id] || L.pinOrder(t, pmap)) return;
       var dd = L.doDate(t);
       if (t.parent_recurring_id && dd !== today) return;
       if (!(dd === today || !dd || (t.due_date && t.due_date <= today))) return;
@@ -241,7 +311,7 @@ App.plan = (function () {
       if (x.date >= from && x.date <= today) { sum += L.duration(x); n++; }
     });
     for (var d = from; d <= today; d = D.addDays(d, 1)) if (!isWeekend(d)) days++;
-    var avg = days ? Math.round(sum / days) : 0, net = workNet(s);
+    var avg = days ? Math.round(sum / days) : 0, net = workNet(s, pinnedTemplates(state).reduce(function (a, t) { return a + L.duration(t); }, 0));
     var pct = net ? Math.min(80, Math.round(avg / net * 100 / 5) * 5) : 0;
     return { from: from, sum: sum, count: n, days: days, avg: avg, suggestPct: pct, currentPct: Math.round(num(s.buffer_pct, 30)), net: net };
   }
@@ -252,7 +322,7 @@ App.plan = (function () {
 
   return {
     DEFAULTS: DEFAULTS, BUCKETS: BUCKETS, TIER_LABELS: TIER_LABELS, minutes: minutes, settings: settings, workNet: workNet, workBudget: workBudget,
-    isFixed: isFixed, isWeekend: isWeekend, caps: caps, bucketOf: bucketOf, goalsMap: goalsMap, interruptions: interruptions, load: load, ordered: ordered,
+    isFixed: isFixed, pinnedOf: pinnedOf, pinnedTemplates: pinnedTemplates, schedule: schedule, isWeekend: isWeekend, caps: caps, bucketOf: bucketOf, goalsMap: goalsMap, interruptions: interruptions, load: load, ordered: ordered,
     overflow: overflow, reasons: reasons, tier: tier, suggest: suggest, rolloverRows: rolloverRows, toInbox: toInbox, fit: fit,
     interruptionStats: interruptionStats, newInterruption: newInterruption
   };

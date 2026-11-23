@@ -13,6 +13,14 @@ App.views.today = function (state, ui) {
   state.goals.forEach(function (g) { goalsById[g.id] = g; });
   var ctx = { today: today, day: day, goalsById: goalsById, flashId: ui.flashId, sort: ui.agendaSort, scope: 'agenda',
     kids: C.kidsMap(state.tasks), order: App.app.planOrder(day) };
+  // Giờ dự kiến bắt đầu từng việc (GĐ7) theo đúng thứ tự danh sách, và việc ghim đầu ngày
+  (function () {
+    var pinned = App.plan.pinnedOf(state, day), dl = L.dayList(state.tasks, day);
+    var seq = App.views.sortRows(dl, { key: 'plan', dir: 1 }, day, ctx.order).map(function (t) { return t.id; });
+    ctx.sched = App.plan.schedule(state, day, isToday ? D.nowHM() : null, seq);
+    ctx.pins = {};
+    pinned.forEach(function (t) { ctx.pins[t.id] = true; });
+  })();
 
   var tasks = state.tasks;
   var list = L.dayList(tasks, day);
@@ -129,10 +137,11 @@ App.views.budget = function (state, day, ui) {
       nf.map(function (t) { return '<b>' + esc(t.title) + '</b> <span class="num">' + f(L.duration(t)) + '</span>'; }).join(', ') + '</span></p>' +
       '<button type="button" class="btn btn-soft" data-action="overflow-inbox">' + icon('box', 'ic18') + 'Đưa <span class="num">' + nf.length + '</span> việc về kho</button></div>';
   }
+  var pinNote = ld.pins && ld.pins.length ? '<p class="bd-pin">' + icon('flag', 'ic14') + '<span>Việc ghim đầu ngày <span class="num">' + f(ld.pinMin) + '</span> đã trừ khỏi quỹ giờ làm.</span></p>' : '';
   var title = isToday ? 'Quỹ giờ hôm nay' : 'Quỹ giờ ' + D.weekday(day).toLowerCase() + ' <span class="num">' + D.fmt(day).slice(0, 5) + '</span>';
   return '<section class="card budget" aria-labelledby="bd-title"><div class="bd-head"><h2 id="bd-title" class="bd-h">' + icon('hourglass', 'ic18') + '<span>' + title + '</span></h2>' +
     (isToday && !ui.plan ? '<button type="button" class="btn btn-soft bd-plan" data-action="plan-open">' + icon('sparkle', 'ic18') + 'Xếp việc hôm nay</button>' : '') + '</div>' +
-    rows + intr + late + '</section>';
+    rows + pinNote + intr + late + '</section>';
 };
 
 /* Kế hoạch hôm nay: bản nháp ui.plan = { ids, first, keep, skipped, split } do app tạo từ App.plan.suggest.
@@ -289,8 +298,11 @@ App.views.sortRows = function (list, sort, day, order) {
     var rest = list.slice().sort(function (a, b) {
       return ((L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0)) || L.impRank(a) - L.impRank(b) || (L.dueKey(a) < L.dueKey(b) ? -1 : L.dueKey(a) > L.dueKey(b) ? 1 : 0);
     });
-    var out = App.plan.ordered(rest, order || []);
-    return dir === -1 ? out.reverse() : out;
+    var pm = L.pinMap(App.store.get().tasks);
+    var pins = rest.filter(function (t) { return L.pinOrder(t, pm); }).sort(function (a, b) { return L.pinOrder(a, pm) - L.pinOrder(b, pm); });
+    var others = App.plan.ordered(rest.filter(function (t) { return !L.pinOrder(t, pm); }), order || []);
+    var out = others;
+    return dir === -1 ? pins.concat(out.reverse()) : pins.concat(out);
   }
   function val(t) {
     if (key === 'done') return L.isDone(t) ? 1 : 0;
@@ -328,7 +340,9 @@ App.views.taskTable = function (list, ctx) {
       '<td class="c-name"><button type="button" class="tt-name" data-action="open-task" data-id="' + esc(t.id) + '">' +
       icon(L.iconOf(t), 'ic14') + '<span class="tt-text"><span class="tt-title">' + esc(t.title) + '</span>' +
       (t.first_step && !done ? '<span class="tt-step">' + icon('play', 'ic12') + esc(t.first_step) + '</span>' : '') +
-      '<span class="tt-sub">' + (t.status === 'Đang làm' ? 'Đang làm · ' : '') + size + ' · ' + (g ? esc(g.name) : esc(App.C.MISC)) +
+      '<span class="tt-sub">' + (ctx.pins && ctx.pins[t.id] ? '<b>Ghim đầu ngày</b> · ' : '') +
+      (ctx.sched && ctx.sched[t.id] ? icon('clock', 'ic12') + '<b class="num" title="Giờ dự kiến bắt đầu, chỉ để tham khảo">' + C.hm(ctx.sched[t.id].start) + '</b>' + (ctx.sched[t.id].late ? ' <b class="late-tag">Không kịp hôm nay</b>' : '') + ' · ' : '') +
+      (t.status === 'Đang làm' ? 'Đang làm · ' : '') + size + ' · ' + (g ? esc(g.name) : esc(App.C.MISC)) +
       (L.deferCount(t) ? ' · dời <span class="num">' + L.deferCount(t) + '</span> lần' : '') + '</span></span></button></td>' +
       '<td class="c-due">' + (done ? C.tag('tok', 'check', 'Xong' + (t.due_date ? ' · <span class="num">' + App.date.fmt(t.due_date).slice(0, 5) + '</span>' + hm : '')) : C.dueTag(t, day)) + '</td>' +
       '<td class="c-pri">' + (L.isImportant(t) ? C.tag('tpri', 'heart', 'Quan trọng') : '<span class="muted" aria-label="Không quan trọng">–</span>') + '</td>' +

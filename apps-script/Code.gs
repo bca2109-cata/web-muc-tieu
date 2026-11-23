@@ -7,12 +7,12 @@
 var SHEETS = {
   Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
   Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time',
-    'do_date', 'duration_min', 'is_important', 'parent_id', 'first_step', 'defer_count', 'inbox_since', 'bucket'],
+    'do_date', 'duration_min', 'is_important', 'parent_id', 'first_step', 'defer_count', 'inbox_since', 'bucket', 'pinned'],
   Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
   HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
   Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from'],
   Interruptions: ['id', 'date', 'title', 'duration_min', 'created_at'],
-  Settings: ['id', 'work_start', 'work_end', 'lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'review_weekday', 'review_time', 'weekend_min']
+  Settings: ['id', 'work_start', 'work_end', 'lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'review_weekday', 'review_time', 'weekend_min', 'evening_start']
 };
 // Cột lưu dạng số, các cột còn lại lưu dạng chữ để ngày giữ đúng yyyy-mm-dd
 var NUMBER_COLS = { Goals: ['target', 'actual'] };

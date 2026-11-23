@@ -3,7 +3,7 @@
    - CSS, JS, ảnh (có ?v= theo phiên bản): dùng bản đã lưu, chưa có thì tải rồi lưu.
    - Dữ liệu Google Sheet (Apps Script) không đi qua đây: luôn gọi thẳng mạng.
    Đổi VERSION mỗi lần đưa bản mới lên để xóa bộ nhớ cũ. */
-var VERSION = 'lp-gd7c';
+var VERSION = 'lp-gd7d';
 var CORE = ['./', 'index.html', 'manifest.json', 'favicon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {

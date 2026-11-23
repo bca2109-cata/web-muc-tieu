@@ -18,12 +18,12 @@ App.C = {
     Goals: ['id', 'name', 'group', 'period_type', 'period_value', 'start_date', 'end_date', 'progress_mode', 'unit', 'target', 'actual', 'status', 'note', 'created_at', 'updated_at', 'importance'],
     // GĐ6 thêm 7 cột cuối, bản sửa sau nghiệm thu thêm cột bucket (Giờ làm / Buổi tối cho việc không gắn mục tiêu). Cột priority giữ dữ liệu cũ, không dùng nữa (chỉ đọc khi is_important còn trống)
     Tasks: ['id', 'title', 'goal_id', 'due_date', 'priority', 'status', 'is_top3', 'top3_date', 'recurring_rule', 'parent_recurring_id', 'done_at', 'note', 'created_at', 'updated_at', 'icon', 'due_time',
-      'do_date', 'duration_min', 'is_important', 'parent_id', 'first_step', 'defer_count', 'inbox_since', 'bucket'],
+      'do_date', 'duration_min', 'is_important', 'parent_id', 'first_step', 'defer_count', 'inbox_since', 'bucket', 'pinned'],
     Habits: ['id', 'name', 'goal_id', 'frequency', 'active', 'created_at', 'updated_at'],
     HabitLogs: ['id', 'habit_id', 'date', 'done', 'created_at', 'updated_at'],
     Reviews: ['id', 'period_type', 'period_value', 'good', 'bad', 'next', 'created_at', 'updated_at', 'rating', 'hide_from'],
     Interruptions: ['id', 'date', 'title', 'duration_min', 'created_at'],
-    Settings: ['id', 'work_start', 'work_end', 'lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'review_weekday', 'review_time', 'weekend_min']
+    Settings: ['id', 'work_start', 'work_end', 'lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'review_weekday', 'review_time', 'weekend_min', 'evening_start']
   },
   // Tên sheet -> khóa trong state
   TABLES: { Goals: 'goals', Tasks: 'tasks', Habits: 'habits', HabitLogs: 'habitLogs', Reviews: 'reviews', Interruptions: 'interruptions', Settings: 'settings' },
@@ -601,6 +601,18 @@ App.logic = {
     return App.logic.TASK_ICONS.indexOf(t.icon) >= 0 ? t.icon : App.logic.guessIcon(t.title);
   },
 
+  /* Việc ghim đầu ngày (GĐ7): việc lặp mẫu có `pinned` = số thứ tự (1, 2, ...). Lần lặp lấy thứ tự theo việc mẫu.
+     pinMap: { id việc mẫu: thứ tự }; pinOrder(t, pm): thứ tự ghim của việc t (0 = không ghim). */
+  pinMap: function (tasks) {
+    var m = {};
+    tasks.forEach(function (t) { var n = parseInt(t.pinned, 10); if (App.logic.isTemplate(t) && n > 0) m[t.id] = n; });
+    return m;
+  },
+  pinOrder: function (t, pm) {
+    if (App.logic.isTemplate(t)) return pm[t.id] || 0;
+    return t.parent_recurring_id ? pm[t.parent_recurring_id] || 0 : 0;
+  },
+
   // Việc không gắn mục tiêu: nhớ lựa chọn Giờ làm / Buổi tối của lần trước (mặc định buổi tối)
   lastBucket: function () { try { return localStorage.getItem('lp_nogoal_bucket') === 'work' ? 'work' : 'evening'; } catch (e) { return 'evening'; } },
   rememberBucket: function (b) { try { localStorage.setItem('lp_nogoal_bucket', b === 'work' ? 'work' : 'evening'); } catch (e) { /* bỏ qua */ } },
@@ -611,7 +623,7 @@ App.logic = {
       id: App.util.uuid(), title: '', goal_id: '', due_date: '', due_time: '', priority: '',
       status: 'Cần làm', is_top3: 'FALSE', top3_date: '', recurring_rule: '', parent_recurring_id: '',
       done_at: '', note: '', created_at: now, updated_at: now, icon: '',
-      do_date: '', duration_min: String(App.C.DEFAULT_DURATION), is_important: 'FALSE', parent_id: '', first_step: '', defer_count: '0', inbox_since: '', bucket: ''
+      do_date: '', duration_min: String(App.C.DEFAULT_DURATION), is_important: 'FALSE', parent_id: '', first_step: '', defer_count: '0', inbox_since: '', bucket: '', pinned: ''
     };
     Object.assign(t, fields || {});
     if (!t.icon) t.icon = App.logic.guessIcon(t.title);

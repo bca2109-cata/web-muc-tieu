@@ -868,3 +868,11 @@ i.bd-key{display:inline-block;width:10px;height:10px;border-radius:3px}
 /* Độ đậm hoa 0.35 đến 0.55 do từng bông quyết định (flowers.js), không nhân thêm ở lớp nền */
 /* Chữ nằm ngoài thẻ có quầng màu nền, để hoa phía sau không làm mờ chữ */
 .main :is(.sec-title,.hint,.muted,.empty,h1,h2):not(.card *),.site-head :is(p,small,span):not(.logo *){text-shadow:0 0 3px var(--bg),0 0 6px var(--bg),0 0 12px var(--bg),0 0 18px var(--bg)}
+
+/* ===== GĐ7 phần A: việc ghim đầu ngày, giờ dự kiến ===== */
+.pin-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
+.pin-list li{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:44px}
+.pin-name{flex:1 1 140px;min-width:0;font-weight:800}
+.bd-pin{display:flex;align-items:flex-start;gap:6px;margin:8px 0 0;font-size:13px;font-weight:700;color:var(--muted)}
+.bd-pin .icon{flex:none;margin-top:2px}
+.late-tag{color:var(--hot)}

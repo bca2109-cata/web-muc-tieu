@@ -91,6 +91,7 @@ App.forms = (function () {
         }).join('') + '</div>' +
         '<p class="form-error" hidden data-err="wd">Chọn ít nhất một thứ.</p>' +
         '<p class="info-line warn-line" data-dup hidden></p>' +
+        '<label class="check-line" data-pin-field' + (repeat === 'none' ? ' hidden' : '') + '><input type="checkbox" name="pinned"' + (parseInt(t.pinned, 10) > 0 ? ' checked' : '') + '>' + icon('flag', 'ic18') + 'Ghim đầu ngày <small class="muted">(luôn làm đầu tiên, trừ khỏi quỹ giờ, không về kho)</small></label>' +
         '<small class="muted repeat-note"' + (repeat === 'none' ? ' hidden' : '') + '>Mỗi ngày khớp sẽ tự có một việc mới, Ngày sẽ làm và hạn chót là đúng ngày đó. Ngày bỏ lỡ vẫn tính vào % mục tiêu.</small></div>'
       : (t.parent_recurring_id ? '<p class="info-line">' + icon('refresh', 'ic14') + 'Đây là một lần của việc lặp lại. Muốn đổi lịch lặp thì vào tab Task, mục Việc lặp lại.</p>' : '');
 
@@ -183,6 +184,7 @@ App.forms = (function () {
       var r = val(form, 'repeat') || 'none';
       form.querySelector('[data-weekdays]').hidden = r !== 'weekly';
       form.querySelector('.repeat-note').hidden = r === 'none';
+      var pf = form.querySelector('[data-pin-field]'); if (pf) pf.hidden = r === 'none';
       form.querySelector('[data-top3-line]').hidden = r !== 'none';
       var df = form.querySelector('[data-do-field]');
       if (df) df.hidden = r !== 'none';
@@ -272,6 +274,9 @@ App.forms = (function () {
       }
       if (repeatKind !== 'none') {
         // Việc lặp mẫu: không có trạng thái riêng, không vào 3 việc chính, ngày = ngày bắt đầu lặp, không nằm trong kho
+        var pinNow = form.elements.pinned && form.elements.pinned.checked;
+        var maxPin = store().get().tasks.reduce(function (a, x) { return Math.max(a, L.isTemplate(x) ? parseInt(x.pinned, 10) || 0 : 0); }, 0);
+        row.pinned = pinNow ? (parseInt(t.pinned, 10) > 0 ? t.pinned : String(maxPin + 1)) : '';
         Object.assign(row, { recurring_rule: L.makeRule(days), status: 'Cần làm', done_at: '', is_top3: 'FALSE', top3_date: '',
           due_date: row.due_date || today, do_date: '', inbox_since: '' });
         store().upsert('Tasks', row);
@@ -670,17 +675,17 @@ App.forms = (function () {
   /* Quỹ giờ (GĐ6): lưu một dòng id = "main" ở sheet Settings */
   function readBudget(f) {
     var row = {};
-    ['work_start', 'work_end', 'lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'weekend_min', 'review_weekday', 'review_time'].forEach(function (k) { row[k] = val(f, k); });
+    ['work_start', 'work_end', 'lunch_min', 'buffer_pct', 'evening_min', 'evening_start', 'weekend_min', 'review_weekday', 'review_time'].forEach(function (k) { row[k] = val(f, k); });
     return row;
   }
   function budgetError(r) {
     var L = App.logic, P = App.plan;
-    if (!L.isTime(r.work_start) || !L.isTime(r.work_end) || !L.isTime(r.review_time)) return 'Giờ phải đúng dạng giờ:phút.';
+    if (!L.isTime(r.work_start) || !L.isTime(r.work_end) || !L.isTime(r.review_time) || !L.isTime(r.evening_start)) return 'Giờ phải đúng dạng giờ:phút.';
     if (P.minutes(r.work_end) <= P.minutes(r.work_start)) return 'Hết giờ làm phải sau giờ bắt đầu.';
-    var bad = ['lunch_min', 'fixed_min', 'buffer_pct', 'evening_min', 'weekend_min'].filter(function (k) { return !/^\d{1,3}$/.test(r[k]); });
+    var bad = ['lunch_min', 'buffer_pct', 'evening_min', 'weekend_min'].filter(function (k) { return !/^\d{1,3}$/.test(r[k]); });
     if (bad.length) return 'Các ô phút và % phải là số nguyên, không âm.';
     if (+r.buffer_pct > 90) return 'Dự phòng tối đa 90%.';
-    if (P.workNet(r) <= 0) return 'Nghỉ trưa và việc cố định dài hơn cả giờ làm.';
+    if (P.workNet(r, 0) <= 0) return 'Nghỉ trưa dài hơn cả giờ làm.';
     return '';
   }
   function bindBudget(f) {
@@ -689,7 +694,7 @@ App.forms = (function () {
     function show() {
       var r = readBudget(f), err = budgetError(r), read = f.querySelector('[data-budget-read]');
       read.innerHTML = err ? '' : icon('hourglass', 'ic14') + '<span>Quỹ giờ làm ngày thường: (<span class="num">' + L.fmtMin(App.plan.minutes(r.work_end) - App.plan.minutes(r.work_start)) +
-        '</span> − nghỉ trưa − việc cố định) × <span class="num">' + (100 - +r.buffer_pct) + '%</span> = <b class="num">' + L.fmtMin(App.plan.workBudget(r)) + '</b>. Buổi tối <span class="num">' + L.fmtMin(+r.evening_min) +
+        '</span> − nghỉ trưa − việc ghim đầu ngày) × <span class="num">' + (100 - +r.buffer_pct) + '%</span> = <b class="num">' + L.fmtMin(App.plan.workBudget(r)) + '</b>. Buổi tối <span class="num">' + L.fmtMin(+r.evening_min) +
         '</span>, cuối tuần <span class="num">' + L.fmtMin(+r.weekend_min) + '</span>.</span>';
     }
     f.addEventListener('input', show); f.addEventListener('change', show); show();
@@ -728,17 +733,28 @@ App.forms = (function () {
       '<form data-form="budget" novalidate><div class="row2">' +
       '<label class="field"><span>Bắt đầu làm</span><input class="input num" type="time" name="work_start" value="' + esc(bs.work_start) + '"></label>' +
       '<label class="field"><span>Hết giờ làm</span><input class="input num" type="time" name="work_end" value="' + esc(bs.work_end) + '"></label></div>' +
-      '<div class="row2">' + nbox('lunch_min', 'Nghỉ trưa', 'phút', 300) + nbox('fixed_min', 'Việc cố định', 'phút', 300) + '</div>' +
+      '<div class="row2">' + nbox('lunch_min', 'Nghỉ trưa', 'phút', 300) + '<label class="field"><span>Buổi tối bắt đầu</span><input class="input num" type="time" name="evening_start" value="' + esc(bs.evening_start) + '"></label></div>' +
       '<div class="row2">' + nbox('buffer_pct', 'Dự phòng đột xuất', '%', 90) + nbox('evening_min', 'Buổi tối', 'phút', 600) + '</div>' +
       '<div class="row2">' + nbox('weekend_min', 'Thứ Bảy, Chủ nhật', 'phút', 900) + '</div>' +
       '<div class="field"><span>Nhắc xem lại kho mỗi tuần</span><div class="do-row"><select class="select" name="review_weekday">' +
       WD.map(function (w, i) { return '<option value="' + i + '"' + (String(i) === String(bs.review_weekday) ? ' selected' : '') + '>' + w + '</option>'; }).join('') +
       '</select><input class="input num" type="time" name="review_time" value="' + esc(bs.review_time) + '" aria-label="Giờ xem lại kho"></div></div>' +
-      '<p class="muted set-note">Đến giờ hết làm, việc nhóm Công việc của hôm nay chưa xong sẽ về kho. Việc cố định là báo cáo, họp mỗi sáng.</p>' +
+      '<p class="muted set-note">Đến giờ hết làm, việc nhóm Công việc của hôm nay chưa xong sẽ về kho. Việc ghim đầu ngày (báo cáo daily...) được trừ khỏi quỹ giờ làm, đặt ở mục Việc ghim đầu ngày bên dưới.</p>' +
       '<p class="info-line" data-budget-read></p><p class="form-error" hidden data-err="budget"></p>' +
       '<div class="set-row"><button type="submit" class="btn btn-primary">' + icon('check', 'ic18') + 'Lưu quỹ giờ</button>' +
       '<button type="button" class="btn btn-soft" data-act="budget-reset">' + icon('refresh', 'ic18') + 'Về mặc định</button></div></form></section>';
-    var body = '<section class="set-sec">' + conn + '</section>' + budget +
+    function pinSection() {
+      var pins = App.plan.pinnedTemplates(store().get());
+      return '<h3>' + icon('flag', 'ic18') + 'Việc ghim đầu ngày</h3>' +
+        (pins.length ? '<ol class="pin-list">' + pins.map(function (t, i) {
+          return '<li><span class="pin-name">' + esc(t.title) + '</span><span class="num muted">' + App.logic.fmtMin(App.logic.duration(t)) + ', ' + esc(t.recurring_rule) + '</span>' +
+            '<button type="button" class="icon-btn" data-pin="up" data-id="' + esc(t.id) + '"' + (i ? '' : ' disabled') + ' aria-label="Đưa lên trên: ' + esc(t.title) + '">' + icon('up', 'ic18') + '</button>' +
+            '<button type="button" class="icon-btn" data-pin="down" data-id="' + esc(t.id) + '"' + (i < pins.length - 1 ? '' : ' disabled') + ' aria-label="Đưa xuống dưới: ' + esc(t.title) + '">' + icon('down', 'ic18') + '</button>' +
+            '<button type="button" class="icon-btn" data-pin="off" data-id="' + esc(t.id) + '" aria-label="Bỏ ghim: ' + esc(t.title) + '">' + icon('close', 'ic18') + '</button></li>';
+        }).join('') + '</ol>' : '<p class="muted set-note">Chưa có việc ghim nào.</p>') +
+        '<p class="muted set-note">Việc ghim luôn đứng đầu danh sách hôm nay, được trừ khỏi quỹ giờ làm và không bị đưa về kho. Để ghim: tạo việc lặp lại rồi tick "Ghim đầu ngày".</p>';
+    }
+    var body = '<section class="set-sec">' + conn + '</section>' + budget + '<section class="set-sec" data-pin-sec>' + pinSection() + '</section>' +
       '<section class="set-sec"><h3>' + icon('moon', 'ic18') + 'Giao diện</h3>' +
       seg('theme', [{ key: 'auto', label: 'Theo máy' }, { key: 'light', label: 'Sáng' }, { key: 'dark', label: 'Tối' }], App.theme.get()) +
       '<p class="muted set-note">Chỉ đổi trên thiết bị này.</p></section>' +
@@ -753,6 +769,27 @@ App.forms = (function () {
 
     var m = App.ui.openModal({ title: 'Cài đặt', body: body });
     bindBudget(m.querySelector('[data-form="budget"]'));
+    var pinSec = m.querySelector('[data-pin-sec]');
+    pinSec.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-pin]');
+      if (!b) return;
+      var tasks = store().get().tasks, pins = App.plan.pinnedTemplates(store().get()), i = pins.findIndex(function (t) { return t.id === b.getAttribute('data-id'); });
+      if (i < 0) return;
+      var act = b.getAttribute('data-pin'), ops = [];
+      if (act === 'off') ops.push({ type: 'upsert', table: 'Tasks', row: Object.assign({}, pins[i], { pinned: '' }) });
+      else {
+        var j = i + (act === 'up' ? -1 : 1);
+        if (j < 0 || j >= pins.length) return;
+        var order = pins.map(function (t) { return t.id; });
+        order.splice(i, 1); order.splice(j, 0, pins[i].id);
+        order.forEach(function (id, k) {
+          var t = tasks.find(function (x) { return x.id === id; });
+          if (String(t.pinned) !== String(k + 1)) ops.push({ type: 'upsert', table: 'Tasks', row: Object.assign({}, t, { pinned: String(k + 1) }) });
+        });
+      }
+      if (ops.length) store().batch(ops);
+      pinSec.innerHTML = pinSection();
+    });
 
     m.querySelectorAll('input[name="fall"]').forEach(function (r) {
       r.addEventListener('change', function () { App.flowers.setFall(r.value); });

@@ -250,6 +250,14 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Kết quả: qa-tester đạt (hoa chuyển động đúng 2 chế độ máy, 90/45 bông, FPS 60, tab ẩn dừng). Lỗi Thấp: chữ ngoài thẻ ở chế độ tối vẫn có thể thấp tương phản ở điểm hoa sáng nhất (đã thêm quầng cho tiêu đề và đầu trang); mỗi bông có 2 lớp will-change (nên đo trên máy công ty yếu).
 - Người dùng duyệt phần C (23/11/2026).
 
+## GĐ7 phần A: Giờ bắt đầu, việc ghim đầu ngày (23/11/2026, SPEC-GD7.md)
+- Cột mới Tasks `pinned` (thứ tự ghim của việc lặp mẫu, trống = không ghim) và Settings `evening_start` (mặc định 20:00). `fixed_min` giữ trong sheet nhưng không dùng nữa. Code.gs đổi: cần triển khai Phiên bản mới.
+- Quỹ giờ làm = (giờ làm 17h30 - 8h00 - nghỉ trưa 1h30 - tổng việc ghim của ngày) x (100% - dự phòng). Việc ghim không tính vào "đã xếp", luôn đứng đầu danh sách, không bị gợi ý, không về kho, không có nút bỏ khỏi kế hoạch.
+- Việc ghim: tạo việc lặp rồi tick "Ghim đầu ngày"; Cài đặt có mục Việc ghim đầu ngày (lên, xuống, bỏ ghim).
+- Giờ dự kiến bắt đầu (`plan.schedule`): từ giờ bắt đầu ngày, bỏ nghỉ trưa 12h00 đến 13h30, đột xuất chèn tại giờ ghi, việc đã xong bỏ qua, muộn hơn giờ dự kiến đầu tiên thì tính từ bây giờ, vượt 17h30 thì nhãn "Không kịp hôm nay", buổi tối từ 20h00. Cuối tuần không tính giờ. Hiện ở bảng, ma trận và Kế hoạch (tag giờ).
+- Dữ liệu mẫu có việc ghim "Báo cáo daily" 15p T2 đến T6.
+- Chuyển dữ liệu Sheet thật: tạo việc ghim "Báo cáo daily" (chỉ làm sau khi triển khai Code.gs mới).
+
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
 
