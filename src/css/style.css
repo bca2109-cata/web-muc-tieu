@@ -869,4 +869,4 @@ i.bd-key{display:inline-block;width:10px;height:10px;border-radius:3px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bg-flowers{opacity:.7}}
 :root[data-theme="dark"] .bg-flowers{opacity:.7}
 /* Chữ nằm ngoài thẻ có quầng màu nền, để hoa phía sau không làm mờ chữ */
-.main :is(.sec-title,.hint,.muted,.empty):not(.card *){text-shadow:0 0 4px var(--bg),0 0 9px var(--bg)}
+.main :is(.sec-title,.hint,.muted,.empty,h1,h2):not(.card *),.site-head :is(p,small,span):not(.logo *){text-shadow:0 0 4px var(--bg),0 0 9px var(--bg)}
