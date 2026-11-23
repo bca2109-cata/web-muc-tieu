@@ -166,6 +166,12 @@ App.comp = (function () {
 
   /* Ma trận 4 ô có 2 trục: cột Khẩn cấp / Không khẩn cấp, hàng Quan trọng / Không quan trọng.
      Thứ tự đọc: ô 1 trên trái, ô 2 trên phải, ô 3 dưới trái, ô 4 dưới phải. */
+  // Giờ dự kiến, nhãn ghim và Không kịp hôm nay trên thẻ ma trận (GĐ7)
+  function mxTime(t, ctx) {
+    var sc = ctx.sched && ctx.sched[t.id], pin = ctx.pins && ctx.pins[t.id];
+    if (!sc && !pin) return '';
+    return '<span class="mx-tm">' + (pin ? '<b>Ghim</b> ' : '') + (sc ? '<span class="num">' + fmtHM(sc.start) + '</span>' : '') + (sc && sc.late ? ' <b class="late-tag">Không kịp</b>' : '') + '</span>';
+  }
   function matrix(tasks, ctx) {
     var day = ctx.day || ctx.today;
     var out = '<div class="mx">' +
@@ -175,7 +181,8 @@ App.comp = (function () {
     [1, 2, 3, 4].forEach(function (q) {
       var Q = L.QUADRANTS[q];
       var items = tasks.filter(function (t) { return L.quadrant(t, day) === q; }).sort(function (a, b) {
-        return ((L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0)) || (L.dueKey(a) < L.dueKey(b) ? -1 : L.dueKey(a) > L.dueKey(b) ? 1 : 0);
+        var pa = ctx.pins && ctx.pins[a.id] ? 0 : 1, pb = ctx.pins && ctx.pins[b.id] ? 0 : 1;
+        return (pa - pb) || ((L.isDone(a) ? 1 : 0) - (L.isDone(b) ? 1 : 0)) || (L.dueKey(a) < L.dueKey(b) ? -1 : L.dueKey(a) > L.dueKey(b) ? 1 : 0);
       });
       var open = items.filter(function (t) { return !L.isDone(t); }).length;
       out += '<section class="q q' + q + '" aria-label="' + Q.label + ': ' + Q.hint + '"><h3 title="' + Q.hint + '">' + icon(Q.icon, 'ic18') + '<span class="q-name">' + Q.label + '</span>' +
@@ -183,7 +190,7 @@ App.comp = (function () {
         (items.length ? items.map(function (t) {
           return '<li class="' + (L.isDone(t) ? 'is-done' : '') + '">' + tickButton(t, ctx) +
             '<button type="button" class="qname" data-action="open-task" data-id="' + esc(t.id) + '" title="' + esc(t.title) + '">' +
-            icon(L.iconOf(t), 'ic14') + '<span>' + esc(t.title) + '</span></button></li>';
+            icon(L.iconOf(t), 'ic14') + '<span>' + esc(t.title) + '</span>' + mxTime(t, ctx) + '</button></li>';
         }).join('') : '<li class="none">Trống, nhẹ nhàng ghê</li>') + '</ul></section>';
     });
     return out + '</div></div>';

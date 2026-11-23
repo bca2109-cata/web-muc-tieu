@@ -90,9 +90,20 @@ App.plan = (function () {
 
   // Việc ghim đầu ngày của ngày D (lần lặp của việc mẫu có ghim), theo thứ tự người dùng đặt
   function pinnedOf(state, day) {
-    var L = App.logic, pm = L.pinMap(allT(state));
-    return state.tasks.filter(function (t) { return !L.isTemplate(t) && L.doDate(t) === day && L.pinOrder(t, pm); })
-      .sort(function (a, b) { return (L.pinOrder(a, pm) - L.pinOrder(b, pm)) || (String(a.created_at) < String(b.created_at) ? -1 : 1); });
+    var L = App.logic, all = allT(state), pm = L.pinMap(all);
+    var list = state.tasks.filter(function (t) { return !L.isTemplate(t) && L.doDate(t) === day && L.pinOrder(t, pm); });
+    // Ngày sau hôm nay chưa có lần lặp: lấy từ lịch lặp của việc mẫu (việc ảo, chỉ để tính quỹ và giờ)
+    if (day > D.today()) {
+      var have = {};
+      list.forEach(function (t) { have[t.parent_recurring_id] = true; });
+      all.forEach(function (t) {
+        if (!L.isTemplate(t) || !pm[t.id] || have[t.id] || !L.ruleMatches(t.recurring_rule, day)) return;
+        var start = D.isValid(t.due_date) ? t.due_date : String(t.created_at || '').slice(0, 10);
+        if (day < start) return;
+        list.push(Object.assign({}, t, { id: t.id + '-' + day, parent_recurring_id: t.id, recurring_rule: '', do_date: day, due_date: day, status: 'Cần làm', virtual: true }));
+      });
+    }
+    return list.sort(function (a, b) { return (L.pinOrder(a, pm) - L.pinOrder(b, pm)) || (String(a.created_at) < String(b.created_at) ? -1 : 1); });
   }
   function pinnedTemplates(state) {
     var L = App.logic;
@@ -110,7 +121,7 @@ App.plan = (function () {
     var goals = goalsMap(state), byId = {}, pm = L.pinMap(allT(state));
     state.tasks.forEach(function (t) { byId[t.id] = t; });
     var seq = (ids || []).map(function (id) { return byId[id]; }).filter(function (t) { return t && !L.isDone(t) && L.doDate(t) === day; });
-    var pins = seq.filter(function (t) { return L.pinOrder(t, pm); }), rest = seq.filter(function (t) { return !L.pinOrder(t, pm); });
+    var pins = pinnedOf(state, day).filter(function (t) { return !L.isDone(t); }), rest = seq.filter(function (t) { return !L.pinOrder(t, pm); });
     var wStart = minutes(s.work_start), wEnd = minutes(s.work_end), lunchEnd = LUNCH_START + num(s.lunch_min, 90), eStart = minutes(s.evening_start);
     var now = day === D.today() && nowHM && minutes(nowHM) != null ? minutes(nowHM) : null;
     var blocks = interruptions(state, day).map(function (x) {

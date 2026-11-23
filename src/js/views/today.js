@@ -60,6 +60,16 @@ App.views.today = function (state, ui) {
       }).join('') + '</ul>' : '') + '</section>';
   }
   html += App.views.budget(state, day, ui);
+  var pinRows = list.filter(function (t) { return ctx.pins && ctx.pins[t.id]; }).sort(function (a, b) { return L.pinOrder(a, L.pinMap(App.store.get().tasks)) - L.pinOrder(b, L.pinMap(App.store.get().tasks)); });
+  if (pinRows.length) {
+    html += '<section class="block pin-strip" aria-labelledby="pin-title"><h2 class="sec-title" id="pin-title">' + icon('flag', 'ic18') + '<span>Ghim đầu ngày</span></h2><ul class="notes">' +
+      pinRows.map(function (t) {
+        var sc = ctx.sched && ctx.sched[t.id];
+        return '<li class="note' + (L.isDone(t) ? ' is-done' : '') + '">' + C.tickButton(t, ctx) +
+          '<button type="button" class="qname" data-action="open-task" data-id="' + esc(t.id) + '"><span>' + esc(t.title) + '</span> <span class="num muted">' + L.fmtMin(L.duration(t)) + '</span>' +
+          (sc ? ' <span class="num mx-tm">' + C.hm(sc.start) + '</span>' : '') + '</button></li>';
+      }).join('') + '</ul></section>';
+  }
   if (isToday) {
     html += '<section class="block" aria-labelledby="top3-title"><h2 class="sec-title" id="top3-title">' + fl('sakura', 24, 1) +
       '<span><span class="num">3</span> việc chính hôm nay</span><span class="badge num">' + top3.length + '/' + App.C.TOP3_MAX + '</span></h2>' +

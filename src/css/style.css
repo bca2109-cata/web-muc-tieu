@@ -876,3 +876,5 @@ i.bd-key{display:inline-block;width:10px;height:10px;border-radius:3px}
 .bd-pin{display:flex;align-items:flex-start;gap:6px;margin:8px 0 0;font-size:13px;font-weight:700;color:var(--muted)}
 .bd-pin .icon{flex:none;margin-top:2px}
 .late-tag{color:var(--hot)}
+.mx-tm{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+.pin-strip .note{gap:8px}

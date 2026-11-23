@@ -256,6 +256,8 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Việc ghim: tạo việc lặp rồi tick "Ghim đầu ngày"; Cài đặt có mục Việc ghim đầu ngày (lên, xuống, bỏ ghim).
 - Giờ dự kiến bắt đầu (`plan.schedule`): từ giờ bắt đầu ngày, bỏ nghỉ trưa 12h00 đến 13h30, đột xuất chèn tại giờ ghi, việc đã xong bỏ qua, muộn hơn giờ dự kiến đầu tiên thì tính từ bây giờ, vượt 17h30 thì nhãn "Không kịp hôm nay", buổi tối từ 20h00. Cuối tuần không tính giờ. Hiện ở bảng, ma trận và Kế hoạch (tag giờ).
 - Dữ liệu mẫu có việc ghim "Báo cáo daily" 15p T2 đến T6.
+- Kiểm: spec-reviewer và qa-tester không lỗi Cao. Đã sửa: ngày tương lai tính ghim từ lịch lặp của việc mẫu (việc ảo); giờ, nhãn Ghim và Không kịp hiện cả ở Ma trận; khối "Ghim đầu ngày" nằm ngay trên "3 việc chính hôm nay".
+- Lỗi Thấp còn lại: việc ghim đã xong vẫn đứng đầu bảng; đột xuất ghi trước giờ bắt đầu ngày bị chèn sau việc đầu; buổi tối không tính lại từ giờ hiện tại và không có nhãn Không kịp; cuối tuần không hiện giờ và không áp quỹ ghim; giờ theo thứ tự plan kể cả khi bảng sắp theo cột khác.
 - Chuyển dữ liệu Sheet thật: tạo việc ghim "Báo cáo daily" (chỉ làm sau khi triển khai Code.gs mới).
 
 ## Câu hỏi chờ người dùng
