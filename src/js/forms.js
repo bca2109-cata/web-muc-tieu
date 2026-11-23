@@ -129,7 +129,7 @@ App.forms = (function () {
       '<div class="field"><span>' + icon('sparkle', 'ic14') + 'Icon <small class="muted">(tự đoán theo tên, bấm để đổi)</small></span>' + iconPicker(App.logic.iconOf(t)) + '</div>' +
       '<label class="field"><span>' + icon('target', 'ic14') + 'Mục tiêu <small class="muted">(nhóm Công việc xếp vào giờ làm, nhóm khác xếp vào buổi tối)</small></span><select class="select" name="goal_id">' + options(goalOpts, t.goal_id) + '</select></label>' +
       '<div class="field" data-bucket-field' + (t.goal_id ? ' hidden' : '') + '><span>' + icon('clock', 'ic14') + 'Việc này tính vào <small class="muted">(không gắn mục tiêu nên chọn tay, web nhớ lựa chọn lần trước)</small></span>' +
-      seg('bucket', [{ key: 'work', label: 'Giờ làm' }, { key: 'evening', label: 'Buổi tối' }], t.bucket === 'work' || t.bucket === 'evening' ? t.bucket : App.logic.lastBucket()) + '</div>' +
+      seg('bucket', [{ key: 'work', label: 'Giờ làm' }, { key: 'evening', label: 'Buổi tối' }], t.bucket === 'work' || t.bucket === 'evening' ? t.bucket : (isNew ? App.logic.lastBucket() : 'evening')) + '</div>' +
       '<label class="check-line"><input type="checkbox" name="is_important"' + (L.isImportant(t) ? ' checked' : '') + '>' + icon('heart', 'ic18') + 'Quan trọng</label>' +
       durBlock + doBlock +
       '<div class="dt-row"><label class="field"><span>' + icon('flag', 'ic14') + '<span data-due-label>' + (repeat === 'none' ? 'Hạn chót' : 'Bắt đầu lặp từ') + '</span> <small class="muted" data-due-opt' + (repeat === 'none' ? '' : ' hidden') + '>(không bắt buộc)</small></span>' + dateInput('due_date', t.due_date || (repeat === 'none' ? '' : today)) + '</label>' +

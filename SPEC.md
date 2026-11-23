@@ -145,7 +145,9 @@ Phát hiện thêm khi review:
   - Cho chỉnh các tham số này trong phần cài đặt: giờ làm, giờ cố định, % dự phòng.
 - **Quỹ buổi tối** tách riêng, mặc định **1,5 giờ**, chỉnh được.
   - Việc nhóm Công việc chỉ xếp vào giờ làm.
-  - Việc Học tập, Sức khỏe và Việc lặt vặt xếp vào buổi tối.
+  - Việc Học tập, Sức khỏe xếp vào buổi tối.
+  - Việc không gắn mục tiêu (Việc lặt vặt) có lựa chọn **Giờ làm / Buổi tối** (cột `bucket`), web nhớ lựa chọn lần trước, mặc định buổi tối. Việc `bucket` = Giờ làm cũng về kho lúc 17h30 như việc nhóm Công việc.
+  - Lần lặp của hôm nay được tính trước vào quỹ, luôn có trong gợi ý, không bỏ và không đưa về kho được.
 - Agenda hiện thanh **"Đã xếp X / 5h15"** và **"Tối: Y / 1h30"**.
   - Vượt quỹ thì thanh chuyển màu cảnh báo, kèm câu "Quá tải Z phút, hãy dời bớt về kho".
 - **Thay khung thống kê bên trái** bằng khung Quỹ giờ này cùng 3 việc chính. Thống kê chuyển sang tab Tổng kết.
@@ -199,7 +201,7 @@ Cách duyệt:
 
 | Sheet | Thêm cột | Bỏ hoặc ngừng dùng |
 |---|---|---|
-| `Tasks` | do_date, duration_min, is_important, parent_id, first_step, defer_count, inbox_since | priority, cột ô ma trận (giữ dữ liệu cũ, không đọc nữa) |
+| `Tasks` | do_date, duration_min, is_important, parent_id, first_step, defer_count, inbox_since, bucket | priority, cột ô ma trận (giữ dữ liệu cũ, không đọc nữa) |
 | `Interruptions` (mới) | id, date, title, duration_min, created_at | |
 | `Settings` (mới, nếu chưa có) | work_start, work_end, lunch_min, fixed_min, buffer_pct, evening_min, review_weekday, review_time | |
 

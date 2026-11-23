@@ -33,7 +33,7 @@ Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sh
 ## 4. Quy tắc nghiệp vụ đã chốt (ngoài SPEC hoặc dễ quên)
 - Ma trận 4 ô (GĐ6): Quan trọng = `is_important` TRUE (trống thì theo ưu tiên Cao); gấp = `due_date` đến 2 ngày sau ngày đang xem (tính cả quá hạn). `logic.quadrant(t, day)`.
 - Agenda ngày D (GĐ6): `logic.dayList` = Ngày sẽ làm (`do_date`, lần lặp cũ thiếu thì theo hạn) là D + xong trong ngày D, bỏ việc cha đã chia nhỏ. Việc quá hạn chót: `logic.overdueList`, thẻ riêng. Giờ hạn không bắt buộc.
-- Kế hoạch ngày (GĐ6, `src/js/plan.js`): quỹ = (17:30 - 08:00 - nghỉ trưa 90 - việc cố định 30) x 70% = 5h15; buổi tối 1h30; cuối tuần 1 quỹ 4h (`weekend_min`). Việc nhóm Công việc vào quỹ Giờ làm, còn lại Buổi tối. Sang ngày mới hoặc sau 17:30 (việc Công việc), việc chưa xong về kho, `defer_count` +1 (`plan.rolloverRows`). Việc từ 120 phút phải chia nhỏ mới xếp vào ngày. Gợi ý: `plan.suggest` (6 bậc, có lý do).
+- Kế hoạch ngày (GĐ6, `src/js/plan.js`): quỹ = (17:30 - 08:00 - nghỉ trưa 90 - việc cố định 30) x 70% = 5h15; buổi tối 1h30; cuối tuần 1 quỹ 4h (`weekend_min`). Việc nhóm Công việc vào quỹ Giờ làm, nhóm khác Buổi tối; việc không gắn mục tiêu theo cột `bucket` (work / evening, mặc định evening). Lần lặp hôm nay trừ quỹ trước, không bỏ và không về kho được. Sang ngày mới hoặc sau 17:30 (việc Công việc), việc chưa xong về kho, `defer_count` +1 (`plan.rolloverRows`). Việc từ 120 phút phải chia nhỏ mới xếp vào ngày. Gợi ý: `plan.suggest` (6 bậc, có lý do).
 - Lời nhắc review: `views.reminderItems`. `hide_from` = ngày bắt đầu ẩn.
 - 3 việc chính (GĐ6): chốt kế hoạch thì 3 việc đầu thành 3 việc chính. Bỏ cách giữ / tự điền Top 3 cũ.
 - Khối Sắp đến hạn: việc chưa xong có hạn từ ngày đang xem đến 2 ngày sau. Xóa mục tiêu thì hỏi mỗi lần: chuyển task thành "Việc lặt vặt" hay xóa theo.
@@ -45,7 +45,7 @@ Không còn. GĐ6 đã xong (22/11/2026): commit, Apps Script Phiên bản 4, Sh
 ## 5. Google Sheet
 - ID `1_zdutUcr7DnRLUm5SFWd959af_h2zZTg700jxPmEK9c`, tên "Quản lý mục tiêu - dữ liệu". Claude đọc ghi qua kết nối Google Sheets.
 - Cột đều để dạng chữ (ngày giữ `yyyy-mm-dd`), `target`/`actual` dạng số. Khi ghi bằng kết nối, ghi kiểu RAW để ngày không bị đổi thành số. Đọc lại ô để kiểm.
-- Cột mới nhất: Goals P = `importance`, Tasks O = `icon`, Tasks P = `due_time` (GĐ5), Tasks Q..W = `do_date`, `duration_min`, `is_important`, `parent_id`, `first_step`, `defer_count`, `inbox_since` (GĐ6); sheet `Interruptions` (id, date, title, duration_min, created_at) và `Settings` (1 dòng id = main) (GĐ6), Reviews I = `rating`, J = `hide_from` (GĐ5, Apps Script tự thêm khi ghi lần đầu). Không đổi tên cột nếu chưa hỏi người dùng.
+- Cột mới nhất: Goals P = `importance`, Tasks O = `icon`, Tasks P = `due_time` (GĐ5), Tasks Q..W = `do_date`, `duration_min`, `is_important`, `parent_id`, `first_step`, `defer_count`, `inbox_since`, X = `bucket` (sau nghiệm thu GĐ6); sheet `Interruptions` (id, date, title, duration_min, created_at) và `Settings` (1 dòng id = main) (GĐ6), Reviews I = `rating`, J = `hide_from` (GĐ5, Apps Script tự thêm khi ghi lần đầu). Không đổi tên cột nếu chưa hỏi người dùng.
 - Dữ liệu thử: Goals dòng 2 đến 4 (3 mục tiêu), Tasks dòng 3 đến 29 (27 task), tất cả có `note` = "Dữ liệu thử". Tasks dòng 2 ("hhh") người dùng đã tự xóa (22/11/2026), dòng 2 đang trống.
 
 ## 6. Kiểm thử

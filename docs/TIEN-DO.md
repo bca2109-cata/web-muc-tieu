@@ -233,8 +233,15 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Dòng "(quỹ 4h )" có khoảng trắng thừa.
 - Ở 390px, trong "Xem lại kho", thông báo vượt quỹ cuối tuần hiện đè lên nút "Đặt ngày" khoảng 5 giây (`forms.js` dòng 434).
 
+## Sau nghiệm thu GĐ6 (23/11/2026, docs/NGHIEM-THU-GD6.md)
+- M1 đã sửa: lần lặp tính trước vào quỹ, không còn quá tải giả, không đề xuất đưa lần lặp về kho.
+- M2 đã sửa: cột `bucket`, chọn Giờ làm / Buổi tối cho việc không gắn mục tiêu. Việc cũ chưa có `bucket` chọn sẵn Buổi tối.
+- M3 (điện thoại): đã làm bản xem trước `docs/de-xuat-giao-dien/preview-m3.html`, chờ người dùng duyệt rồi mới code.
+- Lỗi Thấp mới: `backup.js` không kiểm giá trị `bucket` khi nhập; mỗi ô thêm nhanh giữ lựa chọn bucket riêng; lần lặp từ 2h (khó xảy ra) vẫn tính trong quỹ; ở 390px nhãn "Mục tiêu" và "Việc này tính vào" trong form xuống dòng xấu.
+
 ## Câu hỏi chờ người dùng
-- (chưa có)
+- Việc không gắn mục tiêu chọn Giờ làm có về kho lúc 17h30 như việc nhóm Công việc không (code đang làm vậy).
+- Duyệt bản xem trước M3.
 
 ## Lỗi mức Thấp của đợt đổi giao diện
 - Dữ liệu mẫu có việc "Họp chốt số liệu với phòng kế toán" đã Xong mà ngày xong ở tương lai (`mock-data.js`), nên giả lập sang ngày hôm sau sẽ thấy 1 việc xong sẵn. Chỉ ảnh hưởng bản mock.
