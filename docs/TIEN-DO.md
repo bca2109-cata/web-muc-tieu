@@ -260,6 +260,10 @@ Lập kế hoạch ngày, SPEC mục 4.6. Quyết định của người dùng: 
 - Lỗi Thấp còn lại: việc ghim đã xong vẫn đứng đầu bảng; đột xuất ghi trước giờ bắt đầu ngày bị chèn sau việc đầu; buổi tối không tính lại từ giờ hiện tại và không có nhãn Không kịp; cuối tuần không hiện giờ và không áp quỹ ghim; giờ theo thứ tự plan kể cả khi bảng sắp theo cột khác.
 - Chuyển dữ liệu Sheet thật: tạo việc ghim "Báo cáo daily" (chỉ làm sau khi triển khai Code.gs mới).
 
+## GĐ7 phần B: Ma trận cân việc (đang chờ duyệt bản xem trước)
+- Người dùng chốt (23/11/2026): công tắc "Gấp" chỉ có trong form Cân việc mới, không lưu cờ riêng: bấm Gấp thì chọn "Cần xong hôm nay" hoặc "Cần xong ngày mai", web ghi vào `due_date`. Việc đã có hạn chót thì ẩn công tắc. Dùng lại quy tắc gấp = hạn trong 2 ngày.
+- Bản xem trước: `docs/de-xuat-giao-dien/preview-b.html` (390px và 1280px).
+
 ## Câu hỏi chờ người dùng
 - (chưa có). Đã chốt 23/11: nhãn "Chưa xong, vừa về kho" hiện trong ngày về kho và ngày kế tiếp.
 
