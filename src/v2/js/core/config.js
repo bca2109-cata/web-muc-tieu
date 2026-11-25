@@ -5,7 +5,7 @@ var LP = window.LP || (window.LP = {});
 
 (function () {
   var params = new URLSearchParams(location.search);
-  var url = '';
+  var url = 'https://script.google.com/macros/s/AKfycby-Jn9LrBWL9eCZuU_n1ph7hwSGAc62RB2CIPo5dEPybk03oRY5pnXB482zItL9Pbtn/exec';
   LP.config = {
     SHEET_API_URL: url,
     // Bản mock khi: mở file trực tiếp, có ?mock=1, hoặc chưa điền SHEET_API_URL
