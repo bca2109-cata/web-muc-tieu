@@ -20,7 +20,16 @@ LP.soat = (function () {
       var rows = run.items.filter(function (m) { return !m.done; }).map(function (m) {
         return { kind: 'item', key: 'i|' + run.routine.id + '|' + m.item.id, rid: run.routine.id, iid: m.item.id, runDate: m.runDate, title: m.item.title, time: m.item.time || '' };
       });
-      if (rows.length) groups.push({ name: run.routine.name, rows: rows });
+      if (rows.length) groups.push({ rid: run.routine.id, name: run.routine.name, rows: rows });
+    });
+    // Mục đã quyết làm hôm nay (T+1 của lượt trước, đã mang sang, đã xếp giờ): cũng là "chưa tick hôm nay"
+    R.leftovers(date, { all: true, decided: true }).forEach(function (e) {
+      var c = R.checkOf(e.routineId, e.itemId, e.runDate);
+      if (c && (c.status === 'done' || c.status === 'skipped')) return;
+      var g = groups.filter(function (x) { return x.rid === e.routineId; })[0];
+      if (!g) { var rt = R.byId(e.routineId); g = { rid: e.routineId, name: rt ? rt.name : 'Công việc cố định', rows: [] }; groups.push(g); }
+      g.rows.push({ kind: 'item', key: 'd|' + e.routineId + '|' + e.itemId + '|' + e.runDate, rid: e.routineId, iid: e.itemId, runDate: e.runDate,
+        title: e.title, time: e.time || '', init: c ? c.status : '', from: e.since || e.runDate });
     });
     LP.logic.tasks.tasksFor(date).forEach(function (x) {
       if (x.done) return;
@@ -37,8 +46,9 @@ LP.soat = (function () {
   /* ---------- Trạng thái của một dòng ---------- */
   function stateOf(r) {
     if (r.kind === 'item') {
-      var c = R.checkOf(r.rid, r.iid, r.runDate);
-      return { s: c ? c.status : '', note: c ? c.note : '' };
+      var c = R.checkOf(r.rid, r.iid, r.runDate), s0 = c ? c.status : '';
+      if (r.init && s0 === r.init) s0 = '';   // trạng thái có sẵn từ trước (đã mang sang) chưa phải quyết định mới
+      return { s: s0, note: c ? c.note : '' };
     }
     var t = LP.store.find('Tasks', r.taskId), sp = r.stepId ? LP.store.find('TaskSteps', r.stepId) : null;
     if (!t) return { s: 'gone' };
@@ -54,13 +64,14 @@ LP.soat = (function () {
     var sub = r.kind === 'item' ? (r.time ? 'giờ ' + r.time : '') : (r.parent ? 'Việc: ' + r.parent : '');
     var label = o.s === 'done' ? pill('Đã làm', 'ok') : o.s === 'carried' ? pill('Mang sang ' + D.fmt(D.nextWorkday(st.date)), 'note') :
       o.s === 'skipped' ? pill('Đã bỏ qua' + (o.note ? ': ' + o.note : ''), 'plain') : o.s === 'moved' ? pill('Chuyển sang ' + D.fmt(o.to), 'note') : '';
-    h += '<li class="ag-so-row" data-fk="r|' + esc(r.key) + '"><div class="ag-title"><span>' + esc(r.title) + '</span>' + label + '</div>' + (sub ? '<div class="ag-sub">' + esc(sub) + '</div>' : '');
+    h += '<li class="ag-so-row" data-fk="r|' + esc(r.key) + '"><div class="ag-title"><span>' + esc(r.title) + '</span>' + (r.from ? pill('Tồn từ ' + D.fmt(r.from), 'note') : '') + label + '</div>' + (sub ? '<div class="ag-sub">' + esc(sub) + '</div>' : '');
     var a = 'data-key="' + esc(r.key) + '"';
     if (o.s) {
       h += '<div class="ag-so-btns"><button type="button" class="btn" data-act="undo" ' + a + '>Hoàn tác</button></div>';
     } else if (r.kind === 'item') {
-      h += '<div class="ag-so-btns"><button type="button" class="btn btn-soft" data-act="done" ' + a + '>' + icon('check', 'ic18') + 'Đã làm</button>' +
-        '<button type="button" class="btn btn-soft" data-act="carry" ' + a + ' title="Hiện ở Từ hôm qua ngày ' + D.fmt(D.nextWorkday(st.date)) + '">Mang sang mai</button>' +
+      // Mục đã mang sang từ trước: để nguyên thì tự sang mai nên chỉ còn Đã làm / Bỏ qua
+      var carry = r.init === 'carried' ? '' : '<button type="button" class="btn btn-soft" data-act="carry" ' + a + ' title="Sáng ' + D.fmt(D.nextWorkday(st.date)) + ' vào luồng hôm nay, nhãn Tồn từ">Mang sang mai</button>';
+      h += '<div class="ag-so-btns"><button type="button" class="btn btn-soft" data-act="done" ' + a + '>' + icon('check', 'ic18') + 'Đã làm</button>' + carry +
         '<button type="button" class="btn btn-soft" data-act="skip" ' + a + '>Bỏ qua hôm nay</button></div>';
       if (st.why[r.key]) {
         h += '<div class="ag-so-why"><input class="input" type="text" maxlength="80" placeholder="Lý do ngắn (không bắt buộc)" aria-label="Lý do bỏ qua" data-why="' + esc(r.key) + '">' +
@@ -87,8 +98,8 @@ LP.soat = (function () {
       h += '<section class="card" aria-label="' + esc(g.name) + '"><div class="ag-sec-head"><h2>' + esc(g.name) + '</h2></div><ul class="ag-ul">' + rows + '</ul></section>';
     });
     h += '<div class="ag-so-done"><p>Lịch tháng sẽ đánh dấu ✓ nếu không còn bỏ sót.</p><button type="button" class="btn btn-primary" data-act="finish">Xong soát</button></div>';
-    var oldN = R.leftovers(st.date, { all: true, unplaced: true }).length;
-    if (oldN > 0) h += '<p class="ag-so-ton">Còn <b class="num">' + oldN + '</b> mục tồn đọng <button type="button" class="chip" data-act="ton">Xem</button></p>';
+    var oldN = R.leftovers(st.date, { all: true, pending: true }).length;
+    if (oldN > 0) h += '<p class="ag-so-ton">Còn <b class="num">' + oldN + '</b> mục tồn chưa xử lý <button type="button" class="chip" data-act="ton">Xem</button></p>';
     h += '</div>';
     st.undecided = undecided;
     st.el.innerHTML = h;
@@ -175,7 +186,7 @@ LP.soat = (function () {
     pick: function (b) { var r = rowOf(b.getAttribute('data-key')); if (r) pickDate(r); },
     undo: function (b) {
       var r = rowOf(b.getAttribute('data-key')); if (!r) return;
-      if (r.kind === 'item') R.check(r.rid, r.iid, r.runDate, '');
+      if (r.kind === 'item') R.check(r.rid, r.iid, r.runDate, r.init || '');
       else undoTask(r);
     },
     finish: function () {
@@ -226,7 +237,7 @@ LP.ton = (function () {
   // Danh sách tất cả mục tồn (trừ mục đã được xếp giờ vào hôm nay), cũ nhất trước
   function collect() {
     var today = D.today(), out = [];
-    R.leftovers(today, { all: true, unplaced: true }).forEach(function (e) {
+    R.leftovers(today, { all: true, pending: true }).forEach(function (e) {
       var o = { key: key(e), e: e, kind: e.kind, title: e.title, from: e.kind === 'item' ? (e.since || e.runDate) : e.fromDate };
       if (e.kind === 'item') { var r = R.byId(e.routineId); o.block = r ? r.name : 'Công việc cố định'; }
       else o.block = e.ref && e.ref.kind === 'canhan' ? 'Việc cá nhân' : 'Việc ad-hoc';
@@ -287,17 +298,17 @@ LP.ton = (function () {
   function actItemToday(o) {
     var e = o.e;
     var sh = LP.ui.sheet('Đưa vào hôm nay', '<p>' + esc(e.title) + '<br><span class="muted">' + esc(e.label) + '</span></p>' +
-      '<label class="field"><span>Giờ làm hôm nay</span><input class="input" type="time" id="tt-time" value="' + nextQuarter() + '"></label>' +
+      '<label class="field"><span>Giờ làm hôm nay (có thể bỏ trống)</span><input class="input" type="time" id="tt-time" value="' + nextQuarter() + '"></label>' +
       '<p class="form-error" id="tt-err" hidden>Chọn giờ hợp lệ.</p>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button><button type="button" class="btn btn-primary" id="tt-ok">Đưa vào hôm nay</button></div>');
     sh.el.querySelector('#tt-ok').addEventListener('click', function () {
       var v = sh.el.querySelector('#tt-time').value;
-      if (!D.isTime(v)) { sh.el.querySelector('#tt-err').hidden = false; return; }
-      var prev = R.checkOf(e.routineId, e.itemId, e.runDate), extra = { set_time: v };
-      if (!prev || !prev.note || /^xep-gio/.test(prev.note)) extra.note = 'xep-gio:' + D.today();
-      R.check(e.routineId, e.itemId, e.runDate, prev ? prev.status : 'carried', extra);
+      if (v && !D.isTime(v)) { sh.el.querySelector('#tt-err').hidden = false; return; }
+      var prev = R.checkOf(e.routineId, e.itemId, e.runDate), extra = { set_time: v || '' };
+      if (v && (!prev || !prev.note || /^xep-gio/.test(prev.note))) extra.note = 'xep-gio:' + D.today();
+      R.check(e.routineId, e.itemId, e.runDate, 'carried', extra);   // carried = đã quyết làm: vào luồng hôm nay, nhãn "Tồn từ"
       sh.close();
-      undoToast('Đã đưa "' + e.title + '" vào hôm nay lúc ' + v + '.', function () { restoreCheck(e, prev); });
+      undoToast('Đã đưa "' + e.title + '" vào hôm nay' + (v ? ' lúc ' + v : '') + '.', function () { restoreCheck(e, prev); });
     });
   }
   function undoToast(msg, undo) {
@@ -329,7 +340,6 @@ LP.ton = (function () {
   function rowHtml(o) {
     var a = 'data-key="' + esc(o.key) + '"', isTask = o.kind === 'task';
     var sub = [o.block, 'tồn từ ' + D.fmt(o.from), o.age + ' ngày trước'];
-    if (o.kind === 'item' && o.e.source === 'carried') sub.push('đã mang sang');
     return '<li class="ag-tt-row"><label class="ag-tt-ck"><input type="checkbox" data-sel="' + esc(o.key) + '"' + (st.sel[o.key] ? ' checked' : '') + ' aria-label="Chọn: ' + esc(o.title) + '"></label>' +
       '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div><div class="ag-sub">' + esc(sub.join(' · ')) + '</div>' +
       '<div class="ag-so-btns"><button type="button" class="btn btn-soft" data-act="t-done" ' + a + '>' + icon('check', 'ic18') + 'Đã làm</button>' +

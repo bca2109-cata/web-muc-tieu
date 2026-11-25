@@ -52,8 +52,8 @@
 .ag-list>*{min-width:0}
 @media (min-width:900px){
   .ag-list{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
-  .ag-list>.ag-left,.ag-list>.ag-tasks,.ag-list>.ag-habits{grid-column:1}
-  .ag-list>.ag-runs{grid-column:2;grid-row:1 / span 3;display:grid;gap:16px}
+  .ag-list>.ag-tasks,.ag-list>.ag-habits{grid-column:1}
+  .ag-list>.ag-runs{grid-column:2;grid-row:1 / span 4;display:grid;gap:16px}
   .ag-list>.ag-foot{grid-column:1 / -1}
 }
 .ag-runs{display:grid;gap:16px}
@@ -170,3 +170,7 @@
 .ag-tt-row{display:flex;gap:2px;align-items:flex-start;padding:8px 0;border-top:1px dashed var(--line)}
 .ag-tt-row:first-child{border-top:0}
 .ag-tt-ck{display:grid;place-items:center;width:44px;height:44px;flex:none}
+
+/* Dòng mảnh: mục tồn chưa xử lý (đầu trang) */
+.ag-pending{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;min-height:40px;padding:2px 6px 2px 16px;border:1px dashed var(--dash);border-radius:99px;background:var(--surface);font-weight:700;font-size:14px}
+.ag-pending .chip{min-height:36px}

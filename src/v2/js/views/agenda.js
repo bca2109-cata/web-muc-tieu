@@ -51,6 +51,7 @@ LP.agenda = (function () {
     if (e.kind === 'item') {
       var c = R.checkOf(e.routineId, e.itemId, e.runDate);
       if (c && c.status === 'skipped') return null;
+      if (e.source !== 'plus1' && !(c && (c.status === 'carried' || c.status === 'done'))) return null;   // đã trả về tồn chưa xử lý (bỏ giờ)
       var it = LP.store.find('RoutineItems', e.itemId);
       o.done = !!c && c.status === 'done';
       o.setTime = e.setTime || '';
@@ -76,8 +77,10 @@ LP.agenda = (function () {
     return o;
   }
 
+  // Mục ĐÃ QUYẾT làm hôm nay: +1 của lượt trước, đã "Mang sang mai", hoặc đã xếp giờ. Giữ lại mục vừa tick để còn bỏ tick được.
   function leftEntries() {
-    R.leftovers(st.date).forEach(function (e) {
+    if (!D.isWorkday(st.date)) return [];   // ngày nghỉ / Chủ nhật: mục đã quyết chờ tới ngày làm việc kế tiếp
+    R.leftovers(st.date, { all: true, decided: true }).forEach(function (e) {
       var k = entryKey(e);
       if (!st.snapMap[k]) st.snapOrder.push(k);
       st.snapMap[k] = e;
@@ -146,20 +149,21 @@ LP.agenda = (function () {
       return { d: d, pct: pct, now: d >= today };
     });
   }
-  function chartsHtml(runs, left, tasks) {
+  function chartsHtml(cards, tasks) {
     var done = 0, total = 0;
-    runs.forEach(function (r) { done += r.done; total += r.total; });
-    // Vòng đếm tất cả: hạng mục cố định + việc hôm nay + mục tồn (Từ hôm qua)
+    // Vòng đếm luồng hôm nay: hạng mục cố định + mục đã quyết làm hôm nay (T+1, mang sang) + việc. Không đếm mục sót chưa quyết.
+    cards.forEach(function (c) { done += c.done; total += c.total; });
     tasks.forEach(function (x) { total++; if (x.done) done++; });
-    left.forEach(function (o) { total++; if (o.done) done++; });
     var cap = T.capacity(st.date), ev = cap.evening;
     var facts = '<div class="ag-fact' + (ev.over ? ' is-over' : '') + '"><b>Quỹ việc riêng</b><span class="num">' + D.fmtMin(ev.used) + ' / ' + D.fmtMin(ev.quota) + '</span>' + (ev.over ? ' vượt quỹ' : '') + '</div>' +
       '<div class="ag-fact"><b>Giờ đột xuất</b><span class="num">' + D.fmtMin(cap.interruptionMin) + '</span></div>';
     var blocks = '';
     function blk(name, d, t) { blocks += '<div class="ag-blk"><span class="ag-blk-name">' + esc(name) + '</span><span class="num">' + d + '/' + t + '</span>' + barHtml(d, t) + '</div>'; }
-    runs.forEach(function (r) { blk(r.routine.name, r.done, r.total); });
-    if (left.length) blk('Từ hôm qua', left.filter(function (o) { return o.done; }).length, left.length);
-    if (tasks.length) blk('Việc', tasks.filter(function (x) { return x.done; }).length, tasks.length);
+    cards.forEach(function (c) { blk(c.routine.name, c.done, c.total); });
+    var ad = tasks.filter(function (x) { return x.task.kind !== 'canhan'; }), cn = tasks.filter(function (x) { return x.task.kind === 'canhan'; });
+    function dn(l) { return l.filter(function (x) { return x.done; }).length; }
+    if (ad.length) blk('Ad-hoc', dn(ad), ad.length);
+    if (cn.length) blk('Cá nhân', dn(cn), cn.length);
     if (!blocks) blocks = '<p class="ag-empty">Hôm nay chưa có khối nào.</p>';
     var cols = sixDays().map(function (x) {
       var h = x.pct == null ? 0 : Math.max(4, Math.round(x.pct * 0.8)); // 80px = 100%
@@ -195,12 +199,40 @@ LP.agenda = (function () {
     keyed.sort(function (a, b) { return a.k - b.k || a.i - b.i; });
     return keyed.map(function (x) { return x.m; });
   }
-  function runInfo(run, idx) {
-    var items = sortedItems(run.items), first = items.filter(function (m) { return !m.done; })[0], last = '';
-    run.items.forEach(function (m) { if (m.done && m.check && m.check.done_at) { var t = m.check.done_at.slice(11, 16); if (t > last) last = t; } });
-    var fin = run.total > 0 && run.done === run.total;
+  // Các "đơn vị" của một thẻ: hạng mục của lượt hôm nay + mục đã quyết làm hôm nay (nhãn "Tồn từ")
+  function buildCards(runs, decided) {
+    var byR = {}, list = [];
+    runs.forEach(function (run, i) { var c = { routine: run.routine, run: run, own: run.items, ton: [], idx: i, fake: false }; byR[run.routine.id] = c; list.push(c); });
+    decided.forEach(function (o) {
+      if (o.kind !== 'item') return;
+      var rid = o.e.routineId, c = byR[rid];
+      if (!c) {
+        var r = R.byId(rid); if (!r) return;
+        c = { routine: r, run: { routine: r, runDate: st.date, items: [], total: 0, done: 0, remainDays: null }, own: [], ton: [], idx: list.length, fake: true };
+        byR[rid] = c; list.push(c);
+      }
+      c.ton.push(o);
+    });
+    list.forEach(function (c) {
+      c.total = c.own.length + c.ton.length;
+      c.done = c.own.filter(function (m) { return m.done; }).length + c.ton.filter(function (o) { return o.done; }).length;
+    });
+    return list;
+  }
+  function unitsOf(c) {
+    var u = [];
+    c.own.forEach(function (m) { u.push({ time: m.time, done: m.done, m: m }); });
+    c.ton.forEach(function (o) { u.push({ time: o.setTime || o.origTime, done: o.done, o: o }); });
+    return u;
+  }
+  function runInfo(c) {
+    var items = sortedItems(unitsOf(c)), first = items.filter(function (u) { return !u.done; })[0], last = '';
+    function seen(ck) { if (ck && ck.done_at) { var t = ck.done_at.slice(11, 16); if (t > last) last = t; } }
+    c.own.forEach(function (m) { if (m.done) seen(m.check); });
+    c.ton.forEach(function (o) { if (o.done) seen(R.checkOf(o.e.routineId, o.e.itemId, o.e.runDate)); });
+    var fin = c.total > 0 && c.done === c.total;
     var tm = first ? D.timeToMin(first.time) : null;
-    return { run: run, items: items, fin: fin, last: last, idx: idx, key: fin ? 99999 : tm == null ? 1440 : tm };
+    return { c: c, run: c.run, items: items, fin: fin, last: last, idx: c.idx, key: fin ? 99999 : tm == null ? 1440 : tm };
   }
   function tomorrowLine(run) {
     var its = R.itemsOf(run.routine, run.runDate).filter(function (it) { return (parseInt(it.day_offset, 10) || 0) > 0; });
@@ -223,29 +255,28 @@ LP.agenda = (function () {
     return r.doc_id ? '<button type="button" class="chip" data-act="doc" data-doc="' + esc(r.doc_id) + '" data-head="' + esc(r.heading_id || '') + '">' + icon('note', 'ic18') + 'Ghi chú</button>' : '';
   }
   function runCard(ri) {
-    var r = ri.run.routine, run = ri.run;
+    var r = ri.c.routine, run = ri.run;
     if (ri.fin && !st.open[r.id]) {
       return '<button type="button" class="card ag-run-done" data-act="expand" data-run="' + esc(r.id) + '" aria-expanded="false">' + icon('check', 'ic18') +
         '<span class="txt">' + esc(r.name) + ' · xong' + (ri.last ? ' lúc ' + esc(ri.last) : '') + '</span>' +
         '<span class="flowers" aria-hidden="true">' + LP.flowers.html('sakura', 20, 1) + LP.flowers.html('daisy', 18, 4, 'overlap') + '</span></button>';
     }
-    var tl = tomorrowLine(run);
+    var tl = ri.c.fake ? '' : tomorrowLine(run);
     return '<section class="card ag-run' + (ri.fin ? ' is-done' : '') + '" aria-label="' + esc(r.name) + '">' +
       '<div class="ag-sec-head"><h2>' + esc(r.name) + '</h2>' + LP.ui.importance(r.importance) +
       (run.remainDays != null ? pill('còn ' + run.remainDays + ' ngày', 'note') : '') +
-      '<span class="num">' + run.done + '/' + run.total + '</span>' + docLink(r) +
+      '<span class="num">' + ri.c.done + '/' + ri.c.total + '</span>' + docLink(r) +
       (ri.fin ? '<button type="button" class="icon-btn" data-act="collapse" data-run="' + esc(r.id) + '" aria-label="Thu gọn">' + icon('up') + '</button>' : '') + '</div>' +
-      '<ul class="ag-ul">' + ri.items.map(function (m) { return itemRow(run, m); }).join('') + '</ul>' +
+      '<ul class="ag-ul">' + ri.items.map(function (u) { return u.m ? itemRow(run, u.m) : tonRow(u.o); }).join('') + '</ul>' +
       (tl ? '<p class="ag-run-foot">' + esc(tl) + '</p>' : '') + '</section>';
   }
-  function leftRow(o) {
-    var s = o.source === 'plus1' ? timeState(o.setTime || o.origTime, o.done) : {};
-    var t = o.setTime || (o.source === 'plus1' ? o.origTime : '');
-    var attrs = 'data-key="' + esc(o.key) + '"';
-    return '<li class="ag-item' + (o.done ? ' is-done' : '') + stateCls(s) + '">' + tickBtn('tick-left', attrs, o.done, o.title, o.key) +
-      (t ? '<span class="ag-time num">' + esc(t) + '</span>' : '') +
-      '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div><div class="ag-sub">' + esc(entrySub(o)) + '</div></div>' +
-      '<div class="ag-aside">' + (o.done ? '' : srcPill(o) + skipBtn(o)) + '</div></li>';
+  // Mục đã quyết làm hôm nay, nằm trong khối của nó, đúng giờ (hoặc giờ đã đặt), kèm nhãn nhỏ "Tồn từ dd/mm"
+  function tonRow(o) {
+    var t = o.setTime || o.origTime, s = timeState(t, o.done);
+    return '<li class="ag-item' + (o.done ? ' is-done' : '') + stateCls(s) + '">' + tickBtn('tick-left', 'data-key="' + esc(o.key) + '"', o.done, o.title, o.key) +
+      '<span class="ag-time num">' + esc(t || '') + '</span>' +
+      '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div>' + (o.setTime ? '<div class="ag-sub">đã xếp ' + esc(o.setTime) + '</div>' : '') + '</div>' +
+      '<div class="ag-aside">' + pill('Tồn từ ' + D.fmt(o.from), 'note') + (o.done ? '' : statePill(s) + skipBtn(o)) + '</div></li>';
   }
   function skipBtn(o) {
     if (readOnly()) return '';
@@ -281,29 +312,29 @@ LP.agenda = (function () {
       esc(h.name) + (h.time ? ' <span class="muted num">' + esc(h.time) + '</span>' : '') + '</button>';
   }
 
-  // Dòng "Tồn đọng cũ hơn": mục tồn nằm ngoài khoảng 7 ngày của khối Từ hôm qua. Hết mục thì ẩn.
-  function oldLine() {
+  // Dòng mảnh ở đầu trang: mục SÓT CHƯA QUYẾT (không giới hạn ngày). Không có thì ẩn.
+  function pendingLine() {
     if (readOnly()) return '';
-    var n = R.leftovers(st.date, { all: true, unplaced: true }).length - R.leftovers(st.date, { unplaced: true }).length;
+    var n = R.leftovers(st.date, { all: true, pending: true }).length;
     if (n <= 0) return '';
-    return '<div class="ag-left ag-old"><span>Tồn đọng cũ hơn: <b class="num">' + n + '</b> mục</span>' +
-      '<button type="button" class="chip" data-act="ton">' + icon('box', 'ic18') + 'Xem tất cả</button></div>';
+    return '<div class="ag-pending"><span><b class="num">' + n + '</b> mục tồn chưa xử lý</span><button type="button" class="chip" data-act="ton">Xử lý</button></div>';
   }
 
-  function checklistHtml(runs, left, tasks, habits) {
+  function taskSection(title, list, empty) {
+    return '<section class="card ag-tasks" aria-label="' + esc(title) + '"><div class="ag-sec-head"><h2>' + esc(title) + '</h2>' +
+      (list.length ? '<span class="num">' + list.filter(function (x) { return x.done; }).length + '/' + list.length + '</span>' : '') + '</div>' +
+      (list.length ? '<ul class="ag-ul">' + list.map(taskRow).join('') + '</ul>' : '<p class="ag-empty">' + empty + '</p>') + '</section>';
+  }
+
+  function checklistHtml(cards, tasks, habits) {
     var h = '<div class="ag-list">';
-    if (left.length) {
-      h += '<section class="note-paper ag-left" aria-label="Từ hôm qua"><span class="pin" aria-hidden="true">' + LP.flowers.html('daisy', 30, 1) + '</span>' +
-        '<div class="ag-sec-head"><h2>Từ hôm qua</h2><span class="num">' + left.filter(function (o) { return o.done; }).length + '/' + left.length + '</span></div>' +
-        '<ul class="ag-ul">' + left.map(leftRow).join('') + '</ul></section>';
-    }
-    h += oldLine();
-    var infos = runs.map(runInfo).sort(function (a, b) { return a.key - b.key || a.idx - b.idx; });
+    var infos = cards.map(runInfo).sort(function (a, b) { return a.key - b.key || a.idx - b.idx; });
     h += '<div class="ag-runs">' + (infos.length ? infos.map(runCard).join('') :
       '<section class="card"><h2>Công việc cố định</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Hôm nay không có lượt cố định nào.' : 'Ngày nghỉ, không có lượt cố định.') + '</p></section>') + '</div>';
-    h += '<section class="card ag-tasks" aria-label="Việc hôm nay"><div class="ag-sec-head"><h2>Việc ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)) + '</h2>' +
-      (tasks.length ? '<span class="num">' + tasks.filter(function (x) { return x.done; }).length + '/' + tasks.length + '</span>' : '') + '</div>' +
-      (tasks.length ? '<ul class="ag-ul">' + tasks.map(taskRow).join('') + '</ul>' : '<p class="ag-empty">Không có việc nào có ngày làm là hôm nay.</p>') + '</section>';
+    var ad = tasks.filter(function (x) { return x.task.kind !== 'canhan'; }), cn = tasks.filter(function (x) { return x.task.kind === 'canhan'; });
+    if (ad.length) h += taskSection('Ad-hoc', ad, '');
+    if (cn.length) h += taskSection('Cá nhân', cn, '');
+    if (!tasks.length) h += taskSection('Việc ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)), [], 'Không có việc nào có ngày làm là hôm nay.');
     h += '<section class="card ag-habits" aria-label="Thói quen"><div class="ag-sec-head"><h2>Thói quen</h2></div>' +
       (habits.length ? '<div class="chips">' + habits.map(habitChip).join('') + '</div>' : '<p class="ag-empty">Không có thói quen nào hôm nay.</p>') + '</section>';
     if (st.date === D.today()) h += '<div class="ag-foot"><button type="button" class="btn btn-primary" data-act="soat">' + icon('moon', 'ic18') + 'Soát cuối ngày</button></div>';
@@ -326,12 +357,12 @@ LP.agenda = (function () {
   }
   function segOf(min) { return min < 720 ? 'SÁNG' : min <= 1050 ? 'CHIỀU' : 'TỐI'; }
 
-  function overviewHtml(runs, left, tasks, habits) {
+  function overviewHtml(cards, tasks, habits) {
     var rows = [], undated = [], ro = readOnly(), seq = 0;
-    // Hạng mục cố định
-    runs.forEach(function (run) {
-      var prevMin = null, prevEst = 15, r = run.routine;
-      run.items.forEach(function (m) {
+    // Hạng mục của lượt hôm nay + mục đã quyết làm hôm nay (nhãn "Tồn từ dd/mm", đúng giờ hoặc giờ đã đặt)
+    cards.forEach(function (c) {
+      var prevMin = null, prevEst = 15, r = c.routine;
+      c.own.forEach(function (m) {
         var own = D.timeToMin(m.time), min = own, est = false;
         if (own == null && prevMin != null) { min = prevMin + prevEst; est = true; }
         if (min != null) prevMin = min;
@@ -343,19 +374,16 @@ LP.agenda = (function () {
         };
         if (min == null) undated.push(row); else { row.i = seq++; rows.push(row); }
       });
-    });
-    // Mục tồn: chưa xếp giờ thì vào khối tồn, đã xếp giờ thì lên dòng thời gian
-    var ton = [];
-    left.forEach(function (o) {
-      if (o.kind === 'item' && o.setTime) {
-        var rt = R.byId(o.e.routineId);
-        rows.push({
-          t: D.timeToMin(o.setTime), time: o.setTime, done: o.done, state: timeState(o.setTime, o.done), title: o.title, i: seq++,
-          flag: pill('Tồn từ ' + D.fmt(o.from), 'note'), sub: '', belong: rt ? rt.name : '', hearts: rt ? LP.ui.importance(rt.importance) : '', due: '',
+      c.ton.forEach(function (o) {
+        var t = o.setTime || o.origTime, min = D.timeToMin(t);
+        var row = {
+          t: min, time: t || '', done: o.done, state: timeState(t, o.done), title: o.title, flag: pill('Tồn từ ' + D.fmt(o.from), 'note'), sub: '',
+          belong: r.name, hearts: LP.ui.importance(r.importance), due: '',
           tick: tickBtn('tick-left', 'data-key="' + esc(o.key) + '"', o.done, o.title, o.key),
-          extra: o.done || ro ? '' : '<button type="button" class="btn btn-soft" data-act="unplace" data-key="' + esc(o.key) + '">Bỏ giờ</button>'
-        });
-      } else ton.push(o);
+          extra: o.done || ro ? '' : (o.setTime ? '<button type="button" class="btn btn-soft" data-act="unplace" data-key="' + esc(o.key) + '">Bỏ giờ</button> ' : '') + skipBtn(o)
+        };
+        if (min == null) undated.push(row); else { row.i = seq++; rows.push(row); }
+      });
     });
     // Việc
     tasks.forEach(function (x) {
@@ -386,15 +414,6 @@ LP.agenda = (function () {
     if (st.order === 'desc') rows.reverse();
 
     var h = '';
-    if (ton.length) {
-      h += '<section class="note-paper ag-ton" aria-label="Việc tồn"><span class="pin" aria-hidden="true">' + LP.flowers.html('daisy', 30, 1) + '</span>' +
-        '<h2>Việc tồn · chưa xếp giờ</h2><ul class="ag-ul">' + ton.map(function (o) {
-          var attrs = o.kind === 'item' ? 'data-key="' + esc(o.key) + '"' : 'data-key="' + esc(o.key) + '"';
-          return '<li class="ag-item' + (o.done ? ' is-done' : '') + '">' + tickBtn('tick-left', 'data-key="' + esc(o.key) + '"', o.done, o.title, o.key) +
-            '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div><div class="ag-sub">' + esc(entrySub(o)) + '</div>' +
-            (o.done ? '' : placeBox(o.key, attrs)) + '</div><div class="ag-aside">' + (o.done ? '' : srcPill(o) + skipBtn(o)) + '</div></li>';
-        }).join('') + '</ul></section>';
-    }
     var tl = '<div class="ag-tl-head" aria-hidden="true"><span>Giờ</span><span>Công việc</span><span>Thuộc</span><span>Mức độ</span><span>Hạn</span><span>Trạng thái</span></div>', seg = '';
     rows.forEach(function (r) {
       if (r.t != null) { var sg = segOf(r.t); if (sg !== seg) { seg = sg; tl += '<div class="ag-seg">' + sg + '</div>'; } }
@@ -404,7 +423,6 @@ LP.agenda = (function () {
       tl += '<div class="ag-seg">TRONG NGÀY · CHƯA ĐẶT GIỜ</div>' + undated.map(tlRow).join('');
     }
     if (!rows.length && !undated.length) tl += '<p class="ag-empty">Chưa có gì trên dòng thời gian.</p>';
-    h += oldLine();
     h += '<section class="card ag-tl" aria-label="Dòng thời gian">' + tl + '</section>';
     if (st.date === D.today()) h += '<div class="ag-foot"><button type="button" class="btn btn-primary" data-act="soat">' + icon('moon', 'ic18') + 'Soát cuối ngày</button></div>';
     return h;
@@ -414,10 +432,10 @@ LP.agenda = (function () {
   function render() {
     if (!st || sub) return;
     var y = window.scrollY, ae = document.activeElement, fk = ae && ae.getAttribute ? ae.getAttribute('data-fk') : null;
-    var runs = R.runsFor(st.date), left = leftEntries(), tasks = T.tasksFor(st.date), habits = habitsDue();
+    var cards = buildCards(R.runsFor(st.date), leftEntries()), tasks = T.tasksFor(st.date), habits = habitsDue();
     st.lastNow = D.now();
-    st.el.innerHTML = '<div class="ag">' + headHtml() + chartsHtml(runs, left, tasks) + switchHtml() +
-      (st.mode === 'overview' ? overviewHtml(runs, left, tasks, habits) : checklistHtml(runs, left, tasks, habits)) + '</div>';
+    st.el.innerHTML = '<div class="ag">' + headHtml() + pendingLine() + chartsHtml(cards, tasks) + switchHtml() +
+      (st.mode === 'overview' ? overviewHtml(cards, tasks, habits) : checklistHtml(cards, tasks, habits)) + '</div>';
     if (fk) {
       var cand = st.el.querySelectorAll('[data-fk]');
       for (var i = 0; i < cand.length; i++) if (cand[i].getAttribute('data-fk') === fk) { try { cand[i].focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } break; }
@@ -512,7 +530,7 @@ LP.agenda = (function () {
       var key = b.getAttribute('data-key'), o = st.snapMap[key] && decorate(st.snapMap[key]); if (!o) return;
       var e = o.e;
       if (e.kind === 'item') {
-        if (o.done) R.check(e.routineId, e.itemId, e.runDate, o.setTime ? 'carried' : '');
+        if (o.done) R.check(e.routineId, e.itemId, e.runDate, (o.setTime || e.source === 'carried') ? 'carried' : '');
         else { fx(b, false); R.check(e.routineId, e.itemId, e.runDate, 'done'); }
       } else if (o.step) { if (!o.done) fx(b, false); T.toggleStep(o.step); }
       else { if (!o.done) fx(b, false); T.setDone(o.task, !o.done); }
