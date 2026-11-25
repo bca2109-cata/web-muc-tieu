@@ -37,8 +37,6 @@ module.exports = async function (h) {
     A.ok(inAgenda, 'Agenda T5 không có việc');
     A.strictEqual(await q('2026-11-25'), b4 - 20); A.strictEqual(await q('2026-11-26'), b5 + 20);
     A.ok(await col(page, '2026-11-26').locator('.lblk[data-task="t-kham"]').count(), 'khối chưa sang cột T5');
-    const lbl = (await page.locator('.lhead[data-date="2026-11-26"] .qbar').nth(1).innerText());
-    A.ok(lbl.includes(String(b5 + 20) + '/'), 'thanh quỹ cột T5: ' + lbl);
     // Hoàn tác
     await page.locator('.toast [data-t="act"]').click();
     A.strictEqual(await doDate(page, 't-kham'), '2026-11-25');
@@ -78,13 +76,14 @@ module.exports = async function (h) {
 
   await h.test('4. Lọc "Quan trọng trở lên": thẻ 1 trái tim mờ đi, thanh quỹ vẫn đủ', async () => {
     const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
-    const qsel = '.lhead[data-date="2026-11-28"] .qbar';
-    const quotaBefore = await page.locator(qsel).nth(1).innerText();
+    const q = () => page.evaluate(() => LP.logic.tasks.capacity('2026-11-28').evening.used);
+    const quotaBefore = await q();
+    A.strictEqual(await page.locator('.lhead .qbar, .lhead .lday-fixed').count(), 0, 'đầu cột không còn thanh quỹ/cố định');
     await page.locator('.lich-filter').click();
     const low = page.locator('.lblk[data-task="t-baohiem"]'), high = page.locator('.lblk[data-task="t-kham"]');
     A.ok(await low.evaluate(e => e.classList.contains('dim')), 'thẻ 1 trái tim chưa mờ');
     A.ok(!(await high.evaluate(e => e.classList.contains('dim'))), 'thẻ 2 trái tim bị mờ');
-    A.strictEqual(await page.locator(qsel).nth(1).innerText(), quotaBefore);
+    A.strictEqual(await q(), quotaBefore);
   });
 
   await h.test('G1. Lưới giờ: mục nằm đúng giờ, cao theo thời lượng, trùng giờ thì đứng cạnh nhau', async () => {
