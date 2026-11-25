@@ -1,1 +1,122 @@
-/* V2 · css của phần này. Phần sở hữu file (xem hợp đồng mục 3). Giai đoạn 0: để trống. */
+/* V2 · Phần 3 · Ghi chú. Chỉ dùng biến trong tokens.css. */
+
+/* Màn Ghi chú cần rộng hơn khung 1120px để đủ 3 cột */
+.main:has(#view[data-route="ghi-chu"]){max-width:1280px}
+
+.gc{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}
+.gc-list{padding:14px}
+.gc-space{margin-bottom:14px}
+.gc-space-head{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.gc-space-head h2{flex:1;font-size:19px;font-weight:800}
+.gc-add{width:40px;height:40px;background:var(--accent-soft);color:var(--accent-deep)}
+.gc-docs{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.gc-docs li{min-width:0}
+.gc-list,.gc-side,.gc-main{min-width:0}
+.gc-docrow{overflow:hidden;display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 10px;border:0;border-radius:14px;background:transparent;text-align:left;font-weight:700}
+.gc-docrow .icon{color:var(--accent)}
+.gc-docrow:hover{background:var(--plain-bg)}
+.gc-docrow.is-on{background:var(--accent-soft);color:var(--accent-deep)}
+.gc-docrow-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gc-docrow-m{font-size:12px}
+.gc-none{margin:4px 10px;font-size:14px}
+.gc-trash{margin:0;padding-top:8px;border-top:2px dashed var(--line)}
+.gc-trash-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 10px;border:0;border-radius:14px;background:transparent;font-weight:800;text-align:left}
+.gc-trash-head>span:nth-child(2){flex:1}
+.gc-trashrow{display:flex;align-items:center;gap:8px;min-height:44px;padding:2px 6px 2px 10px}
+.gc-restore{min-height:36px;padding:2px 14px;font-size:14px}
+
+.gc-empty{text-align:center;padding:40px 20px}
+.gc-empty h1{font-size:26px;font-weight:800;margin:6px 0}
+
+/* Khung soạn */
+.gc-doc{padding:14px 14px 20px}
+.gc-top{display:flex;align-items:center;gap:6px}
+.gc-title{flex:1;min-width:0;min-height:48px;padding:4px 8px;border:2px solid transparent;border-radius:14px;background:transparent;color:var(--ink);font-family:var(--display);font-size:26px;font-weight:800;line-height:1.2}
+.gc-title:hover{border-color:var(--line)}
+.gc-title:focus{outline:none;border-color:var(--accent)}
+.gc-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:4px 0 8px;font-size:13px}
+.gc-space-sel{width:auto;min-height:36px;padding:2px 12px;font-size:14px;font-weight:700}
+.gc-status{margin-left:auto}
+.gc-tools{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:6px;margin:0 -4px 10px;border-radius:16px;background:var(--surface);border:2px solid var(--line)}
+.gc-tool{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:36px;height:40px;padding:0 6px;border:0;border-radius:12px;background:transparent;color:var(--ink);font-weight:800;font-size:14px}
+.gc-tool:hover{background:var(--plain-bg)}
+.gc-tool.is-on{background:var(--accent-soft);color:var(--accent-deep)}
+.gc-tool:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.gc-tools-gap{flex:1}
+.gc-tool-task{background:var(--accent-soft);color:var(--accent-deep);padding:0 12px}
+.gc-tocbtn{display:none}
+.gc-editwrap{position:relative}
+.gc-hbtn{position:absolute;right:0;width:36px;height:36px;border:0;border-radius:99px;background:var(--plain-bg);color:var(--muted);display:grid;place-items:center;z-index:2}
+.gc-hbtn:hover{background:var(--accent-soft);color:var(--accent-deep)}
+
+/* Nội dung tài liệu (khung soạn và bản đọc trong tấm trượt) */
+.gc-body{font-weight:600;font-size:16px;line-height:1.7;word-break:break-word;overflow-wrap:anywhere}
+.gc-edit{min-height:46vh;padding:2px 4px 40px;outline:none;caret-color:var(--accent)}
+.gc-body h1,.gc-body h2,.gc-body h3{position:relative;margin:22px 0 6px;scroll-margin-top:16px;border-radius:10px}
+.gc-body h1{font-size:30px;font-weight:800}
+.gc-body h2{font-size:24px;font-weight:800}
+.gc-body h3{font-size:20px;font-weight:700}
+.gc-body h1:first-child,.gc-body h2:first-child,.gc-body h3:first-child{margin-top:4px}
+.gc-body p{margin:0 0 10px}
+.gc-body a{color:var(--accent-deep);text-decoration:underline;text-underline-offset:2px}
+.gc-body ul,.gc-body ol{margin:0 0 10px;padding-left:26px}
+.gc-body li{margin:2px 0}
+.gc-body h1[data-link]::after,.gc-body h2[data-link]::after,.gc-body h3[data-link]::after{
+  content:attr(data-link);display:block;width:fit-content;max-width:100%;margin-top:2px;padding:1px 10px;border-radius:99px;
+  background:var(--accent-soft);color:var(--accent-deep);font-family:var(--font);font-size:12px;font-weight:800;line-height:1.6;user-select:none;pointer-events:none}
+.gc-body .is-hit{background:var(--accent-soft);animation:gc-hit 1.8s ease-out}
+@keyframes gc-hit{0%{background:var(--butter)}100%{background:transparent}}
+.gc-body ul.todo{list-style:none;padding-left:0}
+.gc-body ul.todo>li{position:relative;padding-left:34px;min-height:28px}
+.gc-body ul.todo>li::before{content:"";position:absolute;left:2px;top:4px;width:20px;height:20px;border-radius:99px;border:2.5px solid var(--tick-line);background:var(--surface);cursor:pointer}
+.gc-body ul.todo>li[data-done="true"]::before{background:var(--ok);border-color:var(--ok)}
+.gc-body ul.todo>li[data-done="true"]::after{content:"";position:absolute;left:9px;top:8px;width:5px;height:9px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.gc-body ul.todo>li[data-done="true"]{color:var(--muted);text-decoration:line-through}
+.gc-body blockquote.callout{margin:12px 0;padding:12px 16px;border-radius:18px;border:1.5px dashed var(--dash);background:var(--butter)}
+.gc-body blockquote.callout>*:last-child{margin-bottom:0}
+.gc-body table{width:100%;margin:12px 0;border-collapse:collapse;table-layout:fixed}
+.gc-body td,.gc-body th{padding:6px 10px;border:1.5px solid var(--line);vertical-align:top;text-align:left;min-width:0}
+.gc-body th{background:var(--accent-soft);font-weight:800}
+::highlight(gc-find){background:var(--butter);color:var(--ink)}
+::highlight(gc-find-cur){background:var(--accent);color:var(--accent-ink)}
+
+/* Cột phải: tìm và mục lục */
+.gc-side{display:none}
+.gc-sidebox{padding:14px;border-radius:22px}
+.gc-find{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;border:2px solid var(--line);border-radius:99px;background:var(--surface);color:var(--muted)}
+.gc-find:focus-within{border-color:var(--accent)}
+.gc-find-in{flex:1;min-width:0;height:40px;font-size:14px;border:0;background:transparent;color:var(--ink);font-weight:700;outline:none}
+.gc-findbar{display:flex;align-items:center;gap:4px;margin-top:6px}
+.gc-findbar .icon-btn{width:36px;height:36px}
+.gc-findn{flex:1;font-size:13px;padding-left:8px}
+.gc-toc-h{margin:14px 0 6px;font-size:17px;font-weight:800}
+.gc-toc{display:flex;flex-direction:column}
+.gc-toc-i{display:block;padding:5px 10px;border-left:3px solid var(--line);text-decoration:none;font-size:14px;font-weight:700;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.gc-toc-i.lv2{padding-left:20px}
+.gc-toc-i.lv3{padding-left:30px;font-weight:600}
+.gc-toc-i:hover{color:var(--ink)}
+.gc-toc-i.is-on{border-left-color:var(--accent);color:var(--accent-deep);background:var(--accent-soft);border-radius:0 12px 12px 0}
+.gc-pick{justify-content:space-between;text-align:left}
+.gc-pick small{font-size:12px}
+
+/* Tấm trượt đọc tài liệu */
+.modal.gc-modal{max-width:760px}
+.gc-read{padding-bottom:8px}
+
+/* Điện thoại: đi từng tầng danh sách -> tài liệu */
+@media (max-width:899px){
+  .gc[data-tier="list"] .gc-main{display:none}
+  .gc[data-tier="doc"] .gc-list{display:none}
+  .gc-tocbtn{display:inline-grid}
+  .gc-title{font-size:22px}
+  .gc-body h1{font-size:25px}
+  .gc-body h2{font-size:21px}
+  .gc-body h3{font-size:18px}
+}
+@media (min-width:900px){
+  .gc{grid-template-columns:210px minmax(0,720px) 210px;justify-content:center}
+  .gc-back,.gc-tocbtn{display:none}
+  .gc-side{display:block;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+  .gc-list{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+  .gc-doc{padding:18px 22px 24px}
+}
