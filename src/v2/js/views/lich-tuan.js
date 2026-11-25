@@ -204,8 +204,8 @@ LP.lich = (function () {
     var today = D.today(), off = D.isDayOff(d), past = d < today;
     var runs = LP.logic.routines.runsFor(d), sum = past ? LP.logic.routines.summary(d) : null;
     return '<div class="lhead' + (d === today ? ' is-today' : '') + (off || D.dow(d) === 7 ? ' is-off' : '') + '" data-date="' + d + '">' +
-      '<div class="lday-head"><span class="lday-dow">' + D.weekdayShort(d) + '</span><b class="num">' + D.fmt(d) + '</b>' +
-      (d === today ? '<span class="pill pill-ok">Hôm nay</span>' : '') + (off ? '<span class="pill">Nghỉ</span>' : '') + '</div>' +
+      '<div class="lday-head"><span class="lday-dow">' + D.weekdayShort(d) + '</span><b class="num lday-num" title="' + D.fmtFull(d) + (d === today ? ' · hôm nay' : '') + '">' + parseInt(d.slice(8), 10) + '</b>' +
+      (off ? '<span class="pill">Nghỉ</span>' : '') + '</div>' +
       '<button type="button" class="lday-fixed" data-agenda="' + d + '">Cố định: <b class="num">' + runs.length + '</b>' +
       (past && sum.total ? (sum.missed ? ' <span class="miss">! ' + sum.missed + ' sót</span>' : ' <span class="full">' + UI.icon('check', 'ic18') + '</span>') : '') + '</button>' +
       quotaBars(LP.logic.tasks.capacity(d)) + '</div>';

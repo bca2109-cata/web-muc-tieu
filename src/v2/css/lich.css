@@ -124,3 +124,34 @@
   .mcount,.mbar span{display:none}
   .mbar{height:6px}
 }
+
+/* Lịch tuần: làm lại cho thoáng và dễ đọc (chỉ chữ trong lưới, phần đầu cột gọn hơn) */
+.lgrid{--gl:var(--line);border-radius:26px;padding:16px 16px 18px;column-gap:6px}
+.lhead{align-items:center;text-align:center;gap:4px;padding:2px 2px 10px;border-bottom:0}
+.lhead.is-off{background:transparent}
+.lgrid .lday-head{flex-direction:column;gap:2px}
+.lgrid .lday-dow{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.lday-num{display:grid;place-items:center;min-width:38px;height:38px;padding:0 6px;border-radius:99px;font-family:var(--display);font-size:20px;font-weight:800}
+.lhead.is-today .lday-dow{color:var(--accent-deep)}
+.lhead.is-today .lday-num{background:var(--accent);color:var(--accent-ink);box-shadow:0 3px 0 var(--accent-deep)}
+.lgrid .lday-fixed{background:transparent;min-height:0;padding:0;text-align:center;font-size:12px;border-radius:0}
+.lgrid .lday-fixed .miss{display:inline-block;padding:0 8px;border-radius:99px;background:var(--q1-bg)}
+.lgrid .qbar{width:100%}
+.lgrid .qbar-track{height:6px;border-radius:3px}
+.lgrid .qbar-track>i{border-radius:3px}
+.lgrid .qbar-top{font-size:11px}
+.lg-ad-label{align-self:center;padding:0;font-family:var(--display);font-size:12px}
+.lallday{border-bottom:0;border-top:1px dashed var(--gl);padding:8px 2px;min-height:44px;border-radius:0}
+.lallday.is-today{background:color-mix(in srgb,var(--accent-soft) 35%,transparent)}
+.lgut{margin-top:8px}
+.lgut span{font-size:11px;font-weight:700;opacity:.8}
+.lcol{margin-top:8px;border-radius:0;background-image:linear-gradient(to bottom,var(--gl) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--gl) 40%,transparent) 1px,transparent 1px);border-left:1px solid color-mix(in srgb,var(--gl) 60%,transparent)}
+.lcol.is-today{border-left-color:var(--accent-soft);border-right:1px solid var(--accent-soft)}
+.lcol.is-off{background-color:color-mix(in srgb,var(--plain-bg) 60%,transparent)}
+.lcol.is-past .lblk{opacity:.85}
+.lblk{padding:0 8px;font-size:13px;font-weight:800}
+.lblk.fixed{font-weight:600;color:var(--muted)}
+.lblk.is-done{opacity:.5}
+.ldue{padding:0 8px;font-size:12px}
+.lnow{background:var(--accent);height:2px;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.lnow i{left:-5px;top:-5px;width:12px;height:12px}
