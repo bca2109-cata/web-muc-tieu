@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="vi" data-bg="flowers">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fffafc">
+  <script>try{var lpT=localStorage.getItem('lp_theme');if(lpT==='light'||lpT==='dark')document.documentElement.setAttribute('data-theme',lpT)}catch(e){}</script>
+  <title>Life Planner V2</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Life Planner V2">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/tokens.css?v=v2a">
+  <link rel="stylesheet" href="css/base.css?v=v2a">
+  <link rel="stylesheet" href="css/agenda.css?v=v2a">
+  <link rel="stylesheet" href="css/lich.css?v=v2a">
+  <link rel="stylesheet" href="css/ghi-chu.css?v=v2a">
+  <link rel="stylesheet" href="css/muc-tieu.css?v=v2a">
+  <link rel="stylesheet" href="css/cai-dat.css?v=v2a">
+</head>
+<body>
+  <div class="bg-flowers" id="bg-flowers" aria-hidden="true"></div>
+  <header class="site-head">
+    <div class="topbar">
+      <a class="logo" href="#/agenda" aria-label="Life Planner, về Agenda">
+        <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+          <rect x="6" y="5" width="28" height="32" rx="7" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.4"/>
+          <path d="M12 5V2.5M18 5V2.5M24 5V2.5M30 5V2.5" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>
+          <use href="#f-daisy" x="10" y="12" width="20" height="20" style="color:var(--petal-2)"/>
+          <use href="#f-sprig" x="22" y="24" width="14" height="14"/>
+        </svg>
+        <span class="logo-text">LIFE <span>PLANNER</span></span>
+      </a>
+      <span class="spacer"></span>
+      <button type="button" class="round" id="btn-search" aria-label="Tìm kiếm">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+      </button>
+      <a class="round" id="btn-settings" href="#/cai-dat" aria-label="Cài đặt">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+      </a>
+    </div>
+    <div class="statusline">
+      <span class="banner" id="banner" hidden>Đang dùng dữ liệu mẫu trên trình duyệt này, chưa kết nối Google Sheet.</span>
+      <span class="sync" id="sync" aria-live="polite"></span>
+    </div>
+    <nav class="tabbar" aria-label="Các tab">
+      <a class="tab" href="#/agenda" data-route="agenda">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
+        <span>Agenda</span>
+      </a>
+      <a class="tab" href="#/lich" data-route="lich">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+        <span>Lịch</span>
+      </a>
+      <a class="tab" href="#/ghi-chu" data-route="ghi-chu">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="3"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg>
+        <span>Ghi chú</span>
+      </a>
+      <a class="tab" href="#/muc-tieu" data-route="muc-tieu">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3"/></svg>
+        <span>Mục tiêu</span>
+      </a>
+      <a class="tab" href="#/tong-ket" data-route="tong-ket">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V5M16 20v-7M21 20H3"/></svg>
+        <span>Tổng kết</span>
+      </a>
+    </nav>
+  </header>
+  <div class="update-bar" id="update-bar" role="status" hidden><span>Có bản mới.</span><button type="button" class="btn btn-primary" onclick="location.reload()">Tải lại</button></div>
+  <main class="main" id="view"><p class="muted loading">Đang tải…</p></main>
+
+  <div class="fab-wrap" id="fab-wrap">
+    <div class="fab-menu" id="fab-menu" role="menu" hidden>
+      <button type="button" class="fab-item" role="menuitem" data-kind="adhoc"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>Việc ad-hoc</button>
+      <button type="button" class="fab-item" role="menuitem" data-kind="canhan"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19C4 11 9 5 20 4c0 10-5 15-13 15z"/><path d="M5 19c3-4 6-7 10-9"/></svg>Việc cá nhân</button>
+      <button type="button" class="fab-item" role="menuitem" data-kind="ghichu"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="3"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg>Ghi chú nhanh</button>
+      <button type="button" class="fab-item" role="menuitem" data-kind="dotxuat"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg>Đột xuất</button>
+    </div>
+    <button type="button" class="fab-main" id="fab" aria-label="Thêm mới" aria-haspopup="true" aria-expanded="false">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+
+  <!-- Lõi (Chung) -->
+  <script src="js/core/config.js?v=v2a"></script>
+  <script src="js/core/date.js?v=v2a"></script>
+  <script src="js/core/mock-data.js?v=v2a"></script>
+  <script src="js/core/api-mock.js?v=v2a"></script>
+  <script src="js/core/api-sheet.js?v=v2a"></script>
+  <script src="js/core/api.js?v=v2a"></script>
+  <script src="js/core/flowers.js?v=v2a"></script>
+  <script src="js/core/ui.js?v=v2a"></script>
+  <script src="js/core/store.js?v=v2a"></script>
+  <script src="js/core/logic-routines.js?v=v2a"></script>
+  <script src="js/core/logic-tasks.js?v=v2a"></script>
+  <script src="js/core/stats.js?v=v2a"></script>
+  <script src="js/core/router.js?v=v2a"></script>
+  <script src="js/core/search.js?v=v2a"></script>
+  <script src="js/core/notify.js?v=v2a"></script>
+  <script src="js/core/shell.js?v=v2a"></script>
+  <!-- Các màn (mỗi phần sở hữu file của mình) -->
+  <script src="js/views/agenda.js?v=v2a"></script>
+  <script src="js/views/soat.js?v=v2a"></script>
+  <script src="js/views/lich-tuan.js?v=v2a"></script>
+  <script src="js/views/lich-thang.js?v=v2a"></script>
+  <script src="js/views/editor.js?v=v2a"></script>
+  <script src="js/views/ghi-chu.js?v=v2a"></script>
+  <script src="js/views/thoi-quen.js?v=v2a"></script>
+  <script src="js/views/muc-tieu.js?v=v2a"></script>
+  <script src="js/views/tong-ket.js?v=v2a"></script>
+  <script src="js/views/mau-cong-viec.js?v=v2a"></script>
+  <script src="js/views/cai-dat.js?v=v2a"></script>
+  <script src="js/views/them-nhanh.js?v=v2a"></script>
+</body>
+</html>

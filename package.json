@@ -4,5 +4,8 @@
   "description": "Công cụ kiểm thử cho web quản lý mục tiêu. Web chạy không cần Node.",
   "devDependencies": {
     "playwright": "^1.65.1"
+  },
+  "scripts": {
+    "test:v2": "node tests-qa/v2/run.js"
   }
 }

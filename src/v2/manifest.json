@@ -1,0 +1,17 @@
+{
+  "name": "Life Planner V2",
+  "short_name": "Planner V2",
+  "description": "Không quên việc: công việc cố định theo giờ, việc ad-hoc, ghi chú, thói quen, mục tiêu",
+  "lang": "vi",
+  "start_url": "./#/agenda",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fffafc",
+  "theme_color": "#fffafc",
+  "icons": [
+    { "src": "../icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

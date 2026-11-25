@@ -4,7 +4,7 @@
 
 | Đợt | Phần | Nhánh | Trạng thái | PR | Ghi chú |
 |---|---|---|---|---|---|
-| 0 | Khung chung | v2/khung | Chưa bắt đầu | | |
+| 0 | Khung chung | v2/khung | Chờ duyệt | (xem PR) | Test `core` 25/25. Chưa tạo Sheet V2 thật (làm theo `TRIEN-KHAI-SHEET.md`) |
 | 1 | 1 · Agenda + Soát | v2/phan-1 | Chưa bắt đầu | | |
 | 1 | 2 · Lịch | v2/phan-2 | Chưa bắt đầu | | |
 | 2 | 3 · Ghi chú | v2/phan-3 | Chưa bắt đầu | | |
@@ -12,4 +12,5 @@
 | 3 | 5 · Mẫu + Cài đặt | v2/phan-5 | Chưa bắt đầu | | |
 
 ## Đề xuất (chờ người dùng duyệt)
-- (chưa có)
+- Hiện ô "Quỹ giờ" ở Agenda theo cả hai quỹ (ad-hoc và buổi tối). Cần Phần 1 xác nhận cách hiện.
+- Thông báo nhắc việc (`LP.notify`) mới có khung. Nối lịch nhắc cụ thể nếu người dùng muốn.
