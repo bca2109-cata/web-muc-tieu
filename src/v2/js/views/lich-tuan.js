@@ -30,28 +30,28 @@ LP.lich = (function () {
   }
   function dueText(t) { return 'Hạn ' + (t.due_time ? t.due_time + ' · ' : '· ') + t.title; }
 
-  /* ---------- Đổi ngày làm ---------- */
-  function rowOf(task, step) { return step ? step : task; }
-  function setDate(task, step, date) {
-    var before = Object.assign({}, rowOf(task, step));
-    LP.store.upsert(step ? 'TaskSteps' : 'Tasks', Object.assign({}, before, { do_date: date }));
+  /* ---------- Đổi ngày và giờ làm ---------- */
+  function setDate(task, step, date, time) {
+    var before = Object.assign({}, step || task), patch = { do_date: date };
+    if (time !== undefined) patch.do_time = time;
+    LP.store.upsert(step ? 'TaskSteps' : 'Tasks', Object.assign({}, before, patch));
     return before;
   }
   function undoMove(task, step, before) {
     LP.store.upsert(step ? 'TaskSteps' : 'Tasks', before);
   }
-  // Trả Promise<boolean>. Kiểm ngày đã qua và trễ hạn trước khi đổi
-  function moveTo(task, step, date) {
+  // time: undefined = giữ giờ, '' = bỏ giờ (Cả ngày), 'HH:MM' = đặt giờ. Trả Promise<boolean>
+  function moveTo(task, step, date, time) {
     if (!date) return Promise.resolve(false);
     if (date < D.today()) { UI.toast('Không chuyển được vào ngày đã qua'); return Promise.resolve(false); }
-    var cur = step ? (step.do_date || task.do_date) : task.do_date;
-    if (cur === date) return Promise.resolve(false);
+    var row = step || task, curDate = (step && step.do_date) || task.do_date, curTime = row.do_time || '';
+    if (curDate === date && (time === undefined || time === curTime)) return Promise.resolve(false);
     var late = task.due_date ? D.diff(date, task.due_date) : 0;
-    var ask = late > 0 ? UI.confirm('Chuyển sang ' + D.fmt(date) + '?', 'Việc này sẽ trễ hạn ' + late + ' ngày', { ok: 'Vẫn chuyển' }) : Promise.resolve(true);
+    var ask = late > 0 && date !== curDate ? UI.confirm('Chuyển sang ' + D.fmt(date) + '?', 'Việc này sẽ trễ hạn ' + late + ' ngày', { ok: 'Vẫn chuyển' }) : Promise.resolve(true);
     return ask.then(function (yes) {
       if (!yes) return false;
-      var before = setDate(task, step, date);
-      UI.toast('Đã chuyển sang ' + D.fmt(date), { duration: 10000, actionLabel: 'Hoàn tác', actionIcon: 'refresh', action: function () { undoMove(task, step, before); } });
+      var before = setDate(task, step, date, time);
+      UI.toast('Đã chuyển sang ' + D.fmt(date) + (time ? ' lúc ' + time : ''), { duration: 10000, actionLabel: 'Hoàn tác', actionIcon: 'refresh', action: function () { undoMove(task, step, before); } });
       return true;
     });
   }
@@ -60,12 +60,13 @@ LP.lich = (function () {
     var s = UI.sheet('Chuyển sang ngày…',
       '<p class="muted">' + esc(step ? step.title : task.title) + '</p>' +
       '<label class="lich-field">Ngày làm<input type="date" id="lich-pick" min="' + D.today() + '" value="' + (cur < D.today() ? D.today() : cur) + '"></label>' +
+      '<label class="lich-field">Giờ làm (để trống = cả ngày)<input type="time" id="lich-time" value="' + esc((step || task).do_time || '') + '"></label>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button>' +
       '<button type="button" class="btn btn-primary" data-ok>Chuyển</button></div>');
     s.el.querySelector('[data-ok]').addEventListener('click', function () {
-      var v = s.el.querySelector('#lich-pick').value;
+      var v = s.el.querySelector('#lich-pick').value, tm = s.el.querySelector('#lich-time').value;
       s.close();
-      moveTo(task, step, v);
+      moveTo(task, step, v, tm);
     });
   }
 
@@ -132,19 +133,118 @@ LP.lich = (function () {
       '<div class="lday-cards">' + cards + (cards || dues ? '' : '<p class="muted lday-empty">Chưa có việc</p>') + '</div></section>';
   }
 
-  /* ---------- Tuần ---------- */
-  function renderWeek() {
+  /* ---------- Tuần: danh sách dọc (điện thoại) ---------- */
+  function renderList() {
     var days = allDates(st.anchor), un = unscheduled();
-    var lab = 'Tuần ' + D.fmt(days[0]) + ' – ' + D.fmt(days[6]) + '/' + days[6].slice(0, 4);
-    st.el.innerHTML = '<div class="lich-bar">' + seg('tuan') + nav(lab, 'Tuần trước', 'Tuần sau', 'Tuần này') +
-      '<label class="chip-toggle lich-filter"><input type="checkbox" data-imp' + (st.onlyImp ? ' checked' : '') + '><span>' + UI.icon('heart', 'ic18') + 'Quan trọng trở lên</span></label></div>' +
-      '<div class="lweek">' + days.map(dayHtml).join('') +
+    st.el.innerHTML = head(days) + '<div class="lweek">' + days.map(dayHtml).join('') +
       '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
       '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section></div>';
   }
+  function head(days) {
+    var lab = 'Tuần ' + D.fmt(days[0]) + ' – ' + D.fmt(days[6]) + '/' + days[6].slice(0, 4);
+    return '<div class="lich-bar">' + seg('tuan') + nav(lab, 'Tuần trước', 'Tuần sau', 'Tuần này') +
+      '<label class="chip-toggle lich-filter"><input type="checkbox" data-imp' + (st.onlyImp ? ' checked' : '') + '><span>' + UI.icon('heart', 'ic18') + 'Quan trọng trở lên</span></label></div>';
+  }
+
+  /* ---------- Tuần: lưới giờ kiểu Outlook ---------- */
+  var T0 = 6 * 60, T1 = 22 * 60, STEP = 30, ROW = 36;
+  function yOf(min) { return (min - T0) / STEP * ROW; }
+
+  // Xếp các mục trùng giờ đứng cạnh nhau: cụm chồng lấn, mỗi mục một làn
+  function layout(list) {
+    list.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
+    var cluster = [], end = -1;
+    function flush() {
+      var lanes = [];
+      cluster.forEach(function (e) {
+        var i = 0; while (lanes[i] > e.start) i++;
+        lanes[i] = e.end; e.lane = i;
+      });
+      cluster.forEach(function (e) { e.lanes = lanes.length; });
+      cluster = [];
+    }
+    list.forEach(function (e) {
+      if (cluster.length && e.start >= end) { flush(); end = -1; }
+      cluster.push(e); end = Math.max(end, e.end);
+    });
+    if (cluster.length) flush();
+    return list;
+  }
+
+  function entriesFor(d) {
+    var timed = [], allday = [];
+    function put(e) {
+      var s = D.timeToMin(e.time);
+      if (s == null || s < T0 || s >= T1) { allday.push(e); return; }
+      e.start = s; e.end = Math.min(T1, s + Math.max(STEP, e.dur)); timed.push(e);
+    }
+    LP.logic.routines.itemsFor(d).forEach(function (m) {
+      put({ kind: 'fix', m: m, time: m.time, dur: num(m.item.est_min) || STEP });
+    });
+    LP.logic.tasks.tasksFor(d).forEach(function (x) { put({ kind: 'task', x: x, time: x.time, dur: x.duration || STEP }); });
+    return { timed: layout(timed), allday: allday };
+  }
+
+  function blockInner(e) {
+    if (e.kind === 'fix') {
+      var m = e.m;
+      return '<span class="lblk-t">' + esc(m.item.title) + '</span><span class="lblk-s">' + esc(m.time) + (m.plus1 ? ' · +1' : '') + (m.routine ? ' · ' + esc(m.routine.name) : '') + '</span>';
+    }
+    var t = e.x.task, tm = e.x.time ? e.x.time + (e.start != null ? '–' + D.minToTime(e.end) : '') : '';
+    return '<span class="lblk-t">' + esc(e.x.title) + '</span><span class="lblk-s">' + tm + (e.x.duration ? ' · ' + D.fmtMin(e.x.duration) : '') + '</span>' +
+      '<span class="lblk-m">' + UI.importance(num(t.importance) || 1) + UI.urgency(LP.logic.tasks.urgency(t, D.today())) + '</span>';
+  }
+  function blockHtml(e, pos) {
+    var cls = 'lblk' + (pos && e.end - e.start <= STEP ? ' short' : ''), attr = '';
+    if (e.kind === 'fix') {
+      cls += ' fixed' + (e.m.done ? ' is-done' : '');
+      attr = ' data-fixed="1" title="' + esc(e.m.item.title) + ' ' + esc(e.m.time) + '"';
+    } else {
+      var t = e.x.task, imp = num(t.importance) || 1;
+      cls += ' g-' + groupOf(t) + (e.x.done ? ' is-done' : '') + (st.onlyImp && imp < 2 ? ' dim' : '');
+      attr = (e.x.done ? '' : ' draggable="true"') + ' tabindex="0" data-task="' + esc(t.id) + '" data-step="' + (e.x.step ? esc(e.x.step.id) : '') + '" title="' + esc(e.x.title) + '"';
+    }
+    return '<div class="' + cls + (pos ? '' : ' chip') + '"' + attr + (pos ? ' style="' + pos + '"' : '') + '>' + blockInner(e) + '</div>';
+  }
+
+  function headHtml(d) {
+    var today = D.today(), off = D.isDayOff(d), past = d < today;
+    var runs = LP.logic.routines.runsFor(d), sum = past ? LP.logic.routines.summary(d) : null;
+    return '<div class="lhead' + (d === today ? ' is-today' : '') + (off || D.dow(d) === 7 ? ' is-off' : '') + '" data-date="' + d + '">' +
+      '<div class="lday-head"><span class="lday-dow">' + D.weekdayShort(d) + '</span><b class="num">' + D.fmt(d) + '</b>' +
+      (d === today ? '<span class="pill pill-ok">Hôm nay</span>' : '') + (off ? '<span class="pill">Nghỉ</span>' : '') + '</div>' +
+      '<button type="button" class="lday-fixed" data-agenda="' + d + '">Cố định: <b class="num">' + runs.length + '</b>' +
+      (past && sum.total ? (sum.missed ? ' <span class="miss">! ' + sum.missed + ' sót</span>' : ' <span class="full">' + UI.icon('check', 'ic18') + '</span>') : '') + '</button>' +
+      quotaBars(LP.logic.tasks.capacity(d)) + '</div>';
+  }
+
+  function renderGrid() {
+    var days = allDates(st.anchor), un = unscheduled(), today = D.today(), nowMin = D.timeToMin(D.now());
+    var per = days.map(entriesFor), h = '';
+    var gut = '';
+    for (var m = T0; m < T1; m += 60) gut += '<span style="top:' + yOf(m) + 'px">' + D.minToTime(m) + '</span>';
+    h += '<div class="lgrid" style="--row:' + ROW + 'px"><div class="lg-corner"></div>' + days.map(headHtml).join('');
+    h += '<div class="lg-ad-label">Cả ngày</div>' + days.map(function (d, i) {
+      var dues = dueMarks(d).map(function (t) { return '<div class="ldue">' + UI.icon('flag', 'ic18') + '<span>' + esc(dueText(t)) + '</span></div>'; }).join('');
+      return '<div class="lallday' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + '" data-date="' + d + '">' + dues + per[i].allday.map(function (e) { return blockHtml(e, ''); }).join('') + '</div>';
+    }).join('');
+    h += '<div class="lgut" style="height:' + yOf(T1) + 'px">' + gut + '</div>';
+    h += days.map(function (d, i) {
+      var blocks = per[i].timed.map(function (e) {
+        var w = 100 / e.lanes;
+        return blockHtml(e, 'top:' + yOf(e.start) + 'px;height:' + Math.max(ROW - 2, yOf(e.end) - yOf(e.start) - 2) + 'px;left:calc(' + (e.lane * w) + '% + 1px);width:calc(' + w + '% - 3px)');
+      }).join('');
+      var now = d === today && nowMin >= T0 && nowMin < T1 ? '<div class="lnow" style="top:' + yOf(nowMin) + 'px" title="Bây giờ ' + D.now() + '"><i></i></div>' : '';
+      return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + now + '</div>';
+    }).join('') + '</div>';
+    h += '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
+      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section>';
+    st.el.innerHTML = head(days) + h;
+  }
+  function renderWeek() { if (isMobile()) renderList(); else renderGrid(); }
 
   function findCard(el) {
-    var c = el.closest('.lcard'); if (!c) return null;
+    var c = el.closest('.lcard,.lblk[data-task]'); if (!c) return null;
     var task = LP.store.find('Tasks', c.getAttribute('data-task')), sid = c.getAttribute('data-step');
     return task ? { task: task, step: sid ? LP.store.find('TaskSteps', sid) : null } : null;
   }
@@ -156,35 +256,52 @@ LP.lich = (function () {
   }
 
   function bindWeek() {
-    var el = st.el, drag = null;
+    var el = st.el, drag = null, slot = null;
+    function clearMarks() {
+      el.querySelectorAll('.dragging,.drop-ok,.drop-no').forEach(function (n) { n.classList.remove('dragging', 'drop-ok', 'drop-no'); });
+      if (slot) { slot.remove(); slot = null; }
+    }
     el.addEventListener('dragstart', function (e) {
-      var c = e.target.closest && e.target.closest('.lcard');
+      var c = e.target.closest && e.target.closest('.lcard,.lblk[data-task]');
       if (!c || isMobile()) { e.preventDefault(); return; }
       drag = findCard(c);
       e.dataTransfer.effectAllowed = 'move';
       try { e.dataTransfer.setData('text/plain', c.getAttribute('data-task')); } catch (x) { /* bỏ qua */ }
       c.classList.add('dragging');
     });
-    el.addEventListener('dragend', function (e) {
-      drag = null;
-      el.querySelectorAll('.dragging,.drop-ok,.drop-no').forEach(function (n) { n.classList.remove('dragging', 'drop-ok', 'drop-no'); });
-    });
-    function target(e) { var c = e.target.closest && e.target.closest('.lday[data-date]'); return c && c.getAttribute('data-date') ? c : null; }
+    el.addEventListener('dragend', function () { drag = null; clearMarks(); });
+    // Điểm thả: cột giờ (ngày + giờ), dải Cả ngày (ngày, bỏ giờ), đầu cột hoặc khối ngày dạng danh sách (chỉ ngày)
+    function where(e) {
+      var n = e.target.closest && e.target.closest('[data-date]');
+      if (!n || !n.getAttribute('data-date')) return null;
+      var w = { node: n, date: n.getAttribute('data-date'), time: undefined };
+      if (n.classList.contains('lcol')) {
+        var r = n.getBoundingClientRect(), row = Math.max(0, Math.min((T1 - T0) / STEP - 1, Math.floor((e.clientY - r.top) / ROW)));
+        w.time = D.minToTime(T0 + row * STEP); w.row = row;
+      } else if (n.classList.contains('lallday')) w.time = '';
+      return w;
+    }
     el.addEventListener('dragover', function (e) {
-      var c = target(e); if (!c || !drag) return;
-      var ok = c.getAttribute('data-date') >= D.today();
-      c.classList.toggle('drop-ok', ok); c.classList.toggle('drop-no', !ok);
+      var w = where(e); if (!w || !drag) return;
+      var ok = w.date >= D.today();
+      el.querySelectorAll('.drop-ok,.drop-no').forEach(function (n) { if (n !== w.node) n.classList.remove('drop-ok', 'drop-no'); });
+      w.node.classList.toggle('drop-ok', ok); w.node.classList.toggle('drop-no', !ok);
+      if (slot && slot.parentNode !== w.node) { slot.remove(); slot = null; }
+      if (ok && w.row !== undefined) {
+        if (!slot) { slot = document.createElement('div'); slot.className = 'lslot'; w.node.appendChild(slot); }
+        slot.style.top = w.row * ROW + 'px'; slot.setAttribute('data-time', w.time);
+      } else if (slot) { slot.remove(); slot = null; }
       if (ok) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
     });
     el.addEventListener('dragleave', function (e) {
-      var c = target(e); if (c && !c.contains(e.relatedTarget)) c.classList.remove('drop-ok', 'drop-no');
+      var n = e.target.closest && e.target.closest('[data-date]');
+      if (n && !n.contains(e.relatedTarget)) { n.classList.remove('drop-ok', 'drop-no'); if (slot && slot.parentNode === n) { slot.remove(); slot = null; } }
     });
     el.addEventListener('drop', function (e) {
-      var c = target(e); if (!c || !drag) return;
+      var w = where(e); if (!w || !drag) return;
       e.preventDefault();
-      var d = c.getAttribute('data-date'), item = drag; drag = null;
-      c.classList.remove('drop-ok', 'drop-no');
-      moveTo(item.task, item.step, d);
+      var item = drag; drag = null; clearMarks();
+      moveTo(item.task, item.step, w.date, w.time);
     });
   }
 
@@ -204,7 +321,7 @@ LP.lich = (function () {
     var b;
     if ((b = e.target.closest('[data-view]'))) { st.view = b.getAttribute('data-view'); saveView(st.view); render(); return; }
     if ((b = e.target.closest('[data-nav]'))) { shift(parseInt(b.getAttribute('data-nav'), 10)); return; }
-    if ((b = e.target.closest('[data-more]'))) { var c = findCard(b); if (c) menuFor(c); return; }
+    if ((b = e.target.closest('[data-more],.lblk[data-task]'))) { var c = findCard(b); if (c) menuFor(c); return; }
     if ((b = e.target.closest('[data-agenda]'))) { LP.router.go('agenda', { date: b.getAttribute('data-agenda') }); return; }
     if ((b = e.target.closest('[data-cell]'))) {
       var d = b.getAttribute('data-cell');
@@ -225,9 +342,14 @@ LP.lich = (function () {
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     bindWeek();
-    var h = function () { render(); };
+    var mq = window.matchMedia('(max-width: 767px)'), h = function () { render(); };
+    if (mq.addEventListener) mq.addEventListener('change', h);
+    el.addEventListener('keydown', function (e) {
+      var b = e.target.closest && e.target.closest('.lblk[data-task]');
+      if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); var c = findCard(b); if (c) menuFor(c); }
+    });
     ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.on('change:' + s, h); });
-    st.off = function () { ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.off('change:' + s, h); }); };
+    st.off = function () { if (mq.removeEventListener) mq.removeEventListener('change', h); ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.off('change:' + s, h); }); };
     render();
   }
   function unmount() {

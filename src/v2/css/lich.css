@@ -54,18 +54,56 @@
 .lcard-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px;font-size:12px;font-weight:700;color:var(--muted)}
 .lcard-meta .hearts .icon{width:14px;height:14px}
 .lcard-who{overflow-wrap:anywhere}
-.lday-un{grid-column:1 / -1}
 .lday-un .lday-cards{flex-direction:row;flex-wrap:wrap}
 .lday-un .lcard{flex:1 1 220px;max-width:320px}
 
-@media (max-width:1099px) and (min-width:768px){
-  .lweek{grid-template-columns:repeat(4,minmax(0,1fr))}
-}
 @media (max-width:767px){
   .lweek{grid-template-columns:minmax(0,1fr)}
   .lcard{cursor:default}
   .lich-filter{margin-left:0}
 }
+
+/* Tuần: lưới giờ kiểu Outlook */
+.lich-field+.lich-field{margin-top:10px}
+.lgrid{display:grid;grid-template-columns:48px repeat(7,minmax(0,1fr));column-gap:4px;background:var(--surface);border-radius:22px;padding:10px 10px 12px;box-shadow:var(--shadow)}
+.lhead{padding:4px 4px 8px;display:flex;flex-direction:column;gap:6px;min-width:0;border-bottom:2px solid var(--line)}
+.lhead.is-today{border-bottom-color:var(--accent)}
+.lhead.is-off{background:var(--plain-bg);border-radius:12px 12px 0 0}
+.lg-ad-label{font-size:11px;font-weight:800;color:var(--muted);padding-top:6px;text-align:right}
+.lallday{display:flex;flex-direction:column;gap:3px;padding:4px 2px;min-height:34px;min-width:0;border-bottom:2px solid var(--line);border-radius:6px}
+.lallday.is-off{background:var(--plain-bg)}
+.lallday.drop-ok,.lcol.drop-ok,.lhead.drop-ok{background:var(--accent-soft)}
+.lallday.drop-no,.lcol.drop-no,.lhead.drop-no{background:var(--q1-bg);cursor:not-allowed}
+.lgut{position:relative;color:var(--muted);font-size:11px;font-weight:800}
+.lgut span{position:absolute;right:4px;transform:translateY(-7px)}
+.lcol{position:relative;min-width:0;border-radius:6px;background-image:linear-gradient(to bottom,var(--line) 1px,transparent 1px),linear-gradient(to bottom,var(--plain-bg) 1px,transparent 1px);background-size:100% calc(var(--row) * 2),100% var(--row)}
+.lcol.is-off{background-color:var(--plain-bg)}
+.lcol.is-today{background-color:color-mix(in srgb,var(--accent-soft) 35%,transparent)}
+.lblk{position:absolute;overflow:hidden;box-sizing:border-box;padding:2px 6px;border-radius:8px;border-left:5px solid var(--work);background:var(--work-bg);color:var(--text);cursor:grab;display:flex;flex-direction:column;gap:0;line-height:1.25;min-width:0}
+.lblk.g-study{border-left-color:var(--study);background:var(--study-bg)}
+.lblk.g-health{border-left-color:var(--health);background:var(--health-bg)}
+.lblk.fixed{border-left-color:var(--accent);background:var(--surface);border:2px solid var(--accent-soft);border-left:5px solid var(--accent);cursor:pointer}
+.lblk.chip{position:static;min-height:26px;height:auto}
+.lblk-t{font-weight:800;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.lblk-s{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lblk-m{display:flex;gap:4px;align-items:center}
+.lblk-m .hearts .icon{width:12px;height:12px}
+.lblk-m .urg .icon{width:14px;height:14px}
+.lblk.short{flex-direction:row;align-items:center;gap:6px}
+.lblk.short .lblk-t{white-space:nowrap}
+.lblk.short .lblk-s,.lblk.short .lblk-m{display:none}
+.lblk.dim{opacity:.35}
+.lblk.is-done{opacity:.6}
+.lblk.is-done .lblk-t{text-decoration:line-through}
+.lblk.dragging{opacity:.4}
+.lblk:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.lnow{position:absolute;left:0;right:0;height:2px;background:var(--accent);z-index:3;pointer-events:none}
+.lnow i{position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.lslot{position:absolute;left:0;right:0;height:var(--row);background:var(--accent-soft);border:2px dashed var(--accent);border-radius:6px;z-index:2;pointer-events:none}
+.lslot::after{content:attr(data-time);position:absolute;right:4px;top:2px;font-size:11px;font-weight:800;color:var(--accent-deep)}
+.lgrid+.lday-un{margin-top:12px}
+.lgrid .lday-head{gap:4px}
+@media (max-width:1099px){.lgrid .lday-dow{font-size:14px}.lgrid .pill{display:none}}
 
 /* Tháng */
 .lmonth{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}

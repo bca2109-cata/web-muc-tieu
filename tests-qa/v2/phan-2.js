@@ -3,31 +3,41 @@ module.exports = async function (h) {
   const A = h.assert;
   const WEEK = '#/lich?view=tuan&date=2026-11-25';
   const MONTH = '#/lich?view=thang&date=2026-11-25';
-  const col = (page, d) => page.locator('.lday[data-date="' + d + '"]');
+  const col = (page, d) => page.locator('.lcol[data-date="' + d + '"]');
+  const setTimes = (page, list) => page.evaluate(l => l.forEach(([id, d, t, m, sid]) => { const tk = LP.store.find('Tasks', id); if (sid) { const st = LP.store.find('TaskSteps', sid); LP.store.upsert('TaskSteps', Object.assign({}, st, { do_date: d, do_time: t, duration_min: m })); } else LP.store.upsert('Tasks', Object.assign({}, tk, { do_date: d, do_time: t, duration_min: m })); }), list);
+  // Kéo bằng chuột thật. dst có thể là locator; off = vị trí trong dst (mặc định giữa)
+  const drag = async (page, src, dst, off) => {
+    const a = await page.locator(src).first().boundingBox(), b = await dst.boundingBox();
+    const ex = b.x + (off ? off.x : b.width / 2), ey = b.y + (off ? off.y : b.height / 2);
+    await page.mouse.move(a.x + 12, a.y + 8); await page.mouse.down();
+    await page.mouse.move(a.x + 30, a.y + 40, { steps: 4 }); await page.mouse.move(ex, ey, { steps: 8 });
+    await page.mouse.move(ex + 1, ey + 1); await page.mouse.up(); await page.waitForTimeout(150);
+  };
   const doDate = (page, id) => page.evaluate(i => LP.store.find('Tasks', i).do_date, id);
 
   await h.test('1. Tuần 23–29/11: cột T6 có mốc "Hạn 15:00 · tên việc"', async () => {
-    const page = await h.open({ w: 1280, hash: WEEK });
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
     // Mock chưa có giờ hạn: đặt giờ 15:00 như canvas (xem YEU-CAU-CHUNG #P2-1)
     await page.evaluate(() => { const t = LP.store.find('Tasks', 't-bcnguon'); LP.store.upsert('Tasks', Object.assign({}, t, { due_time: '15:00' })); });
-    const txt = await col(page, '2026-11-27').locator('.ldue').allInnerTexts();
+    const txt = await page.locator('.lallday[data-date="2026-11-27"] .ldue').allInnerTexts();
     A.ok(txt.some(x => /Hạn 15:00 · .*phân tích nguồn T11/.test(x)), 'mốc hạn: ' + txt.join('|'));
-    A.strictEqual(await page.locator('.lday').count(), 8, 'cần 7 cột ngày + cột Chưa có ngày');
+    A.strictEqual(await page.locator('.lcol').count(), 7, 'cần 7 cột ngày');
+    A.strictEqual(await page.locator('.lday-un').count(), 1, 'cần dải Chưa có ngày');
     h.noErrors(page);
   });
 
   await h.test('2. Kéo thẻ T4 sang T5: do_date đổi, Agenda T5 có việc, quỹ hai cột cập nhật', async () => {
-    const page = await h.open({ w: 1280, hash: WEEK });
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
     const q = async d => page.evaluate(x => { const c = LP.logic.tasks.capacity(x); return c.evening.used; }, d);
     const [b4, b5] = [await q('2026-11-25'), await q('2026-11-26')];
-    await col(page, '2026-11-25').locator('.lcard[data-task="t-kham"]').dragTo(col(page, '2026-11-26'));
+    await drag(page, '.lblk[data-task="t-kham"]', col(page, '2026-11-26'));
     await page.waitForTimeout(150);
     A.strictEqual(await doDate(page, 't-kham'), '2026-11-26');
     const inAgenda = await page.evaluate(() => LP.logic.tasks.tasksFor('2026-11-26').some(x => x.task.id === 't-kham'));
     A.ok(inAgenda, 'Agenda T5 không có việc');
     A.strictEqual(await q('2026-11-25'), b4 - 20); A.strictEqual(await q('2026-11-26'), b5 + 20);
-    A.ok(await col(page, '2026-11-26').locator('.lcard[data-task="t-kham"]').count(), 'thẻ chưa sang cột T5');
-    const lbl = (await col(page, '2026-11-26').locator('.qbar').nth(1).innerText());
+    A.ok(await col(page, '2026-11-26').locator('.lblk[data-task="t-kham"]').count(), 'khối chưa sang cột T5');
+    const lbl = (await page.locator('.lhead[data-date="2026-11-26"] .qbar').nth(1).innerText());
     A.ok(lbl.includes(String(b5 + 20) + '/'), 'thanh quỹ cột T5: ' + lbl);
     // Hoàn tác
     await page.locator('.toast [data-t="act"]').click();
@@ -36,21 +46,20 @@ module.exports = async function (h) {
   });
 
   await h.test('3. Thả sau hạn chót thì hỏi xác nhận; ngày đã qua không nhận thả', async () => {
-    const page = await h.open({ w: 1280, hash: WEEK });
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
     // t-kham hạn 26/11: thả vào T6 27/11 là trễ 1 ngày
-    await col(page, '2026-11-25').locator('.lcard[data-task="t-kham"]').dragTo(col(page, '2026-11-27'));
+    await drag(page, '.lblk[data-task="t-kham"]', col(page, '2026-11-27'));
     await page.waitForSelector('.modal');
     A.ok((await page.locator('.modal').innerText()).includes('trễ hạn 1 ngày'), 'thiếu câu xác nhận');
     A.strictEqual(await doDate(page, 't-kham'), '2026-11-25', 'đổi ngày trước khi xác nhận');
     await page.locator('.modal [data-ans="0"]').click();
     A.strictEqual(await doDate(page, 't-kham'), '2026-11-25');
-    await page.locator('.lcard[data-task="t-kham"]').dragTo(col(page, '2026-11-27'));
+    await drag(page, '.lblk[data-task="t-kham"]', col(page, '2026-11-27'));
     await page.locator('.modal [data-ans="1"]').click();
     await page.waitForTimeout(100);
     A.strictEqual(await doDate(page, 't-kham'), '2026-11-27');
     // Ngày đã qua (24/11): không nhận
-    const card = page.locator('.lday[data-date="2026-11-27"] .lcard[data-task="t-kham"]');
-    await card.dragTo(col(page, '2026-11-24'));
+    await drag(page, '.lblk[data-task="t-kham"]', col(page, '2026-11-24'));
     await page.waitForTimeout(100);
     A.strictEqual(await doDate(page, 't-kham'), '2026-11-27', 'ngày làm bị đổi sang ngày đã qua (phải giữ nguyên)');
     h.noErrors(page);
@@ -68,13 +77,70 @@ module.exports = async function (h) {
   });
 
   await h.test('4. Lọc "Quan trọng trở lên": thẻ 1 trái tim mờ đi, thanh quỹ vẫn đủ', async () => {
-    const page = await h.open({ w: 1280, hash: WEEK });
-    const quotaBefore = await col(page, '2026-11-28').locator('.qbar').nth(1).innerText();
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    const qsel = '.lhead[data-date="2026-11-28"] .qbar';
+    const quotaBefore = await page.locator(qsel).nth(1).innerText();
     await page.locator('.lich-filter').click();
-    const low = page.locator('.lcard[data-task="t-baohiem"]'), high = page.locator('.lcard[data-task="t-kham"]');
+    const low = page.locator('.lblk[data-task="t-baohiem"]'), high = page.locator('.lblk[data-task="t-kham"]');
     A.ok(await low.evaluate(e => e.classList.contains('dim')), 'thẻ 1 trái tim chưa mờ');
     A.ok(!(await high.evaluate(e => e.classList.contains('dim'))), 'thẻ 2 trái tim bị mờ');
-    A.strictEqual(await col(page, '2026-11-28').locator('.qbar').nth(1).innerText(), quotaBefore);
+    A.strictEqual(await page.locator(qsel).nth(1).innerText(), quotaBefore);
+  });
+
+  await h.test('G1. Lưới giờ: mục nằm đúng giờ, cao theo thời lượng, trùng giờ thì đứng cạnh nhau', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    await setTimes(page, [['t-kham', '2026-11-25', '14:00', 60], ['t-bcnguon', '2026-11-25', '14:00', 45, 'st-t-bcnguon-1'], ['t-baohiem', '2026-11-28', '09:00', 90]]);
+    const box = async sel => page.locator(sel).evaluate(e => { const r = e.getBoundingClientRect(), c = e.parentElement.getBoundingClientRect(); return { top: r.top - c.top, h: r.height, left: r.left - c.left, w: r.width, cw: c.width }; });
+    const a = await box('.lblk[data-task="t-baohiem"]');
+    A.ok(Math.abs(a.top - (3 * 60 / 30 * 36)) <= 2, '09:00 phải ở y=216, có ' + a.top);
+    A.ok(Math.abs(a.h - (90 / 30 * 36)) <= 4, 'cao theo 90 phút, có ' + a.h);
+    const k = await box('.lblk[data-task="t-kham"]'), b = await box('.lblk[data-step="st-t-bcnguon-1"]');
+    A.ok(Math.abs(k.top - b.top) <= 1, 'cùng giờ bắt đầu');
+    A.ok(k.w < k.cw * 0.6 && b.w < b.cw * 0.6, 'mỗi khối chiếm nửa cột');
+    A.ok(Math.abs(k.left - b.left) > k.cw * 0.3, 'hai khối phải đứng cạnh nhau');
+    h.noErrors(page);
+  });
+
+  await h.test('G2. Hạng mục cố định hiện theo giờ; việc chưa có giờ nằm ở dải Cả ngày', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    const fx = col(page, '2026-11-25').locator('.lblk.fixed', { hasText: 'Cop lại lần cuối' });
+    A.strictEqual(await fx.count(), 1, 'thiếu hạng mục +1 08:30');
+    const top = await fx.evaluate(e => e.offsetTop);
+    A.ok(Math.abs(top - 180) <= 2, '08:30 phải ở y=180, có ' + top);
+    A.ok(await page.locator('.lallday[data-date="2026-11-25"] .lblk[data-task="t-kham"]').count() === 1, 't-kham chưa có giờ phải ở Cả ngày');
+    A.strictEqual(await col(page, '2026-11-25').locator('.lblk[data-task="t-kham"]').count(), 0);
+  });
+
+  await h.test('G3. Thả vào ô giờ đặt luôn ngày và giờ; thả vào Cả ngày thì bỏ giờ; thả sau hạn chót vẫn hỏi', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    const colBox = await col(page, '2026-11-26').boundingBox();
+    // 14:00 = hàng thứ 16, giữa hàng ở y = 16 * 36 + 18
+    await drag(page, '.lblk[data-task="t-kham"]', col(page, '2026-11-26'), { x: 40, y: 16 * 36 + 18 });
+    await page.waitForTimeout(150);
+    const r = await page.evaluate(() => { const t = LP.store.find('Tasks', 't-kham'); return [t.do_date, t.do_time]; });
+    A.deepStrictEqual(r, ['2026-11-26', '14:00']);
+    await drag(page, '.lblk[data-task="t-kham"]', page.locator('.lallday[data-date="2026-11-26"]'));
+    await page.waitForTimeout(150);
+    const r2 = await page.evaluate(() => { const t = LP.store.find('Tasks', 't-kham'); return [t.do_date, t.do_time]; });
+    A.deepStrictEqual(r2, ['2026-11-26', '']);
+    A.ok(colBox.height > 400, 'cột giờ phải cao');
+    h.noErrors(page);
+  });
+
+  await h.test('G4. Vạch "Bây giờ" chỉ ở cột hôm nay, đúng 11:05', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    A.strictEqual(await page.locator('.lnow').count(), 1);
+    A.strictEqual(await col(page, '2026-11-25').locator('.lnow').count(), 1);
+    const top = await page.locator('.lnow').evaluate(e => e.offsetTop);
+    A.ok(Math.abs(top - ((11 * 60 + 5 - 360) / 30 * 36)) <= 2, '11:05 phải ở y=' + ((11 * 60 + 5 - 360) / 30 * 36) + ', có ' + top);
+  });
+
+  await h.test('G5. Lưới giờ 06:00–22:00 (32 hàng 30 phút)', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    const hh = await col(page, '2026-11-25').evaluate(e => e.offsetHeight);
+    A.strictEqual(hh, 32 * 36);
+    const labels = await page.locator('.lgut span').allInnerTexts();
+    A.strictEqual(labels[0], '06:00'); A.strictEqual(labels[labels.length - 1], '21:00');
   });
 
   await h.test('5. Tháng 11: "!" cho ngày sót, ✓ cho ngày đủ, "Nghỉ" cho ngày nghỉ', async () => {
@@ -107,7 +173,7 @@ module.exports = async function (h) {
     await page.goto(page.url().split('#')[0] + '#/lich?view=thang&date=2026-11-25');
     await page.waitForSelector('.lmonth');
     await page.locator('.mcell[data-cell="2026-12-02"]').click();
-    await page.waitForSelector('.lweek');
+    await page.waitForSelector('.lgrid');
     A.ok((await page.locator('.lich-title').innerText()).includes('30/11'), 'tuần chứa 02/12');
   });
 
