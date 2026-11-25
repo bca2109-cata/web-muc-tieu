@@ -80,7 +80,7 @@ LP.agenda = (function () {
   // Mục ĐÃ QUYẾT làm hôm nay: +1 của lượt trước, đã "Mang sang mai", hoặc đã xếp giờ. Giữ lại mục vừa tick để còn bỏ tick được.
   function leftEntries() {
     if (!D.isWorkday(st.date)) return [];   // ngày nghỉ / Chủ nhật: mục đã quyết chờ tới ngày làm việc kế tiếp
-    R.leftovers(st.date, { all: true, decided: true }).forEach(function (e) {
+    R.leftovers(st.date, { all: true, decided: true, withDone: true }).forEach(function (e) {
       var k = entryKey(e);
       if (!st.snapMap[k]) st.snapOrder.push(k);
       st.snapMap[k] = e;
@@ -315,7 +315,7 @@ LP.agenda = (function () {
   // Dòng mảnh ở đầu trang: mục SÓT CHƯA QUYẾT (không giới hạn ngày). Không có thì ẩn.
   function pendingLine() {
     if (readOnly()) return '';
-    var n = R.leftovers(st.date, { all: true, pending: true }).length;
+    var n = R.leftovers(D.today(), { all: true, pending: true }).length;   // luôn tính theo hôm nay, khớp Soát và Tồn tổng
     if (n <= 0) return '';
     return '<div class="ag-pending"><span><b class="num">' + n + '</b> mục tồn chưa xử lý</span><button type="button" class="chip" data-act="ton">Xử lý</button></div>';
   }
@@ -473,7 +473,7 @@ LP.agenda = (function () {
   function clearEntryTime(key) {
     var e = st.snapMap[key]; if (!e || e.kind !== 'item') return;
     var cur = R.checkOf(e.routineId, e.itemId, e.runDate); if (!cur) return;
-    if (/^xep-gio/.test(cur.note || '') && cur.status === 'carried') R.check(e.routineId, e.itemId, e.runDate, '');
+    if (/^(?:xep-gio|dua)/.test(cur.note || '') && cur.status === 'carried') R.check(e.routineId, e.itemId, e.runDate, '');
     else R.check(e.routineId, e.itemId, e.runDate, cur.status, { set_time: '' });
   }
   function setTaskTime(taskId, stepId, time) {
@@ -530,8 +530,8 @@ LP.agenda = (function () {
       var key = b.getAttribute('data-key'), o = st.snapMap[key] && decorate(st.snapMap[key]); if (!o) return;
       var e = o.e;
       if (e.kind === 'item') {
-        if (o.done) R.check(e.routineId, e.itemId, e.runDate, (o.setTime || e.source === 'carried') ? 'carried' : '');
-        else { fx(b, false); R.check(e.routineId, e.itemId, e.runDate, 'done'); }
+        if (o.done) { var back = st.prevSt[key]; R.check(e.routineId, e.itemId, e.runDate, back !== undefined ? back : ((o.setTime || e.source === 'carried') ? 'carried' : '')); }
+        else { fx(b, false); var c0 = R.checkOf(e.routineId, e.itemId, e.runDate); st.prevSt[key] = c0 ? c0.status : ''; R.check(e.routineId, e.itemId, e.runDate, 'done'); }
       } else if (o.step) { if (!o.done) fx(b, false); T.toggleStep(o.step); }
       else { if (!o.done) fx(b, false); T.setDone(o.task, !o.done); }
     },
@@ -650,8 +650,8 @@ LP.agenda = (function () {
         if (m.time && !m.done && !m.status) out.push({ key: 'i|' + run.routine.id + '|' + m.item.id + '|' + d, title: m.item.title, time: m.time, from: run.routine.name });
       });
     });
-    R.leftovers(d).forEach(function (e) {
-      if (e.kind === 'item' && e.setTime) out.push({ key: 'l|' + e.routineId + '|' + e.itemId + '|' + e.runDate, title: e.title, time: e.setTime, from: e.label });
+    R.leftovers(d, { all: true, decided: true }).forEach(function (e) {   // mục đã quyết làm hôm nay: báo theo giờ đã đặt hoặc giờ gốc
+      if (e.time) out.push({ key: 'l|' + e.routineId + '|' + e.itemId + '|' + e.runDate, title: e.title, time: e.time, from: e.label });
     });
     T.tasksFor(d).forEach(function (x) {
       if (x.time && !x.done) out.push({ key: 't|' + x.task.id + '|' + (x.step ? x.step.id : ''), title: x.title, time: x.time, from: 'Việc' });
@@ -681,7 +681,7 @@ LP.agenda = (function () {
     if (sub === 'soat') return LP.soat.mount(el, params);
     var d = params.date && D.isValid(params.date) ? params.date : D.today();
     st = { el: el, date: d, mode: lsGet(MODE_KEY, 'checklist') === 'overview' ? 'overview' : 'checklist', order: lsGet(ORDER_KEY, 'asc') === 'desc' ? 'desc' : 'asc',
-      snapOrder: [], snapMap: {}, stepOf: {}, open: {}, dirty: false, lastNow: '' };
+      snapOrder: [], snapMap: {}, stepOf: {}, prevSt: {}, open: {}, dirty: false, lastNow: '' };
     el.addEventListener('click', onClick);
     LP.store.on('change', schedule);
     render();

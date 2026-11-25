@@ -273,27 +273,90 @@ module.exports = async function (h) {
     A.strictEqual(await p2.locator('.ag-pending').count(), 0, 'hết mục mà dòng vẫn hiện');
   });
 
-  await h.test('Mục đã quyết vẫn ở luồng hôm nay các ngày sau cho tới khi tick/bỏ qua; mục sót sang dòng mảnh', async () => {
+  await h.test('Mục đã quyết chỉ có hiệu lực tới hết ngày làm việc kế tiếp; quá hạn mà chưa tick thì thành mục sót; bỏ qua; đặt giờ chỉ đúng ngày', async () => {
     const page = await h.open({ query: q('2026-11-27', '11:05'), hash: '#/agenda' });
+    const src = d => page.evaluate(dd => LP.logic.routines.leftovers(dd, { all: true }).filter(e => e.title === 'Dọn bàn học' && e.runDate === '2026-11-24').map(e => e.source), d);
+    // Mục carried từ 24/11 (quyết làm 25/11): hết hạn từ 26/11
+    A.deepStrictEqual(await src('2026-11-25'), ['carried']);
+    A.deepStrictEqual(await src('2026-11-26'), ['missed']);
+    A.strictEqual(await L(page, 'Dọn bàn học', '2026-11-24').count(), 0, 'mục quá hạn vẫn ở luồng hôm nay');
+    A.ok(await page.evaluate(() => LP.logic.routines.leftovers('2026-11-27', { all: true, pending: true }).some(e => e.title === 'Dọn bàn học' && e.runDate === '2026-11-24')), 'phải thành mục sót chưa quyết');
+    // Quyết lại ("Đưa vào hôm nay"): hiệu lực 27/11 và 28/11, sang 29/11 thì thành sót
+    await page.evaluate(() => LP.logic.routines.check('r-toi', 'ri-r-toi-2', '2026-11-24', 'carried', { note: 'dua:2026-11-27' }));
+    await wait(page);
     const row = L(page, 'Dọn bàn học', '2026-11-24');
-    A.strictEqual(await row.count(), 1);
     A.ok((await row.innerText()).includes('Tồn từ 24/11'));
-    A.strictEqual(await L(page, 'Cop lại lần cuối', '2026-11-24').count(), 0, 'mục +1 không quyết phải thành mục sót');
-    A.ok(await page.evaluate(() => LP.logic.routines.leftovers('2026-11-27', { all: true, pending: true }).some(e => e.title === 'Cop lại lần cuối' && e.runDate === '2026-11-24')));
+    A.deepStrictEqual([await src('2026-11-28'), await src('2026-11-29')], [['carried'], ['missed']]);
+    // Bỏ qua mục đã quyết: biến khỏi luồng
     await row.locator('[data-act="skip-left"]').click();
     await wait(page);
     A.strictEqual(await L(page, 'Dọn bàn học', '2026-11-24').count(), 0);
     A.strictEqual((await chk(page, 'r-toi', 'ri-r-toi-2', '2026-11-24')).split('|')[0], 'skipped');
+    // Đặt giờ chỉ có hiệu lực đúng ngày: hôm sau mục vẫn đã quyết nhưng về giờ gốc
     await page.evaluate(() => LP.logic.routines.check('r-chiaso', 'ri-r-chiaso-4', '2026-11-24', 'carried', { set_time: '10:30', note: 'xep-gio:2026-11-27' }));
     await wait(page);
     A.ok((await L(page, 'Cop lại lần cuối', '2026-11-24').innerText()).includes('10:30'));
+    A.strictEqual(await page.evaluate(() => LP.logic.routines.leftovers('2026-11-28', { all: true, decided: true }).filter(e => e.title === 'Cop lại lần cuối' && e.runDate === '2026-11-24').map(e => e.setTime + '|' + e.time).join()), '|08:30');
+    A.strictEqual(await page.evaluate(() => LP.logic.routines.leftovers('2026-11-29', { all: true, pending: true }).filter(e => e.title === 'Cop lại lần cuối' && e.runDate === '2026-11-24').length), 1, 'quá hạn thì thành sót');
+    h.noErrors(page);
+  });
+
+  await h.test('Mục đã quyết đã tick vẫn giữ trong luồng và vòng hoàn thành sau khi tải lại trang', async () => {
+    const page = await h.open({ hash: '#/agenda' });
+    await L(page, 'Cop lại lần cuối', '2026-11-24').locator('.tick').click();
+    await wait(page);
+    A.strictEqual(await ring(page), '2/11');
     await page.evaluate(() => LP.store.flush());
-    await page.goto(h.INDEX + '?' + q('2026-11-28', '11:05') + '#/agenda');
+    await page.reload();
     await page.waitForFunction(() => window.LP && LP.ready === true);
     await wait(page);
-    const nx = await page.evaluate(() => LP.logic.routines.leftovers('2026-11-28', { all: true, decided: true }).filter(e => e.title === 'Cop lại lần cuối' && e.runDate === '2026-11-24').map(e => e.setTime + '|' + e.time));
-    A.deepStrictEqual(nx, ['|08:30'], 'đặt giờ chỉ có hiệu lực đúng ngày');
-    h.noErrors(page);
+    A.strictEqual(await ring(page), '2/11', 'tải lại làm đổi vòng');
+    const row = L(page, 'Cop lại lần cuối', '2026-11-24');
+    A.ok(await row.evaluate(e => e.classList.contains('is-done')), 'mục đã tick mất khỏi luồng');
+    await row.locator('.tick').click();                  // bỏ tick sau khi tải lại
+    await wait(page);
+    A.strictEqual(await ring(page), '1/11');
+    A.strictEqual(await chk(page, 'r-chiaso', 'ri-r-chiaso-4', '2026-11-24'), null, 'mục +1 bỏ tick phải về chưa xử lý');
+  });
+
+  await h.test('Mẫu khoảng ngày: mục +1 không nhân bản theo ngày; carried không trùng với mục của lượt hôm nay', async () => {
+    const page = await h.open({ query: q('2026-12-10', '11:05'), hash: '#/agenda' });
+    await page.evaluate(() => LP.store.upsert('RoutineItems', { id: 'ri-r-chotso-3', routine_id: 'r-chotso', sort_order: 3, title: 'Cop bảng chốt', time: '09:30', day_offset: 1, est_min: 10, note: '', link: '', valid_from: '2026-12-01', valid_to: '' }));
+    const r = await page.evaluate(() => {
+      const R = LP.logic.routines, n = d => R.leftovers(d, { all: true }).filter(e => e.itemId === 'ri-r-chotso-3').length;
+      const before = n('2026-12-10'), since = R.leftovers('2026-12-10', { all: true }).filter(e => e.itemId === 'ri-r-chotso-3').map(e => e.since).join();
+      R.check('r-chotso', 'ri-r-chotso-3', '2026-12-02', 'done');   // tick một lần trong khoảng
+      return { before, since, after: n('2026-12-10'), plus: R.plusOneFor('2026-12-04').filter(m => m.routine.id === 'r-chotso').length };
+    });
+    A.strictEqual(r.before, 1, 'mục +1 của mẫu khoảng ngày bị nhân bản: ' + r.before);
+    A.strictEqual(r.since, '2026-12-01', 'ngày gốc phải là đầu khoảng');
+    A.strictEqual(r.after, 0, 'đã tick trong khoảng mà vẫn tồn');
+    A.strictEqual(r.plus, 0, 'vẫn sinh mục +1 sau khi đã tick trong khoảng');
+    // carried trong cùng khoảng: chỉ là mục của lượt hôm nay, không có bản decided trùng
+    const page2 = await h.open({ query: q('2026-12-02', '11:05'), hash: '#/agenda' });
+    const c = await page2.evaluate(() => {
+      LP.logic.routines.check('r-chotso', 'ri-r-chotso-1', '2026-12-01', 'carried', { note: 'dua:2026-12-01' });
+      return LP.logic.routines.leftovers('2026-12-02', { all: true, decided: true }).filter(e => e.routineId === 'r-chotso').length;
+    });
+    A.strictEqual(c, 0, 'carried của mẫu khoảng ngày bị trùng với mục của lượt hôm nay');
+    await wait(page2);
+    A.strictEqual(await page2.locator('.ag-run', { hasText: 'Chốt số tháng' }).locator('.ag-item', { hasText: 'Đối soát số liệu tháng' }).count(), 1);
+  });
+
+  await h.test('Dòng mảnh và Soát luôn đếm theo hôm nay, kể cả khi xem ngày sau', async () => {
+    const page = await h.open({ hash: '#/agenda' });
+    const n = await pend(page);
+    await page.click('[data-act="next"]');
+    await wait(page);
+    A.ok((await tx(page, '.ag-pending')).includes(n + ' mục tồn chưa xử lý'), await tx(page, '.ag-pending'));
+    // Soát: Mang sang mai ghi 'dua:' ngày soát; Bỏ qua xóa giờ đã đặt
+    await page.goto(h.INDEX + '?' + q('2026-11-25', '11:05') + '#/agenda?soat=1');
+    await page.waitForFunction(() => window.LP && LP.ready === true);
+    await wait(page);
+    await page.locator('.ag-so-row', { hasText: 'Gửi file cho TBP' }).locator('[data-act="carry"]').click();
+    await wait(page);
+    A.strictEqual(await page.evaluate(() => LP.logic.routines.checkOf('r-chiaso', 'ri-r-chiaso-3', '2026-11-25').note), 'dua:2026-11-25');
+    A.deepStrictEqual(await page.evaluate(() => ['2026-11-26', '2026-11-27'].map(d => LP.logic.routines.leftovers(d, { all: true }).filter(e => e.title === 'Gửi file cho TBP' && e.runDate === '2026-11-25').map(e => e.source).join())), ['carried', 'missed']);
   });
 
   await h.test('leftovers(): khối mặc định 7 ngày, {all:true} lấy tất cả; việc tồn không bao giờ hết hạn', async () => {

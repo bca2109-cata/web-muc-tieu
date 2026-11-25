@@ -125,9 +125,9 @@ LP.soat = (function () {
     var t = LP.store.find('Tasks', r.taskId), sp = r.stepId ? LP.store.find('TaskSteps', r.stepId) : null; if (!t) return;
     if (sp) {
       LP.store.upsert('TaskSteps', Object.assign({}, sp, { do_date: to }));
-      LP.store.upsert('Tasks', Object.assign({}, LP.store.find('Tasks', t.id), { carried_from: st.date }));
+      LP.store.upsert('Tasks', Object.assign({}, LP.store.find('Tasks', t.id), { carried_from: (LP.store.find('Tasks', t.id).carried_from && LP.store.find('Tasks', t.id).carried_from < st.date) ? LP.store.find('Tasks', t.id).carried_from : st.date }));
     } else {
-      LP.store.upsert('Tasks', Object.assign({}, t, { do_date: to, carried_from: st.date }));
+      LP.store.upsert('Tasks', Object.assign({}, t, { do_date: to, carried_from: t.carried_from && t.carried_from < st.date ? t.carried_from : st.date }));
     }
   }
   function undoTask(r) {
@@ -169,7 +169,7 @@ LP.soat = (function () {
     },
     carry: function (b) {
       var r = rowOf(b.getAttribute('data-key')); if (!r) return;
-      if (r.kind === 'item') R.check(r.rid, r.iid, r.runDate, 'carried');
+      if (r.kind === 'item') R.check(r.rid, r.iid, r.runDate, 'carried', { note: 'dua:' + st.date });   // quyết làm ngày kế tiếp (hiệu lực tới hết ngày đó)
       else moveTask(r, nextDayFor(r));
     },
     skip: function (b) { st.why[b.getAttribute('data-key')] = true; render(); },
@@ -181,7 +181,7 @@ LP.soat = (function () {
       for (var i = 0; i < all.length; i++) if (all[i].getAttribute('data-why') === key) inp = all[i];
       why = inp ? inp.value.trim() : '';
       delete st.why[key];
-      R.check(r.rid, r.iid, r.runDate, 'skipped', { note: why });
+      R.check(r.rid, r.iid, r.runDate, 'skipped', { note: why, set_time: '' });
     },
     pick: function (b) { var r = rowOf(b.getAttribute('data-key')); if (r) pickDate(r); },
     undo: function (b) {
@@ -305,7 +305,7 @@ LP.ton = (function () {
       var v = sh.el.querySelector('#tt-time').value;
       if (v && !D.isTime(v)) { sh.el.querySelector('#tt-err').hidden = false; return; }
       var prev = R.checkOf(e.routineId, e.itemId, e.runDate), extra = { set_time: v || '' };
-      if (v && (!prev || !prev.note || /^xep-gio/.test(prev.note))) extra.note = 'xep-gio:' + D.today();
+      if (!prev || !prev.note || /^(?:xep-gio|dua)/.test(prev.note)) extra.note = (v ? 'xep-gio:' : 'dua:') + D.today();
       R.check(e.routineId, e.itemId, e.runDate, 'carried', extra);   // carried = đã quyết làm: vào luồng hôm nay, nhãn "Tồn từ"
       sh.close();
       undoToast('Đã đưa "' + e.title + '" vào hôm nay' + (v ? ' lúc ' + v : '') + '.', function () { restoreCheck(e, prev); });
