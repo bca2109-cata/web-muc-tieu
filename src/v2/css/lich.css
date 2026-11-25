@@ -1,1 +1,157 @@
-/* V2 · css của phần này. Phần sở hữu file (xem hợp đồng mục 3). Giai đoạn 0: để trống. */
+/* V2 · Phần 2: Lịch tuần và tháng. Chỉ dùng biến trong tokens.css. */
+.lich{display:block}
+.lich .flip{transform:scaleX(-1)}
+.lich-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-bottom:20px}
+.lich-seg{display:inline-flex;background:var(--plain-bg);border-radius:99px;padding:4px}
+.lich-seg button{min-height:40px;padding:4px 18px;border:0;border-radius:99px;background:transparent;font-weight:800;color:var(--muted)}
+.lich-seg button.on{background:var(--surface);color:var(--accent-deep);box-shadow:var(--shadow)}
+.lich-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lich-title{font-family:'Baloo 2',sans-serif;font-size:20px;margin:0 0 0 4px}
+.lich-filter{margin-left:auto}
+.lich-field{display:flex;flex-direction:column;gap:6px;font-weight:700}
+.lich-field input{min-height:44px;border:2px solid var(--line);border-radius:14px;padding:6px 12px;background:var(--surface);color:var(--text)}
+.lich-menu{display:flex;flex-direction:column;gap:8px}
+
+/* Tuần */
+.lweek{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;align-items:start}
+.lday{background:var(--surface);border-radius:22px;padding:10px;box-shadow:var(--shadow);min-width:0;border:2px solid transparent;display:flex;flex-direction:column;gap:8px}
+.lday.is-today{border-color:var(--accent)}
+.lday.is-off{background:var(--plain-bg)}
+.lday.is-past{opacity:.92}
+.lday.drop-ok{border-color:var(--ok-bar);background:var(--accent-soft)}
+.lday.drop-no{border-color:var(--warn-bar);cursor:not-allowed}
+.lday-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.lday-dow{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px}
+.lday-fixed{border:0;background:var(--plain-bg);border-radius:12px;padding:6px 10px;min-height:36px;text-align:left;font-size:13px;font-weight:700;color:var(--muted)}
+.lday.is-off .lday-fixed{background:var(--surface)}
+.lday-fixed .miss{color:var(--warn);font-weight:800}
+.lday-fixed .full{color:var(--ok);font-weight:800;display:inline-flex;align-items:center;gap:2px}
+.qbar{font-size:12px;font-weight:700;color:var(--muted)}
+.qbar-top{display:flex;justify-content:space-between;gap:6px}
+.qbar-track{position:relative;height:14px;border-radius:7px;background:var(--plain-bg);overflow:hidden}
+.lday.is-off .qbar-track{background:var(--surface)}
+.qbar-track>i{position:absolute;left:0;top:0;bottom:0;background:var(--ok-bar);border-radius:7px}
+.qbar.over .qbar-track>i:first-child{background:var(--warn-bar)}
+.qbar-track>i.stripe{background:repeating-linear-gradient(45deg,var(--pr-bar) 0 4px,transparent 4px 8px)}
+.qbar-track>u{position:absolute;top:0;bottom:0;width:2px;background:var(--text);opacity:.5;text-decoration:none}
+.ldue{color:var(--q1);font-size:13px;font-weight:800;padding:0 4px;overflow-wrap:anywhere}
+.lday-cards{display:flex;flex-direction:column;gap:8px;min-height:24px}
+.lday-empty{margin:0;font-size:13px}
+.lcard{background:var(--surface);border:2px solid var(--line);border-left:6px solid var(--work);border-radius:14px;padding:6px 4px 6px 8px;cursor:grab;min-width:0}
+.lcard.g-work{border-left-color:var(--work)}
+.lcard.g-study{border-left-color:var(--study)}
+.lcard.g-health{border-left-color:var(--health)}
+.lcard.dim{opacity:.35}
+.lcard.is-done{opacity:.6}
+.lcard.is-done .lcard-title{text-decoration:line-through}
+.lcard.dragging{opacity:.4}
+.lcard-top{display:flex;gap:4px;align-items:flex-start;justify-content:space-between}
+.lcard-title{font-weight:800;font-size:13px;line-height:1.3;overflow-wrap:anywhere}
+.lcard-more{flex:none;width:28px;height:28px;margin:-2px 0 0 0;border:0;border-radius:99px;background:transparent;color:var(--muted);display:grid;place-items:center}
+.lcard-more:hover{background:var(--plain-bg)}
+.lcard-sub{font-size:12px;overflow-wrap:anywhere}
+.lcard-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.lcard-meta .hearts .icon{width:14px;height:14px}
+.lcard-who{overflow-wrap:anywhere}
+.lday-un .lday-cards{flex-direction:row;flex-wrap:wrap}
+.lday-un .lcard{flex:1 1 220px;max-width:320px}
+
+@media (max-width:767px){
+  .lweek{grid-template-columns:minmax(0,1fr)}
+  .lcard{cursor:default}
+  .lich-filter{margin-left:0}
+}
+
+/* Tuần: lưới giờ kiểu Outlook */
+.lich-field+.lich-field{margin-top:10px}
+.lgrid{display:grid;grid-template-columns:48px repeat(7,minmax(0,1fr));column-gap:4px;background:var(--surface);border-radius:22px;padding:10px 10px 12px;box-shadow:var(--shadow)}
+.lhead{padding:4px 4px 8px;display:flex;flex-direction:column;gap:6px;min-width:0;border-bottom:2px solid var(--line)}
+.lhead.is-today{border-bottom-color:var(--accent)}
+.lhead.is-off{background:var(--plain-bg);border-radius:12px 12px 0 0}
+.lg-ad-label{font-size:11px;font-weight:800;color:var(--muted);padding-top:6px;text-align:right}
+.lallday{display:flex;flex-direction:column;gap:3px;padding:4px 2px;min-height:34px;min-width:0;border-bottom:2px solid var(--line);border-radius:6px}
+.lallday.is-off{background:var(--plain-bg)}
+.lallday.drop-ok,.lcol.drop-ok,.lhead.drop-ok{background:var(--accent-soft)}
+.lallday.drop-no,.lcol.drop-no,.lhead.drop-no{background:var(--q1-bg);cursor:not-allowed}
+.lgut{position:relative;color:var(--muted);font-size:11px;font-weight:800}
+.lgut span{position:absolute;right:4px;transform:translateY(-7px)}
+.lcol{position:relative;min-width:0;border-radius:6px;background-image:linear-gradient(to bottom,var(--line) 1px,transparent 1px),linear-gradient(to bottom,var(--plain-bg) 1px,transparent 1px);background-size:100% calc(var(--row) * 2),100% var(--row)}
+.lcol.is-off{background-color:var(--plain-bg)}
+.lcol.is-today{background-color:color-mix(in srgb,var(--accent-soft) 35%,transparent)}
+.lblk{position:absolute;overflow:hidden;box-sizing:border-box;padding:0 4px;display:flex;align-items:center;font-size:13px;font-weight:700;line-height:1.25;white-space:nowrap;text-overflow:ellipsis;color:var(--text);cursor:grab;min-width:0}
+.lblk.fixed{cursor:pointer}
+.lblk.lstrip{position:static;height:auto;min-height:22px;white-space:normal;overflow-wrap:anywhere}
+.lblk:hover{text-decoration:underline}
+.lblk.dim{opacity:.35}
+.lblk.is-done{opacity:.6;text-decoration:line-through}
+.lblk.dragging{opacity:.4}
+.lblk:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.lnow{position:absolute;left:0;right:0;height:2px;background:var(--accent);z-index:3;pointer-events:none}
+.lnow i{position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.lslot{position:absolute;left:0;right:0;height:var(--row);background:var(--accent-soft);border:2px dashed var(--accent);border-radius:6px;z-index:2;pointer-events:none}
+.lslot::after{content:attr(data-time);position:absolute;right:4px;top:2px;font-size:11px;font-weight:800;color:var(--accent-deep)}
+.lgrid+.lday-un{margin-top:12px}
+.lgrid .lday-head{gap:4px}
+@media (max-width:1099px){.lgrid .lday-dow{font-size:14px}.lgrid .pill{display:none}}
+
+/* Tháng */
+.lmonth{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.mhead{text-align:center;font-weight:800;color:var(--muted);font-size:13px;padding:2px 0}
+.mcell{display:flex;flex-direction:column;gap:2px;min-height:96px;padding:6px;border:2px solid transparent;border-radius:14px;background:var(--surface);box-shadow:var(--shadow);text-align:left;min-width:0;color:var(--text)}
+.mcell:hover{border-color:var(--accent-soft)}
+.mcell.is-today{border-color:var(--accent)}
+.mcell.is-off{background:var(--plain-bg)}
+.mcell.is-other{opacity:.5}
+.mtop{display:flex;justify-content:space-between;align-items:center;gap:2px}
+.mmark{display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;min-width:20px}
+.mmark.du{color:var(--ok)}
+.mmark.sot{color:var(--warn);font-size:15px}
+.mmark.nghi{color:var(--muted);font-size:11px}
+.mmark .icon{width:16px;height:16px;stroke-width:3}
+.mdots{display:flex;flex-wrap:wrap;gap:3px;align-items:center;min-height:10px}
+.mdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--q1-bar)}
+.mmore{font-size:11px;font-weight:800;color:var(--q1)}
+.mcount{font-size:11px;font-weight:700;color:var(--muted)}
+.mbars{display:flex;flex-direction:column;gap:2px;margin-top:auto}
+.mbar{display:block;height:14px;background:var(--study-bg);color:var(--study);font-size:10px;font-weight:800;line-height:14px;white-space:nowrap;overflow:hidden;margin:0 -6px}
+.mbar.s{margin-left:0;border-radius:7px 0 0 7px}
+.mbar.e{margin-right:0;border-radius:0 7px 7px 0}
+.mbar.s.e{border-radius:7px}
+.lmonth-note{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;margin-top:12px}
+@media (max-width:767px){
+  .lmonth{gap:3px}
+  .mcell{min-height:68px;padding:4px;border-radius:10px}
+  .mcount,.mbar span{display:none}
+  .mbar{height:6px}
+}
+
+/* Lịch tuần: làm lại cho thoáng và dễ đọc (chỉ chữ trong lưới, phần đầu cột gọn hơn) */
+.lgrid{--gl:var(--line);border-radius:26px;padding:16px 16px 18px;column-gap:6px}
+.lhead{align-items:center;text-align:center;gap:4px;padding:2px 2px 10px;border-bottom:0}
+.lhead.is-off{background:transparent}
+.lgrid .lday-head{flex-direction:column;gap:2px}
+.lgrid .lday-dow{font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.lday-num{display:grid;place-items:center;min-width:38px;height:38px;padding:0 6px;border-radius:99px;font-family:var(--display);font-size:20px;font-weight:800}
+.lhead.is-today .lday-dow{color:var(--accent-deep)}
+.lhead.is-today .lday-num{background:var(--accent);color:var(--accent-ink);box-shadow:0 3px 0 var(--accent-deep)}
+.lgrid .lday-fixed{background:transparent;min-height:0;padding:0;text-align:center;font-size:12px;border-radius:0}
+.lgrid .lday-fixed .miss{display:inline-block;padding:0 8px;border-radius:99px;background:var(--q1-bg)}
+.lgrid .qbar{width:100%}
+.lgrid .qbar-track{height:6px;border-radius:3px}
+.lgrid .qbar-track>i{border-radius:3px}
+.lgrid .qbar-top{font-size:11px}
+.lg-ad-label{align-self:center;padding:0;font-family:var(--display);font-size:12px}
+.lallday{border-bottom:0;border-top:1px dashed var(--gl);padding:8px 2px;min-height:44px;border-radius:0}
+.lallday.is-today{background:color-mix(in srgb,var(--accent-soft) 35%,transparent)}
+.lgut{margin-top:8px}
+.lgut span{font-size:11px;font-weight:700;opacity:.8}
+.lcol{margin-top:8px;border-radius:0;background-image:linear-gradient(to bottom,var(--gl) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--gl) 40%,transparent) 1px,transparent 1px);border-left:1px solid color-mix(in srgb,var(--gl) 60%,transparent)}
+.lcol.is-today{border-left-color:var(--accent-soft);border-right:1px solid var(--accent-soft)}
+.lcol.is-off{background-color:color-mix(in srgb,var(--plain-bg) 60%,transparent)}
+.lcol.is-past .lblk{opacity:.85}
+.lblk{padding:0 8px;font-size:13px;font-weight:800}
+.lblk.fixed{font-weight:600;color:var(--muted)}
+.lblk.is-done{opacity:.5}
+.ldue{padding:0 8px;font-size:12px}
+.lnow{background:var(--accent);height:2px;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.lnow i{left:-5px;top:-5px;width:12px;height:12px}
