@@ -176,7 +176,7 @@ LP.lich = (function () {
     function put(e) {
       var s = D.timeToMin(e.time);
       if (s == null || s < T0 || s >= T1) { allday.push(e); return; }
-      e.start = s; e.end = Math.min(T1, s + Math.max(STEP, e.dur)); timed.push(e);
+      e.start = s; e.end = s + STEP; timed.push(e);
     }
     LP.logic.routines.itemsFor(d).forEach(function (m) {
       put({ kind: 'fix', m: m, time: m.time, dur: num(m.item.est_min) || STEP });
@@ -185,15 +185,8 @@ LP.lich = (function () {
     return { timed: layout(timed), allday: allday };
   }
 
-  function blockInner(e) {
-    if (e.kind === 'fix') {
-      var m = e.m;
-      return '<span class="lblk-t">' + esc(m.item.title) + '</span><span class="lblk-s">' + esc(m.time) + (m.plus1 ? ' · +1' : '') + (m.routine ? ' · ' + esc(m.routine.name) : '') + '</span>';
-    }
-    var t = e.x.task, tm = e.x.time ? e.x.time + (e.start != null ? '–' + D.minToTime(e.end) : '') : '';
-    return '<span class="lblk-t">' + esc(e.x.title) + '</span><span class="lblk-s">' + tm + (e.x.duration ? ' · ' + D.fmtMin(e.x.duration) : '') + '</span>' +
-      '<span class="lblk-m">' + UI.importance(num(t.importance) || 1) + UI.urgency(LP.logic.tasks.urgency(t, D.today())) + '</span>';
-  }
+  // Chỉ tên việc dạng chữ; giờ, thời lượng, mức quan trọng xem ở tooltip và menu
+  function blockInner(e) { return esc(e.kind === 'fix' ? e.m.item.title : e.x.title); }
   function blockHtml(e, pos) {
     var cls = 'lblk' + (pos && e.end - e.start <= STEP ? ' short' : ''), attr = '';
     if (e.kind === 'fix') {
@@ -204,7 +197,7 @@ LP.lich = (function () {
       cls += ' g-' + groupOf(t) + (e.x.done ? ' is-done' : '') + (st.onlyImp && imp < 2 ? ' dim' : '');
       attr = (e.x.done ? '' : ' draggable="true"') + ' tabindex="0" data-task="' + esc(t.id) + '" data-step="' + (e.x.step ? esc(e.x.step.id) : '') + '" title="' + esc(e.x.title) + '"';
     }
-    return '<div class="' + cls + (pos ? '' : ' chip') + '"' + attr + (pos ? ' style="' + pos + '"' : '') + '>' + blockInner(e) + '</div>';
+    return '<div class="' + cls + (pos ? '' : ' lstrip') + '"' + attr + (pos ? ' style="' + pos + '"' : '') + '>' + blockInner(e) + '</div>';
   }
 
   function headHtml(d) {
@@ -225,14 +218,14 @@ LP.lich = (function () {
     for (var m = T0; m < T1; m += 60) gut += '<span style="top:' + yOf(m) + 'px">' + D.minToTime(m) + '</span>';
     h += '<div class="lgrid" style="--row:' + ROW + 'px"><div class="lg-corner"></div>' + days.map(headHtml).join('');
     h += '<div class="lg-ad-label">Cả ngày</div>' + days.map(function (d, i) {
-      var dues = dueMarks(d).map(function (t) { return '<div class="ldue">' + UI.icon('flag', 'ic18') + '<span>' + esc(dueText(t)) + '</span></div>'; }).join('');
+      var dues = dueMarks(d).map(function (t) { return '<div class="ldue">' + esc(dueText(t)) + '</div>'; }).join('');
       return '<div class="lallday' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + '" data-date="' + d + '">' + dues + per[i].allday.map(function (e) { return blockHtml(e, ''); }).join('') + '</div>';
     }).join('');
     h += '<div class="lgut" style="height:' + yOf(T1) + 'px">' + gut + '</div>';
     h += days.map(function (d, i) {
       var blocks = per[i].timed.map(function (e) {
         var w = 100 / e.lanes;
-        return blockHtml(e, 'top:' + yOf(e.start) + 'px;height:' + Math.max(ROW - 2, yOf(e.end) - yOf(e.start) - 2) + 'px;left:calc(' + (e.lane * w) + '% + 1px);width:calc(' + w + '% - 3px)');
+        return blockHtml(e, 'top:' + yOf(e.start) + 'px;height:' + ROW + 'px;left:calc(' + (e.lane * w) + '% + 1px);width:calc(' + w + '% - 3px)');
       }).join('');
       var now = d === today && nowMin >= T0 && nowMin < T1 ? '<div class="lnow" style="top:' + yOf(nowMin) + 'px" title="Bây giờ ' + D.now() + '"><i></i></div>' : '';
       return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + now + '</div>';

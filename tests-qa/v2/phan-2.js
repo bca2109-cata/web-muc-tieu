@@ -93,10 +93,9 @@ module.exports = async function (h) {
     const box = async sel => page.locator(sel).evaluate(e => { const r = e.getBoundingClientRect(), c = e.parentElement.getBoundingClientRect(); return { top: r.top - c.top, h: r.height, left: r.left - c.left, w: r.width, cw: c.width }; });
     const a = await box('.lblk[data-task="t-baohiem"]');
     A.ok(Math.abs(a.top - (3 * 60 / 30 * 36)) <= 2, '09:00 phải ở y=216, có ' + a.top);
-    A.ok(Math.abs(a.h - (90 / 30 * 36)) <= 4, 'cao theo 90 phút, có ' + a.h);
     const k = await box('.lblk[data-task="t-kham"]'), b = await box('.lblk[data-step="st-t-bcnguon-1"]');
     A.ok(Math.abs(k.top - b.top) <= 1, 'cùng giờ bắt đầu');
-    A.ok(k.w < k.cw * 0.6 && b.w < b.cw * 0.6, 'mỗi khối chiếm nửa cột');
+    A.ok(k.w < k.cw * 0.6 && b.w < b.cw * 0.6, 'mỗi dòng chiếm nửa cột');
     A.ok(Math.abs(k.left - b.left) > k.cw * 0.3, 'hai khối phải đứng cạnh nhau');
     h.noErrors(page);
   });
@@ -133,6 +132,29 @@ module.exports = async function (h) {
     A.strictEqual(await col(page, '2026-11-25').locator('.lnow').count(), 1);
     const top = await page.locator('.lnow').evaluate(e => e.offsetTop);
     A.ok(Math.abs(top - ((11 * 60 + 5 - 360) / 30 * 36)) <= 2, '11:05 phải ở y=' + ((11 * 60 + 5 - 360) / 30 * 36) + ', có ' + top);
+  });
+
+  await h.test('G6. Mục chỉ còn chữ: không nền, không viền, không trái tim/đồng hồ; hạn chót chữ đỏ; xong gạch ngang', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    await setTimes(page, [['t-kham', '2026-11-25', '14:00', 30]]);
+    await page.evaluate(() => LP.logic.tasks.setDone(LP.store.find('Tasks', 't-kham'), true));
+    const r = await page.evaluate(() => {
+      const bad = [];
+      document.querySelectorAll('.lgrid .lblk').forEach(e => {
+        const c = getComputedStyle(e);
+        if (c.backgroundColor !== 'rgba(0, 0, 0, 0)' || parseFloat(c.borderLeftWidth) > 0 || e.querySelector('.icon,.hearts,.urg')) bad.push(e.textContent.slice(0, 20));
+      });
+      const due = document.querySelector('.ldue'), dc = getComputedStyle(due);
+      const done = getComputedStyle(document.querySelector('.lblk[data-task="t-kham"]'));
+      return { bad, dueBg: dc.backgroundColor, dueColor: dc.color, line: done.textDecorationLine, due: due.textContent };
+    });
+    A.deepStrictEqual(r.bad, [], 'còn ô trang trí: ' + r.bad);
+    A.strictEqual(r.dueBg, 'rgba(0, 0, 0, 0)'); A.ok(r.dueColor !== 'rgb(0, 0, 0)' && /^rgb\(1[5-9]\d|^rgb\(2/.test(r.dueColor), 'hạn chót phải chữ đỏ: ' + r.dueColor);
+    A.strictEqual(r.line, 'line-through');
+    // Vẫn bấm mở menu được trên dòng chữ
+    await page.evaluate(() => LP.logic.tasks.setDone(LP.store.find('Tasks', 't-kham'), false));
+    await page.locator('.lblk[data-task="t-kham"]').click();
+    A.ok(await page.locator('[data-pick]').count() === 1, 'không mở menu');
   });
 
   await h.test('G5. Lưới giờ 06:00–22:00 (32 hàng 30 phút)', async () => {
