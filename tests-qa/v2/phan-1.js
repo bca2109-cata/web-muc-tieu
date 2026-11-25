@@ -15,6 +15,8 @@ module.exports = async function (h) {
   // Mục đã quyết (nhãn "Tồn từ") của một ngày gốc cụ thể trong luồng hôm nay
   const L = (page, title, date, scope) => page.locator((scope || '.ag-runs') + ' .ag-item', { has: page.locator('.tick[data-key$="|' + date + '"]'), hasText: title });
   const pend = page => page.evaluate(() => LP.logic.routines.leftovers('2026-11-25', { all: true, pending: true }).length);
+  // Tồn tổng: mỗi tuần mặc định thu gọn, mở hết để thao tác từng mục
+  const openAll = async page => { for (let i = 0; i < 300; i++) { const b = page.locator('.ag-tt-wtoggle[aria-expanded="false"]').first(); if (!(await b.count())) break; await b.click(); } await page.waitForTimeout(80); };
   const ttRow = (page, re) => page.locator('.ag-tt-row', { hasText: re });
   const chk = (page, rid, iid, d) => page.evaluate(([r, i, dd]) => { const c = LP.logic.routines.checkOf(r, i, dd); return c && [c.status, c.set_time].join('|'); }, [rid, iid, d]);
 
@@ -72,6 +74,7 @@ module.exports = async function (h) {
     const n0 = await pend(page);
     await page.click('.ag-pending [data-act="ton"]');
     await wait(page);
+    await openAll(page);
     await ttRow(page, /Gửi báo cáo ngày[\s\S]*tồn từ 24\/11/).locator('[data-act="t-today"]').click();
     await page.fill('#tt-time', '11:30');
     await page.click('#tt-ok');
@@ -376,6 +379,7 @@ module.exports = async function (h) {
   await h.test('Tồn tổng: 3 số, danh sách cũ nhất trước gom theo tuần, không thêm tab', async () => {
     const page = await h.open({ hash: '#/agenda?ton=1' });
     await wait(page);
+    await openAll(page);
     const info = await page.evaluate(() => {
       const L = LP.logic.routines.leftovers('2026-11-25', { all: true, pending: true });
       const from = e => e.kind === 'item' ? (e.since || e.runDate) : e.fromDate, cnt = {};
@@ -389,32 +393,34 @@ module.exports = async function (h) {
     A.ok(stats[1].includes('Mục cũ nhất') && stats[1].includes(info.oldest + ' ngày'), stats[1]);
     A.ok(stats[2].includes('Khối tồn nhiều nhất') && stats[2].includes(info.top) && stats[2].includes(String(info.topN)), stats[2]);
     A.strictEqual(await page.locator('.ag-tt-row').count(), info.n);
-    const heads = await page.locator('.ag-tt section h2').allInnerTexts();
-    A.ok(heads.length >= 3 && heads.every(x => /^Tuần \d\d\/\d\d – \d\d\/\d\d$/.test(x.trim())), heads.join('|'));
-    const ages = await page.locator('.ag-tt-row .ag-sub').allInnerTexts().then(a => a.map(x => +/(\d+) ngày trước/.exec(x)[1]));
+    const heads = await page.locator('.ag-tt-week h2').allInnerTexts();
+    A.ok(heads.length >= 3 && heads.every(x => /^Tuần \d\d\/\d\d – \d\d\/\d\d · \d+ mục$/.test(x.trim())), heads.join('|'));
+    A.strictEqual(heads.reduce((n, x) => n + +/· (\d+) mục/.exec(x)[1], 0), info.n, 'tổng các tuần phải bằng tổng mục');
+    const ages = await page.locator('.ag-tt-row .ag-sub').allInnerTexts().then(a => a.map(x => +/(\d+) ngày\s*$/.exec(x)[1]));
     A.deepStrictEqual(ages, ages.slice().sort((a, b) => b - a), 'không xếp cũ nhất trước');
     A.strictEqual(await page.locator('.tabbar .tab').count(), 5);
   });
 
   await h.test('Tồn tổng: lọc theo loại, khối, khoảng ngày', async () => {
     const page = await h.open({ hash: '#/agenda?ton=1' });
+    await openAll(page);
     const total = await page.locator('.ag-tt-row').count();
     await page.click('[data-act="filter"][data-f="type"][data-v="task"]');
-    await wait(page);
+    await openAll(page);
     const tasks = await page.locator('.ag-tt-row').allInnerTexts();
     A.ok(tasks.length === 1 && tasks[0].includes('Trả lời email đối tác') && tasks[0].includes('Hủy việc'), tasks.join('|'));
     await page.click('[data-act="filter"][data-f="type"][data-v="item"]');
-    await wait(page);
+    await openAll(page);
     A.strictEqual(await page.locator('.ag-tt-row').count(), total - 1);
     await page.click('[data-act="filter"][data-f="type"][data-v=""]');
     await page.selectOption('#tt-block', 'Báo cáo cuối ngày');
-    await wait(page);
+    await openAll(page);
     const blk = await page.locator('.ag-tt-row .ag-sub').allInnerTexts();
-    A.ok(blk.length > 0 && blk.every(x => x.startsWith('Báo cáo cuối ngày')), blk.slice(0, 2).join('|'));
+    A.ok(blk.length > 0 && blk.every(x => x.replace(/^\s*·\s*/, '').startsWith('Báo cáo cuối ngày')), blk.slice(0, 2).join('|'));
     await page.selectOption('#tt-block', '');
     await page.fill('[data-f="from"]', '2026-11-20');
     await page.fill('[data-f="to"]', '2026-11-24');
-    await wait(page);
+    await openAll(page);
     const days = await page.locator('.ag-tt-row .ag-sub').allInnerTexts().then(a => a.map(x => /tồn từ (\d\d\/\d\d)/.exec(x)[1]));
     A.ok(days.length > 0 && days.every(d => d >= '20/11' && d <= '24/11'), days.join(','));
     h.noErrors(page);
@@ -422,6 +428,7 @@ module.exports = async function (h) {
 
   await h.test('Tồn tổng: Đã làm / Bỏ qua / Đưa vào hôm nay cho từng mục, có Hoàn tác; mục đưa vào hôm nay vào luồng đúng khối', async () => {
     const page = await h.open({ hash: '#/agenda?ton=1' });
+    await openAll(page);
     await ttRow(page, /Lấy số liệu từ LMS[\s\S]*tồn từ 24\/11/).locator('[data-act="t-done"]').click();
     await wait(page);
     A.strictEqual((await chk(page, 'r-chiaso', 'ri-r-chiaso-1', '2026-11-24')).split('|')[0], 'done');
@@ -463,22 +470,80 @@ module.exports = async function (h) {
     h.noErrors(page);
   });
 
-  await h.test('Tồn tổng: chọn nhiều để Bỏ qua hàng loạt (có xác nhận và Hoàn tác)', async () => {
+  await h.test('Tồn tổng: chọn nhiều và chọn cả tuần để Bỏ qua hàng loạt (có xác nhận và Hoàn tác)', async () => {
     const page = await h.open({ hash: '#/agenda?ton=1' });
     A.ok(await page.locator('[data-act="bulk-skip"]').isDisabled());
-    const n0 = await page.locator('.ag-tt-row').count();
-    for (let i = 0; i < 3; i++) await page.locator('.ag-tt-row input[type="checkbox"]').nth(i).check();
-    A.ok((await tx(page, '.ag-tt-n')).includes('Đã chọn 3'));
+    // Chọn cả tuần ngay cả khi tuần đang thu gọn
+    const w0 = await page.locator('.ag-tt-week').first().locator('h2').innerText();
+    const n0 = +/· (\d+) mục/.exec(w0)[1];
+    await page.locator('.ag-tt-week').first().locator('[data-selweek]').check();
+    A.ok((await tx(page, '.ag-tt-n')).includes('Đã chọn ' + n0), await tx(page, '.ag-tt-n'));
+    A.strictEqual(await page.locator('.ag-tt-row').count(), 0, 'chọn tuần không được tự mở tuần');
+    const pend0 = await pend(page);
     await page.click('[data-act="bulk-skip"]');
     await page.locator('.modal [data-ans="1"]').click();
     await wait(page);
-    A.strictEqual(await page.locator('.ag-tt-row').count(), n0 - 3);
+    A.strictEqual(await pend(page), pend0 - n0, 'bỏ qua cả tuần');
     await page.locator('.toast [data-t="act"]').click();
     await wait(page);
-    A.strictEqual(await page.locator('.ag-tt-row').count(), n0, 'hoàn tác hàng loạt không khôi phục');
+    A.strictEqual(await pend(page), pend0, 'hoàn tác hàng loạt không khôi phục');
+    // Chọn lẻ từng mục sau khi mở tuần, và chọn tất cả đang lọc
+    await openAll(page);
+    for (let i = 0; i < 3; i++) await page.locator('.ag-tt-row input[type="checkbox"]').nth(i).check();
+    A.ok((await tx(page, '.ag-tt-n')).includes('Đã chọn 3'));
     await page.click('[data-act="filter"][data-f="type"][data-v="task"]');
+    await wait(page);
     await page.locator('[data-selall]').check();
-    A.ok((await tx(page, '.ag-tt-n')).includes('Đã chọn 1'));
+    A.ok(await page.locator('[data-selall]').isChecked() && +/Đã chọn (\d+)/.exec(await tx(page, '.ag-tt-n'))[1] >= 3, 'chọn tất cả đang lọc');
+  });
+
+  await h.test('Tồn tổng gọn: tuần thu gọn mặc định, bấm mới mở; mỗi mục một dòng, 3 nút ở cuối dòng; bộ lọc một hàng', async () => {
+    const page = await h.open({ hash: '#/agenda?ton=1' });
+    A.strictEqual(await page.locator('.ag-tt-row').count(), 0, 'tuần phải thu gọn mặc định');
+    const first = page.locator('.ag-tt-wtoggle').first();
+    A.strictEqual(await first.getAttribute('aria-expanded'), 'false');
+    const n = +/· (\d+) mục/.exec(await first.innerText())[1];
+    await first.click();
+    await wait(page);
+    A.strictEqual(await page.locator('.ag-tt-row').count(), n, 'mở tuần phải hiện đủ mục');
+    await page.locator('.ag-tt-wtoggle').first().click();
+    await wait(page);
+    A.strictEqual(await page.locator('.ag-tt-row').count(), 0, 'bấm lần nữa phải thu gọn');
+    await page.locator('.ag-tt-wtoggle').first().click();
+    await wait(page);
+    // Một dòng: tên · khối · tồn từ dd/mm · N ngày, các nút ở cuối dòng
+    const row = page.locator('.ag-tt-row').first();
+    const txt = (await row.locator('.ag-tt-line').innerText()).replace(/\s+/g, ' ');
+    A.ok(/^.+ · .+ · tồn từ \d\d\/\d\d · \d+ ngày$/.test(txt), txt);
+    const geo = await row.evaluate(e => { const r = e.getBoundingClientRect(), l = e.querySelector('.ag-tt-line').getBoundingClientRect(), b = e.querySelector('.ag-tt-btns').getBoundingClientRect(); return { h: r.height, lineY: l.top, btnY: b.top, btnX: b.left, lineX: l.left, rowR: r.right, btnR: b.right }; });
+    A.ok(geo.h <= 64, 'dòng cao ' + geo.h);
+    A.ok(Math.abs(geo.lineY - geo.btnY) < 20 && geo.btnX > geo.lineX + 150 && geo.rowR - geo.btnR < 12, 'nút không nằm cuối dòng: ' + JSON.stringify(geo));
+    A.deepStrictEqual(await row.locator('.ag-tt-btns .btn').allInnerTexts().then(a => a.map(x => x.trim())).then(a => [a[0], a[2]]), ['Đã làm', 'Đưa vào hôm nay']);
+    // Bộ lọc một hàng
+    const tops = await page.locator('.ag-tt-filters').evaluate(e => Array.from(e.querySelectorAll('.chips, #tt-block, [data-f="from"], [data-f="to"]')).map(x => Math.round(x.getBoundingClientRect().top)));
+    A.ok(Math.max.apply(null, tops) - Math.min.apply(null, tops) <= 8, 'bộ lọc nhiều hàng: ' + tops.join(','));
+    A.ok(await page.locator('.ag-tt-filters').evaluate(e => e.getBoundingClientRect().height) <= 70, 'bộ lọc cao');
+  });
+
+  await h.test('Không giới hạn 120 ngày: mục Daily sót bao lâu cũng vẫn tính tồn', async () => {
+    const page = await h.open({ hash: '#/agenda' });
+    const r = await page.evaluate(() => {
+      LP.store.upsert('Routines', { id: 'r-cu', name: 'Việc Daily cũ', group: 'cong_viec', repeat: 'weekday', weekdays: '1,2,3,4,5', month_from: '', month_to: '', done_before: '', importance: 1, doc_id: '', heading_id: '', active: 'TRUE', sort_order: 9, created_at: '2026-03-02 08:00' });
+      LP.store.upsert('RoutineItems', { id: 'ri-cu-1', routine_id: 'r-cu', sort_order: 1, title: 'Việc cũ', time: '09:00', day_offset: 0, est_min: 5, note: '', link: '', valid_from: '', valid_to: '' });
+      const L = LP.logic.routines.leftovers('2026-11-25', { all: true, pending: true }).filter(e => e.routineId === 'r-cu');
+      return { n: L.length, first: L.map(e => e.since).sort()[0] };
+    });
+    A.strictEqual(r.first, '2026-03-02', 'phải tra ngược tới ngày tạo mẫu: ' + r.first);
+    A.ok(r.n > 150, 'số mục sót: ' + r.n);
+    // Màn Tồn tổng: tuần cũ nhất đứng đầu, và dọn được bằng chọn cả tuần + Bỏ qua
+    await page.evaluate(() => LP.router.go('agenda', { ton: '1' }));
+    await wait(page);
+    A.strictEqual((await page.locator('.ag-tt-week h2').first().innerText()).split(' · ')[0], 'Tuần 02/03 – 08/03');
+    await page.locator('.ag-tt-week').first().locator('[data-selweek]').check();
+    await page.click('[data-act="bulk-skip"]');
+    await page.locator('.modal [data-ans="1"]').click();
+    await wait(page);
+    A.ok(await page.evaluate(() => LP.logic.routines.leftovers('2026-11-25', { all: true, pending: true }).filter(e => e.routineId === 'r-cu').length) < r.n, 'chưa dọn được');
   });
 
   await h.test('Số "mục tồn chưa xử lý" khớp giữa Agenda, Soát và Tồn tổng (kể cả sau khi đưa một mục vào hôm nay)', async () => {
@@ -493,6 +558,7 @@ module.exports = async function (h) {
     A.ok((await tx(page, '.ag-so-ton')).includes('Còn ' + n + ' mục'));
     await page.click('.ag-so-ton [data-act="ton"]');
     await wait(page);
+    await openAll(page);
     A.ok((await tx(page, '.ag-tt-stat')).includes(String(n)));
     A.strictEqual(await page.locator('.ag-tt-row').count(), n);
   });
@@ -505,13 +571,15 @@ module.exports = async function (h) {
     A.deepStrictEqual(r[0], ['ri-r-chotso-1@2026-12-01', 'ri-r-chotso-2@2026-12-01']);
     A.deepStrictEqual(r[1], r[0]);
     const page = await h.open({ query: q('2026-12-10', '11:05'), hash: '#/agenda?ton=1' });
+    await openAll(page);
     const row = await ttRow(page, /Đối soát số liệu tháng/).innerText();
-    A.ok(/tồn từ 01\/12/.test(row) && /9 ngày trước/.test(row), row.replace(/\s+/g, ' '));
+    A.ok(/tồn từ 01\/12/.test(row) && /9 ngày/.test(row), row.replace(/\s+/g, ' '));
   });
 
   /* ---- Ý (5): Hủy việc ---- */
   await h.test('Hủy việc: thoát khỏi tồn, Việc hôm nay, thống kê; Hoàn tác khôi phục đúng trạng thái cũ; việc đã xong không có nút Hủy', async () => {
     const page = await h.open({ hash: '#/agenda?ton=1' });
+    await openAll(page);
     await ttRow(page, /Trả lời email đối tác/).locator('[data-act="t-skip"]').click();
     await wait(page);
     const r = await page.evaluate(() => ({ st: LP.store.find('Tasks', 't-email').status,

@@ -337,14 +337,15 @@ LP.ton = (function () {
   function chip(label, f, v) { return '<button type="button" class="chip' + (st[f] === v ? ' is-on' : '') + '" data-act="filter" data-f="' + f + '" data-v="' + esc(v) + '" aria-pressed="' + (st[f] === v) + '">' + label + '</button>'; }
   function weekLabel(d) { var a = D.startOfWeek(d); return 'Tuần ' + D.fmt(a) + ' – ' + D.fmt(D.add(a, 6)); }
 
+  // Mỗi mục một dòng: tên · khối · tồn từ dd/mm · N ngày, 3 nút nhỏ ở cuối dòng
   function rowHtml(o) {
     var a = 'data-key="' + esc(o.key) + '"', isTask = o.kind === 'task';
-    var sub = [o.block, 'tồn từ ' + D.fmt(o.from), o.age + ' ngày trước'];
+    var sub = [o.block, 'tồn từ ' + D.fmt(o.from), o.age + ' ngày'];
     return '<li class="ag-tt-row"><label class="ag-tt-ck"><input type="checkbox" data-sel="' + esc(o.key) + '"' + (st.sel[o.key] ? ' checked' : '') + ' aria-label="Chọn: ' + esc(o.title) + '"></label>' +
-      '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div><div class="ag-sub">' + esc(sub.join(' · ')) + '</div>' +
-      '<div class="ag-so-btns"><button type="button" class="btn btn-soft" data-act="t-done" ' + a + '>' + icon('check', 'ic18') + 'Đã làm</button>' +
-      '<button type="button" class="btn btn-soft" data-act="t-skip" ' + a + '>' + (isTask ? 'Hủy việc' : 'Bỏ qua') + '</button>' +
-      '<button type="button" class="btn btn-soft" data-act="t-today" ' + a + '>' + icon('calendar', 'ic18') + 'Đưa vào hôm nay</button></div></div></li>';
+      '<div class="ag-tt-line"><span class="ag-title">' + esc(o.title) + '</span><span class="ag-sub"><span aria-hidden="true"> · </span>' + esc(sub.join(' · ')) + '</span></div>' +
+      '<div class="ag-tt-btns"><button type="button" class="btn btn-soft ag-tt-b" data-act="t-done" ' + a + '>Đã làm</button>' +
+      '<button type="button" class="btn btn-soft ag-tt-b" data-act="t-skip" ' + a + '>' + (isTask ? 'Hủy việc' : 'Bỏ qua') + '</button>' +
+      '<button type="button" class="btn btn-soft ag-tt-b" data-act="t-today" ' + a + '>Đưa vào hôm nay</button></div></li>';
   }
 
   function render() {
@@ -357,25 +358,33 @@ LP.ton = (function () {
     var nSel = Object.keys(st.sel).length, allSel = list.length > 0 && list.every(function (o) { return st.sel[o.key]; });
     var h = '<div class="ag-so ag-tt"><div class="ag-so-top"><button type="button" class="chip" data-act="back">' + icon('back', 'ic18') + 'Agenda</button><h1>Tồn tổng</h1></div>' +
       '<p class="muted">Tất cả mục chưa xử lý từ trước tới nay, cũ nhất trước.</p>' + statsHtml(all);
-    h += '<section class="card ag-tt-filters" aria-label="Bộ lọc"><div class="ag-tt-frow"><b>Loại</b><div class="chips">' + chip('Tất cả', 'type', '') + chip('Cố định', 'type', 'item') + chip('Việc', 'type', 'task') + '</div></div>' +
-      '<div class="ag-tt-frow"><label for="tt-block"><b>Khối</b></label><select class="select" id="tt-block" data-f="block"><option value="">Tất cả khối</option>' +
-      Object.keys(blocks).sort().map(function (b) { return '<option value="' + esc(b) + '"' + (st.block === b ? ' selected' : '') + '>' + esc(b) + '</option>'; }).join('') + '</select></div>' +
-      '<div class="ag-tt-frow"><b>Ngày gốc</b><div class="row2"><label class="field"><span>Từ ngày</span><input class="input" type="date" data-f="from" value="' + esc(st.from) + '"></label>' +
-      '<label class="field"><span>Đến ngày</span><input class="input" type="date" data-f="to" value="' + esc(st.to) + '"></label></div></div></section>';
+    // Bộ lọc gọn về một hàng: loại · khối · từ ngày · đến ngày
+    h += '<section class="card ag-tt-filters" aria-label="Bộ lọc"><div class="chips" role="group" aria-label="Loại">' + chip('Tất cả', 'type', '') + chip('Cố định', 'type', 'item') + chip('Việc', 'type', 'task') + '</div>' +
+      '<select class="select" id="tt-block" data-f="block" aria-label="Khối"><option value="">Tất cả khối</option>' +
+      Object.keys(blocks).sort().map(function (b) { return '<option value="' + esc(b) + '"' + (st.block === b ? ' selected' : '') + '>' + esc(b) + '</option>'; }).join('') + '</select>' +
+      '<label class="ag-tt-date">Từ <input class="input" type="date" data-f="from" value="' + esc(st.from) + '" aria-label="Từ ngày"></label>' +
+      '<label class="ag-tt-date">Đến <input class="input" type="date" data-f="to" value="' + esc(st.to) + '" aria-label="Đến ngày"></label></section>';
     if (list.length) {
       h += '<div class="card ag-tt-bulk"><label class="ag-tt-all"><input type="checkbox" data-selall' + (allSel ? ' checked' : '') + '> Chọn tất cả đang lọc (' + list.length + ')</label>' +
         '<span class="ag-tt-n">Đã chọn <b class="num">' + nSel + '</b></span>' +
         '<button type="button" class="btn btn-danger" data-act="bulk-skip"' + (nSel ? '' : ' disabled') + '>Bỏ qua đã chọn</button></div>';
       var groups = [], cur = null;
       list.forEach(function (o) { var w = D.startOfWeek(o.from); if (!cur || cur.w !== w) { cur = { w: w, rows: [] }; groups.push(cur); } cur.rows.push(o); });
+      // Mỗi tuần mặc định thu gọn thành một dòng "Tuần dd/mm – dd/mm · N mục"; bấm mới mở. Ô chọn cả tuần để bỏ qua nhanh.
       groups.forEach(function (g) {
-        h += '<section class="card" aria-label="' + esc(weekLabel(g.w)) + '"><div class="ag-sec-head"><h2>' + esc(weekLabel(g.w)) + '</h2><span class="num">' + g.rows.length + ' mục</span></div><ul class="ag-ul">' + g.rows.map(rowHtml).join('') + '</ul></section>';
+        var open = !!st.open[g.w], wl = weekLabel(g.w) + ' · ' + g.rows.length + ' mục';
+        var all = g.rows.every(function (o) { return st.sel[o.key]; }), some = g.rows.some(function (o) { return st.sel[o.key]; });
+        h += '<section class="card ag-tt-week" aria-label="' + esc(weekLabel(g.w)) + '"><div class="ag-tt-whead">' +
+          '<label class="ag-tt-ck"><input type="checkbox" data-selweek="' + esc(g.w) + '"' + (all ? ' checked' : '') + (some && !all ? ' data-partial' : '') + ' aria-label="Chọn cả ' + esc(weekLabel(g.w)) + '"></label>' +
+          '<button type="button" class="ag-tt-wtoggle" data-act="week" data-w="' + esc(g.w) + '" aria-expanded="' + open + '"><h2>' + esc(wl) + '</h2>' + icon(open ? 'up' : 'down', 'ic18') + '</button></div>' +
+          (open ? '<ul class="ag-ul">' + g.rows.map(rowHtml).join('') + '</ul>' : '') + '</section>';
       });
     } else {
       h += '<section class="card" style="text-align:center"><div class="ph-flower">' + LP.flowers.html('daisy', 48, 2) + '</div><h2>' + (all.length ? 'Không có mục nào khớp bộ lọc' : 'Hết mục tồn') + '</h2><p class="muted">' + (all.length ? 'Đổi hoặc bỏ bộ lọc để xem tiếp.' : 'Không còn gì chưa xử lý.') + '</p></section>';
     }
     h += '</div>';
     st.el.innerHTML = h;
+    Array.prototype.forEach.call(st.el.querySelectorAll('input[data-partial]'), function (i) { i.indeterminate = true; });
     window.scrollTo(0, y);
   }
   function schedule() {
@@ -387,6 +396,7 @@ LP.ton = (function () {
   var ACTIONS = {
     back: function () { LP.router.go('agenda', {}); },
     filter: function (b) { st[b.getAttribute('data-f')] = b.getAttribute('data-v'); render(); },
+    week: function (b) { var w = b.getAttribute('data-w'); st.open[w] = !st.open[w]; render(); },
     't-done': function (b) { var o = st.map[b.getAttribute('data-key')]; if (o) { var u = actDone(o); undoToast('Đã làm "' + o.title + '".', u); } },
     't-skip': function (b) { var o = st.map[b.getAttribute('data-key')]; if (o) { var u = actSkip(o); undoToast((o.kind === 'task' ? 'Đã hủy việc "' : 'Đã bỏ qua "') + o.title + '".', u); } },
     't-today': function (b) {
@@ -415,7 +425,11 @@ LP.ton = (function () {
     var t = ev.target;
     if (!st || !t) return;
     if (t.hasAttribute('data-sel')) { if (t.checked) st.sel[t.getAttribute('data-sel')] = true; else delete st.sel[t.getAttribute('data-sel')]; render(); }
-    else if (t.hasAttribute('data-selall')) {
+    else if (t.hasAttribute('data-selweek')) {
+      var w = t.getAttribute('data-selweek');
+      filtered(collect()).forEach(function (o) { if (D.startOfWeek(o.from) === w) { if (t.checked) st.sel[o.key] = true; else delete st.sel[o.key]; } });
+      render();
+    } else if (t.hasAttribute('data-selall')) {
       var list = filtered(collect());
       list.forEach(function (o) { if (t.checked) st.sel[o.key] = true; else delete st.sel[o.key]; });
       render();
@@ -423,7 +437,7 @@ LP.ton = (function () {
   }
 
   function mount(el) {
-    st = { el: el, type: '', block: '', from: '', to: '', sel: {}, map: {}, dirty: false };
+    st = { el: el, type: '', block: '', from: '', to: '', sel: {}, open: {}, map: {}, dirty: false };
     el.addEventListener('click', onClick);
     el.addEventListener('change', onChange);
     LP.store.on('change', schedule);

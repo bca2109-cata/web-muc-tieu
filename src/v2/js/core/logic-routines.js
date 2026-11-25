@@ -157,8 +157,8 @@ LP.logic.routines = (function () {
      - carried: hạng mục đã chọn "Mang sang mai" ở màn Soát
      - task: việc quá ngày làm mà chưa xong (xem logic-tasks)
      Khối "Từ hôm qua" chỉ lấy mục tồn trong `leftover_days` ngày lịch gần nhất (Settings, mặc định 7).
-     leftovers(d, { all: true }) lấy TẤT CẢ mục chưa xử lý từ trước tới nay (tra ngược tối đa ALL_DAYS = 120 ngày, đúng
-     khoảng dữ liệu LP.store tải, và không sớm hơn ngày tạo mẫu). Mục tồn giữ cho tới khi tick (done) hoặc bỏ qua (skipped).
+     leftovers(d, { all: true }) lấy TẤT CẢ mục chưa xử lý từ trước tới nay (tra ngược không giới hạn, chỉ chặn bởi ngày tạo mẫu;
+     LP.store tải toàn bộ lịch sử để việc này đúng). Mục tồn giữ cho tới khi tick (done) hoặc bỏ qua (skipped).
      Tùy chọn { pending: true } = mục sót chưa quyết (dòng "N mục tồn chưa xử lý", màn Tồn tổng); { decided: true } = mục đã quyết làm hôm nay
      (hiện ngay trong luồng hôm nay, nhãn "Tồn từ dd/mm"). Tùy chọn { unplaced: true }: bỏ hạng mục đã xếp giờ vào hôm nay. Mục có `since` = ngày gốc để hiển thị (mẫu khoảng ngày: ngày đầu khoảng).
      Mục carried (đã mang sang / đưa vào hôm nay) là "đã quyết" tới hết ngày làm việc kế tiếp sau ngày quyết (note 'dua:yyyy-mm-dd');
@@ -166,7 +166,7 @@ LP.logic.routines = (function () {
      Việc (task) tồn giữ tới khi xong hoặc hủy (status 'cancelled'). Mẫu theo khoảng ngày: mỗi hạng mục chỉ hiện một lần.
      "Đặt giờ" (set_time) chỉ có hiệu lực trong đúng ngày đặt: ghi chú 'xep-gio:yyyy-mm-dd'. Sang ngày khác mục lại là
      tồn chưa xếp giờ (setTime rỗng). Ghi chú 'xep-gio' không có ngày (bản cũ) coi như còn hiệu lực. */
-  var ALL_DAYS = 120;
+  var ALL_DAYS = 36500;   // không giới hạn: chặn dưới là ngày tạo mẫu sớm nhất
   function leftoverDays() { var n = parseInt(LP.store.setting('leftover_days', 7), 10); return n > 0 ? n : 7; }
 
   // Mẫu khoảng ngày: hạng mục đã tick/bỏ qua ở bất kỳ ngày nào của khoảng chứa p thì không còn tồn (tính cộng dồn)
@@ -207,10 +207,11 @@ LP.logic.routines = (function () {
     opts = opts || {};
     var days = opts.all ? ALL_DAYS : (opts.days || leftoverDays());
     var prev = D.prevWorkday(d), out = [], seen = {}, lo = D.add(d, -days), p = prev, guard = 0;
+    if (opts.all) { var mc = ''; S().routines.forEach(function (r) { var c0 = (r.created_at || '').slice(0, 10); if (c0 && (!mc || c0 < mc)) mc = c0; }); if (mc && mc > lo) lo = mc; }   // không tra ngược trước ngày tạo mẫu sớm nhất
     plusOneFor(d).forEach(function (m) {
       if (open(m) || (opts.withDone && doneToday(m, d, true))) out.push(entry(m, 'plus1', d));
     });
-    while (p >= lo && guard++ < 400) {
+    while (p >= lo && guard++ < 4000) {
       runsFor(p).forEach(function (run) {
         if ((run.routine.created_at || '').slice(0, 10) > p) return; // không tạo tồn cho ngày trước khi mẫu tồn tại
         var mr = run.routine.repeat === 'month_range';
