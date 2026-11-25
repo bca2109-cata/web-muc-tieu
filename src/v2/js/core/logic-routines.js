@@ -152,12 +152,14 @@ LP.logic.routines = (function () {
      - missed: hạng mục của lượt ngày trước chưa tick và không có dòng ghi nhận
      - carried: hạng mục đã chọn "Mang sang mai" ở màn Soát
      - task: việc quá ngày làm mà chưa xong (xem logic-tasks)
-     Mục tồn KHÔNG biến mất sau 1 ngày: giữ lại cho tới khi tick (done), bỏ qua (skipped) hoặc quá giới hạn
-     tra ngược `leftover_days` ngày lịch (Settings, mặc định 14). Việc (task) tồn thì giữ cho tới khi xong.
-     Mẫu theo khoảng ngày trong tháng: mỗi hạng mục chỉ hiện một lần (lượt gần nhất).
-     "Đặt giờ" (set_time) chỉ có hiệu lực trong đúng ngày đặt: ghi chú dạng 'xep-gio:yyyy-mm-dd'. Sang ngày khác
-     mục lại là tồn chưa xếp giờ (setTime rỗng). Ghi chú 'xep-gio' không có ngày (bản cũ) coi như còn hiệu lực. */
-  function leftoverDays() { var n = parseInt(LP.store.setting('leftover_days', 14), 10); return n > 0 ? n : 14; }
+     Khối "Từ hôm qua" chỉ lấy mục tồn trong `leftover_days` ngày lịch gần nhất (Settings, mặc định 7).
+     leftovers(d, { all: true }) lấy TẤT CẢ mục chưa xử lý từ trước tới nay (tra ngược tối đa ALL_DAYS = 120 ngày, đúng
+     khoảng dữ liệu LP.store tải, và không sớm hơn ngày tạo mẫu). Mục tồn giữ cho tới khi tick (done) hoặc bỏ qua (skipped).
+     Việc (task) tồn giữ tới khi xong hoặc hủy (status 'cancelled'). Mẫu theo khoảng ngày: mỗi hạng mục chỉ hiện một lần.
+     "Đặt giờ" (set_time) chỉ có hiệu lực trong đúng ngày đặt: ghi chú 'xep-gio:yyyy-mm-dd'. Sang ngày khác mục lại là
+     tồn chưa xếp giờ (setTime rỗng). Ghi chú 'xep-gio' không có ngày (bản cũ) coi như còn hiệu lực. */
+  var ALL_DAYS = 120;
+  function leftoverDays() { var n = parseInt(LP.store.setting('leftover_days', 7), 10); return n > 0 ? n : 7; }
 
   // Hạng mục ngày lệch +1 của các lượt ngày p (không kiểm tra ngày rơi)
   function plusItemsOn(p) {
@@ -172,23 +174,31 @@ LP.logic.routines = (function () {
   }
   function open(m) { return !m.done && m.status !== 'skipped'; }
 
-  function leftovers(d) {
-    var prev = D.prevWorkday(d), out = [], seen = {}, lo = D.add(d, -leftoverDays()), p = prev, guard = 0;
+  function leftovers(d, opts) {
+    opts = opts || {};
+    var days = opts.all ? ALL_DAYS : (opts.days || leftoverDays());
+    var prev = D.prevWorkday(d), out = [], seen = {}, lo = D.add(d, -days), p = prev, guard = 0;
     plusOneFor(d).forEach(function (m) { if (open(m)) out.push(entry(m, 'plus1', d)); });
-    while (p >= lo && guard++ < 80) {
+    while (p >= lo && guard++ < 400) {
       runsFor(p).forEach(function (run) {
+        if ((run.routine.created_at || '').slice(0, 10) > p) return; // không tạo tồn cho ngày trước khi mẫu tồn tại
         run.items.forEach(function (m) {
           if (!open(m)) return;
-          if (run.routine.repeat === 'month_range') { var k = run.routine.id + '|' + m.item.id; if (seen[k]) return; seen[k] = 1; }
+          if (run.routine.repeat === 'month_range') {
+            // Tính cộng dồn trong khoảng: đã tick (hoặc bỏ qua) ở bất kỳ ngày nào của khoảng thì không còn tồn; mỗi hạng mục chỉ hiện một lần
+            var k = run.routine.id + '|' + m.item.id + '|' + run.window.start;
+            if (seen[k]) return; seen[k] = 1;
+            if (workdaysBetween(run.window.start, run.window.end).some(function (x) { var c = checkOf(run.routine.id, m.item.id, x); return c && (c.status === 'done' || c.status === 'skipped'); })) return;
+          }
           out.push(entry(m, m.status === 'carried' ? 'carried' : 'missed', d));
         });
       });
       // Hạng mục +1 của lượt p đã tới hạn từ trước hôm nay (hôm nay tới hạn thì đã xử lý ở plusOneFor)
-      plusItemsOn(p).forEach(function (m) { if (m.date < d && open(m)) out.push(entry(m, 'missed', d)); });
+      plusItemsOn(p).forEach(function (m) { if (m.date < d && open(m) && (m.routine.created_at || '').slice(0, 10) <= p) out.push(entry(m, 'missed', d)); });
       p = D.prevWorkday(p);
     }
     out.sort(function (a, b) { return (a.source === 'plus1' ? 0 : 1) - (b.source === 'plus1' ? 0 : 1) || (a.runDate < b.runDate ? -1 : a.runDate > b.runDate ? 1 : 0); });
-    if (LP.logic.tasks) LP.logic.tasks.leftoverTasks(d).forEach(function (t) { out.push(t); });
+    if (LP.logic.tasks) LP.logic.tasks.leftoverTasks(d).forEach(function (t) { if (opts.all || t.fromDate >= lo) out.push(t); });
     return out;
   }
   function entry(m, source, d) {

@@ -58,7 +58,7 @@ LP.stats = (function () {
   function adhocStatus(from, to) {
     var today = D.today(), o = { done: 0, doneLate: 0, doing: 0, overdue: 0, total: 0 };
     S().tasks.forEach(function (t) {
-      if (t.kind !== 'adhoc' || !t.due_date || t.due_date < from || t.due_date > to) return;
+      if (t.kind !== 'adhoc' || t.status === 'cancelled' || !t.due_date || t.due_date < from || t.due_date > to) return;
       o.total++;
       if (t.status === 'done') { if ((t.done_at || '').slice(0, 10) > t.due_date) o.doneLate++; else o.done++; }
       else if (t.due_date < today) o.overdue++; else o.doing++;
@@ -71,7 +71,7 @@ LP.stats = (function () {
     var out = [1, 2, 3].map(function (l) { return { level: l, total: 0, done: 0 }; });
     S().tasks.forEach(function (t) {
       var d = t.due_date || t.do_date;
-      if (!d || d < from || d > to) return;
+      if (t.status === 'cancelled' || !d || d < from || d > to) return;
       var l = Math.max(1, Math.min(3, parseInt(t.importance, 10) || 1)) - 1;
       out[l].total++; if (t.status === 'done') out[l].done++;
     });

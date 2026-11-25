@@ -10,7 +10,7 @@ LP.agenda = (function () {
   var MODE_KEY = 'lpv2_ag_mode', ORDER_KEY = 'lpv2_ag_order';
   var MORE = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></svg>';
   var notified = {};
-  var st = null, soatOn = false;
+  var st = null, sub = '';   // sub: '' | 'soat' | 'ton' (màn con mở bằng tham số của route agenda)
 
   function lsGet(k, def) { try { var v = localStorage.getItem(k); return v == null ? def : v; } catch (e) { return def; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* bỏ qua */ } }
@@ -60,7 +60,7 @@ LP.agenda = (function () {
       return o;
     }
     var t = LP.store.find('Tasks', e.taskId);
-    if (!t) return null;
+    if (!t || t.status === 'cancelled') return null;
     if (st.stepOf[k] === undefined) { var sp0 = tam_overdueStep(t, e.fromDate); st.stepOf[k] = sp0 ? sp0.id : ''; }
     var sp = st.stepOf[k] ? LP.store.find('TaskSteps', st.stepOf[k]) : null;
     o.done = sp ? sp.status === 'done' : t.status === 'done';
@@ -248,7 +248,8 @@ LP.agenda = (function () {
       '<div class="ag-aside">' + (o.done ? '' : srcPill(o) + skipBtn(o)) + '</div></li>';
   }
   function skipBtn(o) {
-    return o.kind === 'item' && !readOnly() ? '<button type="button" class="chip" data-act="skip-left" data-key="' + esc(o.key) + '">Bỏ qua</button>' : '';
+    if (readOnly()) return '';
+    return '<button type="button" class="chip" data-act="' + (o.kind === 'item' ? 'skip-left' : 'cancel-left') + '" data-key="' + esc(o.key) + '">' + (o.kind === 'item' ? 'Bỏ qua' : 'Hủy việc') + '</button>';
   }
   function taskInfoSub(x) {
     var t = x.task, parts = [];
@@ -280,6 +281,15 @@ LP.agenda = (function () {
       esc(h.name) + (h.time ? ' <span class="muted num">' + esc(h.time) + '</span>' : '') + '</button>';
   }
 
+  // Dòng "Tồn đọng cũ hơn": mục tồn nằm ngoài khoảng 7 ngày của khối Từ hôm qua. Hết mục thì ẩn.
+  function oldLine() {
+    if (readOnly()) return '';
+    var n = R.leftovers(st.date, { all: true }).length - R.leftovers(st.date).length;
+    if (n <= 0) return '';
+    return '<div class="ag-left ag-old"><span>Tồn đọng cũ hơn: <b class="num">' + n + '</b> mục</span>' +
+      '<button type="button" class="chip" data-act="ton">' + icon('box', 'ic18') + 'Xem tất cả</button></div>';
+  }
+
   function checklistHtml(runs, left, tasks, habits) {
     var h = '<div class="ag-list">';
     if (left.length) {
@@ -287,6 +297,7 @@ LP.agenda = (function () {
         '<div class="ag-sec-head"><h2>Từ hôm qua</h2><span class="num">' + left.filter(function (o) { return o.done; }).length + '/' + left.length + '</span></div>' +
         '<ul class="ag-ul">' + left.map(leftRow).join('') + '</ul></section>';
     }
+    h += oldLine();
     var infos = runs.map(runInfo).sort(function (a, b) { return a.key - b.key || a.idx - b.idx; });
     h += '<div class="ag-runs">' + (infos.length ? infos.map(runCard).join('') :
       '<section class="card"><h2>Công việc cố định</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Hôm nay không có lượt cố định nào.' : 'Ngày nghỉ, không có lượt cố định.') + '</p></section>') + '</div>';
@@ -393,6 +404,7 @@ LP.agenda = (function () {
       tl += '<div class="ag-seg">TRONG NGÀY · CHƯA ĐẶT GIỜ</div>' + undated.map(tlRow).join('');
     }
     if (!rows.length && !undated.length) tl += '<p class="ag-empty">Chưa có gì trên dòng thời gian.</p>';
+    h += oldLine();
     h += '<section class="card ag-tl" aria-label="Dòng thời gian">' + tl + '</section>';
     if (st.date === D.today()) h += '<div class="ag-foot"><button type="button" class="btn btn-primary" data-act="soat">' + icon('moon', 'ic18') + 'Soát cuối ngày</button></div>';
     return h;
@@ -400,7 +412,7 @@ LP.agenda = (function () {
 
   /* ---------- Vẽ lại ---------- */
   function render() {
-    if (!st || soatOn) return;
+    if (!st || sub) return;
     var y = window.scrollY, ae = document.activeElement, fk = ae && ae.getAttribute ? ae.getAttribute('data-fk') : null;
     var runs = R.runsFor(st.date), left = leftEntries(), tasks = T.tasksFor(st.date), habits = habitsDue();
     st.lastNow = D.now();
@@ -479,6 +491,7 @@ LP.agenda = (function () {
     expand: function (b) { st.open[b.getAttribute('data-run')] = true; render(); },
     collapse: function (b) { st.open[b.getAttribute('data-run')] = false; render(); },
     soat: function () { LP.router.go('agenda', { soat: '1' }); },
+    ton: function () { LP.router.go('agenda', { ton: '1' }); },
     off: function () {
       var d = st.date, row = S().daysOff.filter(function (r) { return r.date === d; })[0];
       LP.ui.confirm(row ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ',
@@ -529,11 +542,20 @@ LP.agenda = (function () {
       R.check(e.routineId, e.itemId, e.runDate, 'skipped', { note: 'Bỏ qua từ Agenda', set_time: '' });
       LP.ui.toast('Đã bỏ qua "' + e.title + '".', { actionLabel: 'Hoàn tác', actionIcon: 'back', action: function () { R.check(e.routineId, e.itemId, e.runDate, ''); } });
     },
+    'cancel-left': function (b) {
+      var o = st.snapMap[b.getAttribute('data-key')] && decorate(st.snapMap[b.getAttribute('data-key')]); if (!o || !o.task) return;
+      cancelWithUndo(o.task);
+    },
     unplace: function (b) { clearEntryTime(b.getAttribute('data-key')); },
     'unplace-task': function (b) { clearTaskTime(b.getAttribute('data-task'), b.getAttribute('data-step')); },
     doc: function (b) { tam_openDoc(b.getAttribute('data-doc'), b.getAttribute('data-head')); },
     more: function (b) { taskMenu(b.getAttribute('data-task'), b.getAttribute('data-step')); }
   };
+
+  function cancelWithUndo(task) {
+    T.setCancelled(task, true);
+    LP.ui.toast('Đã hủy việc "' + task.title + '".', { actionLabel: 'Hoàn tác', actionIcon: 'back', action: function () { T.setCancelled(LP.store.find('Tasks', task.id), false); } });
+  }
 
   function onClick(ev) {
     var b = ev.target.closest('[data-act]');
@@ -549,12 +571,14 @@ LP.agenda = (function () {
     var s = LP.ui.sheet(sp ? sp.title : t.title,
       '<div class="choice-list"><button type="button" class="btn" data-m="date">' + icon('calendar', 'ic18') + 'Đổi ngày làm</button>' +
       '<button type="button" class="btn" data-m="edit">' + icon('edit', 'ic18') + 'Sửa</button>' +
-      '<button type="button" class="btn" data-m="note">' + icon('note', 'ic18') + 'Mở ghi chú</button></div>');
+      '<button type="button" class="btn" data-m="note">' + icon('note', 'ic18') + 'Mở ghi chú</button>' +
+      '<button type="button" class="btn btn-danger" data-m="cancel">' + icon('close', 'ic18') + 'Hủy việc</button></div>');
     s.el.addEventListener('click', function (e) {
       var b = e.target.closest('[data-m]'); if (!b) return;
       var m = b.getAttribute('data-m');
       s.close();
       if (m === 'date') changeDate(t, sp);
+      else if (m === 'cancel') cancelWithUndo(t);
       else if (m === 'edit') {
         if (LP.quickAdd && LP.quickAdd.edit) LP.quickAdd.edit('task', t.id);
         else LP.ui.toast('Form sửa việc đang làm (Phần 5 sẽ nối vào).');
@@ -633,8 +657,9 @@ LP.agenda = (function () {
   /* ---------- Vòng đời ---------- */
   function mount(el, params) {
     params = params || {};
-    if (params.soat) { soatOn = true; return LP.soat.mount(el, params); }
-    soatOn = false;
+    sub = params.ton ? 'ton' : params.soat ? 'soat' : '';
+    if (sub === 'ton') return LP.ton.mount(el, params);
+    if (sub === 'soat') return LP.soat.mount(el, params);
     var d = params.date && D.isValid(params.date) ? params.date : D.today();
     st = { el: el, date: d, mode: lsGet(MODE_KEY, 'checklist') === 'overview' ? 'overview' : 'checklist', order: lsGet(ORDER_KEY, 'asc') === 'desc' ? 'desc' : 'asc',
       snapOrder: [], snapMap: {}, stepOf: {}, open: {}, dirty: false, lastNow: '' };
@@ -643,7 +668,7 @@ LP.agenda = (function () {
     render();
   }
   function unmount() {
-    if (soatOn) { soatOn = false; if (LP.soat) LP.soat.unmount(); return; }
+    if (sub) { var was = sub; sub = ''; if (was === 'ton') LP.ton.unmount(); else LP.soat.unmount(); return; }
     if (!st) return;
     st.el.removeEventListener('click', onClick);
     LP.store.off('change', schedule);
@@ -652,7 +677,7 @@ LP.agenda = (function () {
 
   // Mỗi 30 giây: cập nhật "Trễ N phút" khi sang phút mới, và kiểm tra thông báo
   setInterval(function () {
-    if (st && !soatOn && D.now() !== st.lastNow && !typing()) render();
+    if (st && !sub && D.now() !== st.lastNow && !typing()) render();
     checkNotify();
   }, 30000);
   LP.router.on('route', function () { checkNotify(); });
