@@ -52,7 +52,7 @@ module.exports = async function (h) {
     const card = page.locator('.lday[data-date="2026-11-27"] .lcard[data-task="t-kham"]');
     await card.dragTo(col(page, '2026-11-24'));
     await page.waitForTimeout(100);
-    A.strictEqual(await doDate(page, 't-kham'), '2026-11-27', 'thả được vào ngày đã qua');
+    A.strictEqual(await doDate(page, 't-kham'), '2026-11-27', 'ngày làm bị đổi sang ngày đã qua (phải giữ nguyên)');
     h.noErrors(page);
   });
 
