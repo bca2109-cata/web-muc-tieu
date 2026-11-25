@@ -43,7 +43,9 @@ LP.createSheetApi = function (options) {
     // Tài liệu ghi chú: Phần 3 xử lý phía Apps Script trong apps-script-v2/Docs.gs
     docsIndex: function () { return call('docsIndex'); },
     docGet: function (id) { return call('docGet', { id: id }); },
+    // docSave nhận thêm base_updated_at, force; trả { conflict: true, server } khi bản trên Sheet mới hơn
     docSave: function (doc) { return call('docSave', { doc: doc }, 60000); },
+    docDelete: function (id) { return call('docDelete', { id: id }); },
     ping: function () { return call('ping'); }
   };
 };

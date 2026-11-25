@@ -32,13 +32,6 @@ LP.views = LP.views || {};
         var list = docs(); list.length = 0;
         trashRows = [];
         (rows || []).forEach(function (r) { if (LP.util.truthy(r.deleted)) trashRows.push(indexRow(r)); else list.push(indexRow(r)); });
-        // tam_: bản mock chỉ trả tài liệu còn sống. Đọc thêm thùng rác từ kho mock (xem YEU-CAU-CHUNG P3-1)
-        if (LP.config.mock) {
-          try {
-            var raw = JSON.parse(localStorage.getItem('lpv2_mock_v1') || '{}');
-            (raw.docs || []).forEach(function (r) { if (LP.util.truthy(r.deleted) && !trashRows.some(function (t) { return t.id === r.id; })) trashRows.push(indexRow(r)); });
-          } catch (e) { /* bỏ qua */ }
-        }
         return list;
       }, function (e) { indexPromise = null; throw e; });
     }
@@ -131,8 +124,6 @@ LP.views = LP.views || {};
       }
     }, function () { ui.toast('Không mở được ghi chú.'); });
   };
-  // tam_: Agenda gọi LP.ui.docSheet (bản cũ chỉ hiện chữ thô). Chuyển sang bản có định dạng, xem YEU-CAU-CHUNG P3-2
-  LP.ui.docSheet = function (d, h) { return LP.views.openDoc(d, h); };
 
   /* ---------- Màn Ghi chú ---------- */
   function listHTML() {

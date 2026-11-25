@@ -21,16 +21,27 @@ LP.stats = (function () {
   }
   function upTo(to) { var t = D.add(D.today(), -1); return to < t ? to : t; } // chỉ tính ngày đã qua
 
-  // Tỷ lệ hoàn thành công việc cố định. done / (tổng - bỏ qua). Mỗi ô: { label, from, to, done, skipped, total, pct }
+  // Việc Ad-hoc + Personal có ngày làm trong ngày d, cùng cách đếm với vòng "Hoàn thành hôm nay" ở Agenda: mỗi mục (việc hoặc bước) tính 1
+  function taskCounts(d) {
+    var o = { done: 0, total: 0 };
+    LP.logic.tasks.tasksFor(d).forEach(function (x) { o.total++; if (x.done) o.done++; });
+    return o;
+  }
+
+  // Tỷ lệ hoàn thành = Daily + Ad-hoc + Personal. done / (tổng - Daily bỏ qua).
+  // Mỗi ô: { label, from, to, done, skipped, total, pct, missed, carried, rDone, rTotal, tDone, tTotal }
+  // rDone/rTotal là riêng Daily, tDone/tTotal là riêng Ad-hoc + Personal; skipped, missed, carried chỉ của Daily
   function completion(from, to, unit) {
     var last = upTo(to);
     return buckets(from, to, unit || 'day').map(function (b) {
-      var o = { label: b.label, from: b.from, to: b.to, done: 0, skipped: 0, total: 0, missed: 0, carried: 0, pct: null };
+      var o = { label: b.label, from: b.from, to: b.to, done: 0, skipped: 0, total: 0, missed: 0, carried: 0, pct: null, rDone: 0, rTotal: 0, tDone: 0, tTotal: 0 };
       if (b.from > last) return o;
       D.range(b.from, b.to < last ? b.to : last).forEach(function (d) {
-        var s = LP.logic.routines.summary(d);
-        o.done += s.done; o.skipped += s.skipped; o.missed += s.missed; o.carried += s.carried; o.total += s.total - s.skipped;
+        var s = LP.logic.routines.summary(d), t = taskCounts(d);
+        o.rDone += s.done; o.rTotal += s.total - s.skipped; o.tDone += t.done; o.tTotal += t.total;
+        o.skipped += s.skipped; o.missed += s.missed; o.carried += s.carried;
       });
+      o.done = o.rDone + o.tDone; o.total = o.rTotal + o.tTotal;
       o.pct = o.total ? Math.round(o.done * 100 / o.total) : null;
       return o;
     });
@@ -123,7 +134,7 @@ LP.stats = (function () {
   function level(pct) { return pct == null ? '' : pct >= 100 ? 'ok' : pct >= 80 ? 'pr' : 'warn'; }
 
   return {
-    buckets: buckets, completion: completion, missedTop: missedTop, adhocStatus: adhocStatus, byLevel: byLevel,
+    buckets: buckets, completion: completion, taskCounts: taskCounts, missedTop: missedTop, adhocStatus: adhocStatus, byLevel: byLevel,
     interruptions: interruptions, habits: habits, streak: streak, habitDone: habitDone, habitDue: habitDue, level: level
   };
 })();
