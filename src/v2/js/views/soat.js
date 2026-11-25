@@ -27,7 +27,7 @@ LP.soat = (function () {
       var c = R.checkOf(e.routineId, e.itemId, e.runDate);
       if (c && (c.status === 'done' || c.status === 'skipped')) return;
       var g = groups.filter(function (x) { return x.rid === e.routineId; })[0];
-      if (!g) { var rt = R.byId(e.routineId); g = { rid: e.routineId, name: rt ? rt.name : 'Công việc cố định', rows: [] }; groups.push(g); }
+      if (!g) { var rt = R.byId(e.routineId); g = { rid: e.routineId, name: rt ? rt.name : 'Daily', rows: [] }; groups.push(g); }
       g.rows.push({ kind: 'item', key: 'd|' + e.routineId + '|' + e.itemId + '|' + e.runDate, rid: e.routineId, iid: e.itemId, runDate: e.runDate,
         title: e.title, time: e.time || '', init: c ? c.status : '', from: e.since || e.runDate });
     });
@@ -39,7 +39,7 @@ LP.soat = (function () {
         origDo: x.step ? x.step.do_date : x.task.do_date, origCarried: x.task.carried_from || ''
       });
     });
-    if (tasks.length) groups.push({ name: 'Việc hôm nay', rows: tasks, isTasks: true });
+    if (tasks.length) groups.push({ name: 'Ad-hoc / Personal hôm nay', rows: tasks, isTasks: true });
     return groups;
   }
 
@@ -61,7 +61,7 @@ LP.soat = (function () {
   function rowHtml(r) {
     var o = stateOf(r), h = '';
     if (o.s === 'gone') return '';
-    var sub = r.kind === 'item' ? (r.time ? 'giờ ' + r.time : '') : (r.parent ? 'Việc: ' + r.parent : '');
+    var sub = r.kind === 'item' ? (r.time ? 'giờ ' + r.time : '') : (r.parent ? 'Ad-hoc: ' + r.parent : '');
     var label = o.s === 'done' ? pill('Đã làm', 'ok') : o.s === 'carried' ? pill('Mang sang ' + D.fmt(D.nextWorkday(st.date)), 'note') :
       o.s === 'skipped' ? pill('Đã bỏ qua' + (o.note ? ': ' + o.note : ''), 'plain') : o.s === 'moved' ? pill('Chuyển sang ' + D.fmt(o.to), 'note') : '';
     h += '<li class="ag-so-row" data-fk="r|' + esc(r.key) + '"><div class="ag-title"><span>' + esc(r.title) + '</span>' + (r.from ? pill('Tồn từ ' + D.fmt(r.from), 'note') : '') + label + '</div>' + (sub ? '<div class="ag-sub">' + esc(sub) + '</div>' : '');
@@ -239,8 +239,8 @@ LP.ton = (function () {
     var today = D.today(), out = [];
     R.leftovers(today, { all: true, pending: true }).forEach(function (e) {
       var o = { key: key(e), e: e, kind: e.kind, title: e.title, from: e.kind === 'item' ? (e.since || e.runDate) : e.fromDate };
-      if (e.kind === 'item') { var r = R.byId(e.routineId); o.block = r ? r.name : 'Công việc cố định'; }
-      else o.block = e.ref && e.ref.kind === 'canhan' ? 'Việc cá nhân' : 'Việc ad-hoc';
+      if (e.kind === 'item') { var r = R.byId(e.routineId); o.block = r ? r.name : 'Daily'; }
+      else o.block = e.ref && e.ref.kind === 'canhan' ? 'Personal' : 'Ad-hoc';
       o.age = D.diff(today, o.from);
       out.push(o);
     });
@@ -359,7 +359,7 @@ LP.ton = (function () {
     var h = '<div class="ag-so ag-tt"><div class="ag-so-top"><button type="button" class="chip" data-act="back">' + icon('back', 'ic18') + 'Agenda</button><h1>Tồn tổng</h1></div>' +
       '<p class="muted">Tất cả mục chưa xử lý từ trước tới nay, cũ nhất trước.</p>' + statsHtml(all);
     // Bộ lọc gọn về một hàng: loại · khối · từ ngày · đến ngày
-    h += '<section class="card ag-tt-filters" aria-label="Bộ lọc"><div class="chips" role="group" aria-label="Loại">' + chip('Tất cả', 'type', '') + chip('Cố định', 'type', 'item') + chip('Việc', 'type', 'task') + '</div>' +
+    h += '<section class="card ag-tt-filters" aria-label="Bộ lọc"><div class="chips" role="group" aria-label="Loại">' + chip('Tất cả', 'type', '') + chip('Daily', 'type', 'item') + chip('Ad-hoc / Personal', 'type', 'task') + '</div>' +
       '<select class="select" id="tt-block" data-f="block" aria-label="Khối"><option value="">Tất cả khối</option>' +
       Object.keys(blocks).sort().map(function (b) { return '<option value="' + esc(b) + '"' + (st.block === b ? ' selected' : '') + '>' + esc(b) + '</option>'; }).join('') + '</select>' +
       '<label class="ag-tt-date">Từ <input class="input" type="date" data-f="from" value="' + esc(st.from) + '" aria-label="Từ ngày"></label>' +
@@ -402,12 +402,12 @@ LP.ton = (function () {
     't-today': function (b) {
       var o = st.map[b.getAttribute('data-key')]; if (!o) return;
       if (o.kind === 'item') actItemToday(o);
-      else { var u = actTaskToday(o); undoToast('Đã đưa "' + o.title + '" vào Việc hôm nay.', u); }
+      else { var u = actTaskToday(o); undoToast('Đã đưa "' + o.title + '" vào danh sách hôm nay.', u); }
     },
     'bulk-skip': function () {
       var keys = Object.keys(st.sel).filter(function (k) { return st.map[k]; });
       if (!keys.length) return;
-      LP.ui.confirm('Bỏ qua hàng loạt', 'Bỏ qua ' + keys.length + ' mục đã chọn? Hạng mục cố định sẽ được bỏ qua, việc sẽ được hủy. Vẫn hoàn tác được ngay sau đó.', { ok: 'Bỏ qua ' + keys.length + ' mục', danger: true }).then(function (yes) {
+      LP.ui.confirm('Bỏ qua hàng loạt', 'Bỏ qua ' + keys.length + ' mục đã chọn? Mục Daily sẽ được bỏ qua, Ad-hoc / Personal sẽ được hủy. Vẫn hoàn tác được ngay sau đó.', { ok: 'Bỏ qua ' + keys.length + ' mục', danger: true }).then(function (yes) {
         if (!yes) return;
         var undos = keys.map(function (k) { return actSkip(st.map[k]); });
         st.sel = {};

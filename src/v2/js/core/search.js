@@ -25,16 +25,16 @@ LP.search = (function () {
   function has(text, nq) { return fold(text).indexOf(nq) >= 0; }
 
   /* ---------- Nguồn có sẵn ---------- */
-  register('Việc', function (q) {
+  register('Ad-hoc / Personal', function (q) {
     return LP.store.get().tasks.filter(function (t) { return has(t.title, q) || has(t.requester, q); }).map(function (t) {
       return { title: t.title, sub: (t.status === 'done' ? 'Đã xong' : t.status === 'cancelled' ? 'Đã hủy' : t.due_date ? 'Hạn ' + LP.date.fmt(t.due_date) : 'Chưa có hạn'), icon: 'list',
         route: 'agenda', params: { date: t.do_date || t.due_date || LP.date.today() } };
     });
   });
-  register('Mẫu công việc', function (q) {
+  register('Daily', function (q) {
     var s = LP.store.get(), out = [];
     s.routines.forEach(function (r) {
-      if (has(r.name, q)) out.push({ title: r.name, sub: 'Mẫu công việc', icon: 'calcheck', route: 'mau', params: { id: r.id } });
+      if (has(r.name, q)) out.push({ title: r.name, sub: 'Daily', icon: 'calcheck', route: 'mau', params: { id: r.id } });
     });
     s.routineItems.forEach(function (it) {
       if (!has(it.title, q)) return;

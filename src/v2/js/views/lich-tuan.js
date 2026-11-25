@@ -31,26 +31,17 @@ LP.lich = (function () {
   function dueText(t) { return 'Hạn ' + (t.due_time ? t.due_time + ' · ' : '· ') + t.title; }
 
   /* ---------- Đổi ngày và giờ làm ---------- */
-  function setDate(task, step, date, time) {
-    var before = Object.assign({}, step || task), patch = { do_date: date };
-    if (time !== undefined) patch.do_time = time;
-    LP.store.upsert(step ? 'TaskSteps' : 'Tasks', Object.assign({}, before, patch));
-    return before;
-  }
   function undoMove(task, step, before) {
     LP.store.upsert(step ? 'TaskSteps' : 'Tasks', before);
   }
   // time: undefined = giữ giờ, '' = bỏ giờ (Cả ngày), 'HH:MM' = đặt giờ. Trả Promise<boolean>
   function moveTo(task, step, date, time) {
-    if (!date) return Promise.resolve(false);
-    if (date < D.today()) { UI.toast('Không chuyển được vào ngày đã qua'); return Promise.resolve(false); }
-    var row = step || task, curDate = (step && step.do_date) || task.do_date, curTime = row.do_time || '';
-    if (curDate === date && (time === undefined || time === curTime)) return Promise.resolve(false);
-    var late = task.due_date ? D.diff(date, task.due_date) : 0;
-    var ask = late > 0 && date !== curDate ? UI.confirm('Chuyển sang ' + D.fmt(date) + '?', (task.kind === 'canhan' ? 'Personal' : 'Ad-hoc') + ' này sẽ trễ hạn ' + late + ' ngày', { ok: 'Vẫn chuyển' }) : Promise.resolve(true);
+    var mv = LP.logic.tasks.moveDoDate(task, step, date, time);
+    if (!mv.ok) { if (mv.reason === 'past') UI.toast('Không chuyển được vào ngày đã qua'); return Promise.resolve(false); }
+    var ask = mv.late > 0 ? UI.confirm('Chuyển sang ' + D.fmt(date) + '?', (task.kind === 'canhan' ? 'Personal' : 'Ad-hoc') + ' này sẽ trễ hạn ' + mv.late + ' ngày', { ok: 'Vẫn chuyển' }) : Promise.resolve(true);
     return ask.then(function (yes) {
       if (!yes) return false;
-      var before = setDate(task, step, date, time);
+      var before = mv.apply();
       UI.toast('Đã chuyển sang ' + D.fmt(date) + (time ? ' lúc ' + time : ''), { duration: 10000, actionLabel: 'Hoàn tác', actionIcon: 'refresh', action: function () { undoMove(task, step, before); } });
       return true;
     });

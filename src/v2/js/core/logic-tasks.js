@@ -121,8 +121,26 @@ LP.logic.tasks = (function () {
     return done;
   }
 
+  // Đổi ngày/giờ làm của việc hoặc bước. time: undefined = giữ giờ, '' = bỏ giờ, 'HH:MM' = đặt giờ.
+  // Trả { ok, reason ('past'|'same'), late (số ngày trễ hạn, 0 nếu không), apply() -> dòng cũ để hoàn tác }.
+  // apply() chỉ ghi khi gọi, để giao diện còn hỏi xác nhận khi trễ hạn.
+  function moveDoDate(task, step, date, time) {
+    var D = LP.date;
+    if (!date) return { ok: false, reason: 'same' };
+    if (date < D.today()) return { ok: false, reason: 'past' };
+    var row = step || task, curDate = (step && step.do_date) || task.do_date, curTime = row.do_time || '';
+    if (curDate === date && (time === undefined || time === curTime)) return { ok: false, reason: 'same' };
+    var late = task.due_date && date !== curDate ? Math.max(0, D.diff(date, task.due_date)) : 0;
+    return { ok: true, late: late, apply: function () {
+      var before = Object.assign({}, row), patch = { do_date: date };
+      if (time !== undefined) patch.do_time = time;
+      LP.store.upsert(step ? 'TaskSteps' : 'Tasks', Object.assign({}, before, patch));
+      return before;
+    } };
+  }
+
   return {
-    urgency: urgency, capacity: capacity, suggestDoDate: suggestDoDate, tasksFor: tasksFor, stepsOf: stepsOf,
+    moveDoDate: moveDoDate, urgency: urgency, capacity: capacity, suggestDoDate: suggestDoDate, tasksFor: tasksFor, stepsOf: stepsOf,
     nextDo: nextDo, leftoverTasks: leftoverTasks, progress: progress, setDone: setDone, setCancelled: setCancelled, toggleStep: toggleStep
   };
 })();

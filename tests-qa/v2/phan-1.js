@@ -465,7 +465,7 @@ module.exports = async function (h) {
     await wait(page);
     const bao = (await page.locator('.ag-run', { hasText: 'Báo cáo cuối ngày' }).innerText()).replace(/\s+/g, ' ');
     A.ok(/15:00.*Tổng hợp doanh số.*Tồn từ 20\/11/.test(bao), 'khối Báo cáo: ' + bao.slice(0, 250));
-    const ad = (await page.locator('.ag-tasks', { hasText: 'Ad-hoc' }).first().innerText()).replace(/\s+/g, ' ');
+    const ad = (await page.locator('.ag-tasks', { hasText: 'Ad-hoc hôm nay' }).first().innerText()).replace(/\s+/g, ' ');
     A.ok(/Trả lời email đối tác/.test(ad) && /Tồn từ 24\/11/.test(ad), 'khối Ad-hoc: ' + ad.slice(0, 200));
     h.noErrors(page);
   });
@@ -634,10 +634,10 @@ module.exports = async function (h) {
     const page = await h.open({ hash: '#/agenda' });
     A.strictEqual(await page.locator('.ag-chart').count(), 3);
     const facts = await tx(page, '.ag-facts');
-    A.ok(/Quỹ việc riêng 20p \/ 1h30/.test(facts) && /Giờ đột xuất 30p/.test(facts), facts);
+    A.ok(/Quỹ Personal 20p \/ 1h30/.test(facts) && /Giờ chen ngang 30p/.test(facts), facts);
     const blk = (await page.locator('.ag-blk').allInnerTexts()).map(b => b.replace(/\n/g, ' '));
     A.ok(blk.some(b => /Chia số AI Class\s+1\/4/.test(b)), blk.join('|'));
-    A.ok(blk.some(b => /^Ad-hoc\s+0\/1/.test(b)) && blk.some(b => /^Cá nhân\s+0\/1/.test(b)), 'thiếu khối Ad-hoc / Cá nhân: ' + blk.join('|'));
+    A.ok(blk.some(b => /^Ad-hoc hôm nay\s+0\/1/.test(b)) && blk.some(b => /^Personal hôm nay\s+0\/1/.test(b)), 'thiếu khối Ad-hoc / Cá nhân: ' + blk.join('|'));
     A.ok(!blk.some(b => b.includes('Từ hôm qua')), 'còn khối Từ hôm qua');
     A.strictEqual(await page.locator('.ag-col').count(), 6);
     A.strictEqual(await page.locator('.ag-col-bar.is-now').count(), 1);
@@ -660,7 +660,7 @@ module.exports = async function (h) {
 
   await h.test('Việc hôm nay: chia khối Ad-hoc / Cá nhân, hàng đủ thông tin, tick bước con, menu ⋯, đổi ngày làm', async () => {
     const page = await h.open({ hash: '#/agenda' });
-    A.deepStrictEqual(await page.locator('.ag-tasks h2').allInnerTexts(), ['Ad-hoc', 'Cá nhân']);
+    A.deepStrictEqual(await page.locator('.ag-tasks h2').allInnerTexts(), ['Ad-hoc hôm nay', 'Personal hôm nay']);
     const row = page.locator('.ag-tasks .ag-item', { hasText: 'Lấy dữ liệu nguồn' });
     const t = (await row.innerText()).replace(/\s+/g, ' ');
     A.ok(/Người đặt: TBP Sales/.test(t) && /Hạn 27\/11/.test(t) && /bước 0\/3/.test(t), t);
@@ -724,11 +724,11 @@ module.exports = async function (h) {
     A.strictEqual(await p3.locator('.toast').count(), 0, 'báo quá muộn');
   });
 
-  await h.test('Toàn cảnh: các cột Giờ | Công việc | Thuộc | Mức độ | Hạn | Trạng thái', async () => {
+  await h.test('Toàn cảnh: các cột Giờ | Tên | Thuộc | Mức độ | Hạn | Trạng thái', async () => {
     const page = await h.open({ hash: '#/agenda' });
     await page.click('[data-act="mode"][data-mode="overview"]');
     await wait(page);
-    A.strictEqual((await page.locator('.ag-tl-head span').allInnerTexts()).join('|'), 'Giờ|Công việc|Thuộc|Mức độ|Hạn|Trạng thái');
+    A.strictEqual((await page.locator('.ag-tl-head span').allInnerTexts()).join('|'), 'Giờ|Tên|Thuộc|Mức độ|Hạn|Trạng thái');
     const row = (await page.locator('.ag-tl-row', { hasText: 'Chia số cho các tổ' }).innerText()).replace(/\s+/g, ' ');
     A.ok(/08:30/.test(row) && /Chia số AI Class/.test(row) && /trước 09:30/.test(row) && /Trễ 2h35/.test(row), row);
     A.ok(/Xong/.test((await page.locator('.ag-tl-row', { hasText: 'Lấy số liệu từ LMS' }).innerText()).replace(/\s+/g, ' ')));

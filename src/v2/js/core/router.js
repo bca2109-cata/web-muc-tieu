@@ -5,7 +5,7 @@ var LP = window.LP || (window.LP = {});
 
 LP.router = (function () {
   var views = {}, cur = null, handlers = {};
-  var TITLES = { agenda: 'Agenda', lich: 'Lịch', 'ghi-chu': 'Ghi chú', 'muc-tieu': 'Mục tiêu', 'tong-ket': 'Tổng kết', 'cai-dat': 'Cài đặt', mau: 'Mẫu công việc' };
+  var TITLES = { agenda: 'Agenda', lich: 'Lịch', 'ghi-chu': 'Ghi chú', 'muc-tieu': 'Mục tiêu', 'tong-ket': 'Tổng kết', 'cai-dat': 'Cài đặt', mau: 'Daily' };
   var PHAN = { agenda: 'Phần 1', lich: 'Phần 2', 'ghi-chu': 'Phần 3', 'muc-tieu': 'Phần 4', 'tong-ket': 'Phần 4', 'cai-dat': 'Phần 5', mau: 'Phần 5' };
 
   function on(ev, fn) { (handlers[ev] = handlers[ev] || []).push(fn); }
