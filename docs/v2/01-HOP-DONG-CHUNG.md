@@ -98,9 +98,9 @@ Không dùng chữ "Việc" đứng một mình làm tên loại hay tiêu đề
 | Routines / RoutineItems | **Daily** | Danh sách lặp lại theo lịch (sáng, cuối ngày, tối, chốt số tháng…) |
 | Tasks `kind = adhoc` | **Ad-hoc** | Được TP/TBP giao, có người giao và hạn chót |
 | Tasks `kind = canhan` | **Personal** | Việc riêng của tôi |
-| Interruptions | **Bị ngắt** | Thời gian bị kéo đi đột xuất (trước đây gọi "Đột xuất") |
+| Interruptions | **Chen ngang** | Thời gian bị kéo đi đột xuất (trước đây gọi "Đột xuất") |
 
-- Tiêu đề khối, nhãn tiến độ, bộ lọc, chú giải Lịch, Tổng kết, menu nút "+": dùng đúng 4 tên trên. Ví dụ Agenda: "Ad-hoc hôm nay", "Personal hôm nay"; nút "+": "Thêm Ad-hoc / Thêm Personal / Ghi chú nhanh / Bị ngắt".
+- Tiêu đề khối, nhãn tiến độ, bộ lọc, chú giải Lịch, Tổng kết, menu nút "+": dùng đúng 4 tên trên. Ví dụ Agenda: "Ad-hoc hôm nay", "Personal hôm nay"; nút "+": "Thêm Ad-hoc / Thêm Personal / Ghi chú nhanh / Chen ngang".
 - Tên khối Daily cụ thể (ví dụ "Chia số AI Class") giữ nguyên tên người dùng đặt.
 - Quỹ giờ: "Quỹ Ad-hoc", "Quỹ Personal".
 - Không đổi tên cột hay giá trị trong Sheet; chỉ đổi chữ hiển thị.
