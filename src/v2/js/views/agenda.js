@@ -284,7 +284,7 @@ LP.agenda = (function () {
   }
   function taskInfoSub(x) {
     var t = x.task, parts = [];
-    if (x.step) parts.push('Việc: ' + t.title);
+    if (x.step) parts.push((t.kind === 'canhan' ? 'Personal: ' : 'Ad-hoc: ') + t.title);
     if (t.requester) parts.push('Người đặt: ' + t.requester);
     if (t.due_date) parts.push('Hạn ' + D.fmt(t.due_date) + (t.due_time ? ' ' + t.due_time : ''));
     var p = T.progress(t);
