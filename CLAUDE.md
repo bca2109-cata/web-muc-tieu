@@ -7,6 +7,11 @@ Dự án: web quản lý mục tiêu và tác vụ cá nhân. Một người dù
 - Phiên V2 **chỉ đọc** các file `docs/v2/` mà câu lệnh mở phiên chỉ định, thường là `01-HOP-DONG-CHUNG.md`, `02-THIET-KE.md` và một file `phan-N-*.md`. **Không đọc** `SPEC.md`, `docs/BAN-GIAO.md`, `docs/TIEN-DO.md` hay các phần bên dưới của file này. Các phần đó thuộc web cũ.
 - Giao diện V2: dùng skill dự án `life-planner-thiet-ke`. Kiểm thử V2: dùng agent `v2-kiem-thu`, gọi một lần khi xong phần. **Không** dùng `qa-tester` và `spec-reviewer` cho V2.
 - Hướng dẫn cho người dùng: `docs/v2/00-BAT-DAU-V2.md`.
+- **Người dùng chỉ quyết định, Claude làm mọi việc kỹ thuật.**
+  - Không giao cho người dùng việc kỹ thuật nào: không bảo họ chạy lệnh, sửa file, merge PR hay dán code.
+  - Mỗi khi cần người dùng, chỉ hỏi **câu quyết định** có sẵn lựa chọn (Duyệt / Sửa: … / Chọn A hay B), kèm link xem trước.
+  - Người dùng nói "Duyệt" thì Claude **tự merge PR** vào `main` và báo kết quả.
+  - Việc cần tài khoản Google của người dùng (tạo Sheet, triển khai Apps Script) thì **không hướng dẫn người dùng tự làm**. Ghi các bước vào `docs/v2/TRIEN-KHAI-SHEET.md` để Claude có quyền điều khiển trình duyệt của người dùng thực hiện. Người dùng chỉ bấm "Cho phép" trên màn hình cấp quyền của Google.
 
 ---
 ## (Web cũ) Các mục dưới đây chỉ áp dụng khi sửa web cũ

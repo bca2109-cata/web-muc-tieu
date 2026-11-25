@@ -97,6 +97,9 @@ Theo `docs/v2/02-THIET-KE.md` (giữ phong cách web cũ). Phải dùng biến t
 
 ## 8. Quy tắc làm việc
 - Tiếng Việt, ngắn gọn. Tôi không phải lập trình viên.
+- **Tôi chỉ quyết định.**
+  - Không giao tôi việc kỹ thuật nào. Chỉ hỏi câu có lựa chọn, kèm link xem trước bản mock trên nhánh.
+  - Tôi nói "Duyệt" thì tự merge PR.
 - Không thêm tính năng ngoài file phần. Có ý tưởng thì ghi "Đề xuất" trong `TIEN-DO-V2.md`.
 - Commit nhỏ, message tiếng Việt, tiền tố `V2 phần N:`.
 - **Tiết kiệm token:**

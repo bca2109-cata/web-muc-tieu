@@ -25,12 +25,12 @@ Cách chọn model: trong phiên Claude Code trên web, chọn ở ô model cạ
 
 **Phiên 0, Điều phối (Opus):**
 ```
-Bạn là agent điều phối V2. Chỉ đọc docs/v2/01-HOP-DONG-CHUNG.md và docs/v2/02-THIET-KE.md (SPEC-V2-DAY-DU.md chỉ mở khi cần tra). Làm "Giai đoạn 0" ở mục 9 của hợp đồng trên nhánh v2/khung. Xong thì mở PR, báo tôi cách tạo Google Sheet V2 và triển khai Apps Script, rồi dừng.
+Bạn là agent điều phối V2. Chỉ đọc docs/v2/01-HOP-DONG-CHUNG.md và docs/v2/02-THIET-KE.md (SPEC-V2-DAY-DU.md chỉ mở khi cần tra). Làm "Giai đoạn 0" ở mục 9 của hợp đồng trên nhánh v2/khung. Xong thì mở PR, viết docs/v2/TRIEN-KHAI-SHEET.md cho Claude điều khiển Chrome của tôi làm, gửi tôi link xem trước và câu hỏi duyệt, rồi dừng. Tôi nói "Duyệt" thì tự merge.
 ```
 
 **Phiên phần N (Sonnet).** Thay N bằng 1–5:
 ```
-Bạn là agent thực hiện Phần N của V2. Chỉ đọc 3 file: docs/v2/01-HOP-DONG-CHUNG.md, docs/v2/02-THIET-KE.md và docs/v2/phan-N-*.md. Không đọc code của phần khác. Làm trên nhánh v2/phan-N tách từ main. Chỉ sửa các file Phần N sở hữu (mục 3 của hợp đồng). Cần đổi phần chung thì ghi vào docs/v2/YEU-CAU-CHUNG.md rồi làm tạm trong file của mình. Xong: chạy npm run test:v2 -- phan-N, gọi agent v2-kiem-thu một lần, sửa lỗi, mở PR rồi dừng.
+Bạn là agent thực hiện Phần N của V2. Chỉ đọc 3 file: docs/v2/01-HOP-DONG-CHUNG.md, docs/v2/02-THIET-KE.md và docs/v2/phan-N-*.md. Không đọc code của phần khác. Làm trên nhánh v2/phan-N tách từ main. Chỉ sửa các file Phần N sở hữu (mục 3 của hợp đồng). Cần đổi phần chung thì ghi vào docs/v2/YEU-CAU-CHUNG.md rồi làm tạm trong file của mình. Xong: chạy npm run test:v2 -- phan-N, gọi agent v2-kiem-thu một lần, sửa lỗi, mở PR, gửi tôi link xem trước bản mock và câu hỏi duyệt, rồi dừng. Tôi nói "Duyệt" thì tự merge.
 ```
 
 **Phiên ghép (Opus)**, sau mỗi đợt:
@@ -48,7 +48,7 @@ Bạn là agent điều phối V2. Gộp lần lượt các PR của đợt này
 7. **File nhỏ:** CSS và JS tách theo phần, mỗi file dưới khoảng 400 dòng.
 8. **Tối đa 2 phiên song song.**
 
-## 5. Việc bạn phải tự làm
-- Bấm **Merge** các PR khi phiên báo xong. Hoặc bảo phiên ghép làm.
-- Tạo Google Sheet V2 và triển khai Apps Script V2 theo hướng dẫn của phiên 0, chỉ cần trình duyệt.
-- Duyệt bản xem trước mỗi phần trên web thật (`/v2/?mock=1`).
+## 5. Bạn chỉ quyết định
+- **Phiên nào báo xong:** xem bản xem trước theo link phiên gửi, rồi trả lời **"Duyệt"** hoặc **"Sửa: …"**. Phiên tự merge.
+- **Google Sheet V2:** sau khi phiên 0 xong, nhắn cho Claude trong ứng dụng Claude (có quyền dùng Chrome của bạn): **"Triển khai Sheet V2 theo docs/v2/TRIEN-KHAI-SHEET.md"**. Claude làm mọi bước. Bạn chỉ bấm **"Cho phép"** khi Google hỏi quyền.
+- **Mở phiên tiếp theo:** dán câu lệnh ở mục 3.
