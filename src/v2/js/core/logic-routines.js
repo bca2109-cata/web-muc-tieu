@@ -112,9 +112,13 @@ LP.logic.routines = (function () {
     var prev = D.prevWorkday(d), out = [];
     if (D.addWorkdays(prev, 1) !== d) return out;
     S().routines.forEach(function (r) {
-      if (!scheduled(r, prev)) return;
+      if (!scheduled(r, prev) || (r.created_at || '').slice(0, 10) > prev) return;
       itemsOf(r, prev).forEach(function (it) {
-        if ((parseInt(it.day_offset, 10) || 0) > 0) { var m = mkItem(r, it, prev); m.date = d; m.plus1 = true; out.push(m); }
+        if ((parseInt(it.day_offset, 10) || 0) > 0) {
+          // Mẫu khoảng ngày: đã tick ở bất kỳ ngày nào của khoảng thì không sinh mục +1 nữa
+          if (r.repeat === 'month_range' && doneInWindow(r, it.id, prev)) return;
+          var m = mkItem(r, it, prev); m.date = d; m.plus1 = true; out.push(m);
+        }
       });
     });
     return out;
@@ -146,32 +150,117 @@ LP.logic.routines = (function () {
   }
 
   /* "Từ hôm qua" / "Việc tồn" của ngày d. Mỗi phần tử:
-     { kind:'item', source:'plus1'|'missed'|'carried', routineId, itemId, runDate, title, time, label, ref }
+     { kind:'item', source:'plus1'|'missed'|'carried', routineId, itemId, runDate, title, time, setTime, label, ref }
      { kind:'task', source:'task', taskId, title, fromDate, ref }
-     - plus1: hạng mục +1 của lượt hôm trước (cũng có trong itemsFor(d), màn Agenda tự gộp)
-     - missed: hạng mục lượt hôm trước chưa tick và không có dòng ghi nhận
-     - carried: hạng mục lượt hôm trước đã chọn "Mang sang mai" ở màn Soát
+     - plus1: hạng mục +1 của lượt hôm trước, hôm nay mới tới hạn (cũng có trong itemsFor(d), màn Agenda tự gộp)
+     - missed: hạng mục của lượt ngày trước chưa tick và không có dòng ghi nhận
+     - carried: hạng mục đã chọn "Mang sang mai" ở màn Soát
      - task: việc quá ngày làm mà chưa xong (xem logic-tasks)
-     Hạng mục đã xong (tick bù) hoặc đã "Bỏ qua" thì không hiện. */
-  function leftovers(d) {
-    var prev = D.prevWorkday(d), out = [];
-    plusOneFor(d).forEach(function (m) {
-      if (m.done || m.status === 'skipped') return;
-      out.push(entry(m, 'plus1'));
-    });
-    runsFor(prev).forEach(function (run) {
-      run.items.forEach(function (m) {
-        if (m.done || m.status === 'skipped') return;
-        out.push(entry(m, m.status === 'carried' ? 'carried' : 'missed'));
+     Khối "Từ hôm qua" chỉ lấy mục tồn trong `leftover_days` ngày lịch gần nhất (Settings, mặc định 7).
+     leftovers(d, { all: true }) lấy TẤT CẢ mục chưa xử lý từ trước tới nay (tra ngược không giới hạn, chỉ chặn bởi ngày tạo mẫu;
+     LP.store tải toàn bộ lịch sử để việc này đúng). Mục tồn giữ cho tới khi tick (done) hoặc bỏ qua (skipped).
+     Tùy chọn { pending: true } = mục sót chưa quyết (dòng "N mục tồn chưa xử lý", màn Tồn tổng); { decided: true } = mục đã quyết làm hôm nay
+     (hiện ngay trong luồng hôm nay, nhãn "Tồn từ dd/mm"). Tùy chọn { unplaced: true }: bỏ hạng mục đã xếp giờ vào hôm nay. Mục có `since` = ngày gốc để hiển thị (mẫu khoảng ngày: ngày đầu khoảng).
+     Mục carried (đã mang sang / đưa vào hôm nay) là "đã quyết" tới hết ngày làm việc kế tiếp sau ngày quyết (note 'dua:yyyy-mm-dd');
+     quá hạn mà chưa tick/bỏ qua thì tính lại là SÓT (missed). { withDone: true } giữ cả mục đã quyết vừa tick hôm nay.
+     Việc (task) tồn giữ tới khi xong hoặc hủy (status 'cancelled'). Mẫu theo khoảng ngày: mỗi hạng mục chỉ hiện một lần.
+     "Đặt giờ" (set_time) chỉ có hiệu lực trong đúng ngày đặt: ghi chú 'xep-gio:yyyy-mm-dd'. Sang ngày khác mục lại là
+     tồn chưa xếp giờ (setTime rỗng). Ghi chú 'xep-gio' không có ngày (bản cũ) coi như còn hiệu lực. */
+  var ALL_DAYS = 36500;   // không giới hạn: chặn dưới là ngày tạo mẫu sớm nhất
+  function leftoverDays() { var n = parseInt(LP.store.setting('leftover_days', 7), 10); return n > 0 ? n : 7; }
+
+  // Mẫu khoảng ngày: hạng mục đã tick/bỏ qua ở bất kỳ ngày nào của khoảng chứa p thì không còn tồn (tính cộng dồn)
+  function doneInWindow(r, itemId, p) {
+    var w = monthWindow(r, p); if (!w) return false;
+    return workdaysBetween(w.start, w.end).some(function (x) { var c = checkOf(r.id, itemId, x); return c && (c.status === 'done' || c.status === 'skipped'); });
+  }
+  // Hạng mục ngày lệch +1 của các lượt ngày p (không kiểm tra ngày rơi)
+  function plusItemsOn(p) {
+    var out = [];
+    S().routines.forEach(function (r) {
+      if (!scheduled(r, p) || (r.created_at || '').slice(0, 10) > p) return;
+      itemsOf(r, p).forEach(function (it) {
+        if ((parseInt(it.day_offset, 10) || 0) > 0) {
+          if (r.repeat === 'month_range' && doneInWindow(r, it.id, p)) return;
+          var m = mkItem(r, it, p); m.date = D.addWorkdays(p, 1); m.plus1 = true; out.push(m);
+        }
       });
     });
-    if (LP.logic.tasks) LP.logic.tasks.leftoverTasks(d).forEach(function (t) { out.push(t); });
     return out;
   }
-  function entry(m, source) {
+  function open(m) { return !m.done && m.status !== 'skipped'; }
+
+  // Ngày người dùng QUYẾT làm một mục carried: ngày ghi trong note ('dua:yyyy-mm-dd' hoặc 'xep-gio:yyyy-mm-dd'), không có thì ngày của lượt.
+  function decidedOn(c, runDate) {
+    var m = c && /^(?:dua|xep-gio):(\d{4}-\d{2}-\d{2})/.exec(c.note || '');
+    return m ? m[1] : runDate;
+  }
+  // "Đã quyết" chỉ có hiệu lực tới hết ngày làm việc kế tiếp sau ngày quyết. Quá hạn mà chưa tick/bỏ qua thì tính lại là SÓT (missed).
+  function carriedValid(m, d) { return D.nextWorkday(decidedOn(m.check, m.runDate)) >= d; }
+  // Mục đã tick HÔM NAY mà vốn là mục đã quyết (opts.withDone): vẫn giữ để vòng hoàn thành và thẻ "xong lúc" không đổi khi tải lại trang
+  function doneToday(m, d, plus1) {
+    var c = m.check;
+    return !!c && c.status === 'done' && (c.done_at || '').slice(0, 10) === d && (plus1 || /^(?:dua|xep-gio):/.test(c.note || ''));
+  }
+
+  function leftovers(d, opts) {
+    opts = opts || {};
+    var days = opts.all ? ALL_DAYS : (opts.days || leftoverDays());
+    var prev = D.prevWorkday(d), out = [], seen = {}, lo = D.add(d, -days), p = prev, guard = 0;
+    if (opts.all) { var mc = ''; S().routines.forEach(function (r) { var c0 = (r.created_at || '').slice(0, 10); if (c0 && (!mc || c0 < mc)) mc = c0; }); if (mc && mc > lo) lo = mc; }   // không tra ngược trước ngày tạo mẫu sớm nhất
+    plusOneFor(d).forEach(function (m) {
+      if (open(m) || (opts.withDone && doneToday(m, d, true))) out.push(entry(m, 'plus1', d));
+    });
+    while (p >= lo && guard++ < 4000) {
+      runsFor(p).forEach(function (run) {
+        if ((run.routine.created_at || '').slice(0, 10) > p) return; // không tạo tồn cho ngày trước khi mẫu tồn tại
+        var mr = run.routine.repeat === 'month_range';
+        if (mr) { var cw = monthWindow(run.routine, d); if (cw && cw.start === run.window.start) return; } // cùng khoảng với hôm nay: đã là hạng mục của lượt hôm nay
+        run.items.forEach(function (m) {
+          var keepDone = opts.withDone && !mr && doneToday(m, d, false);
+          if (!open(m) && !keepDone) return;
+          if (mr) {
+            // Tính cộng dồn trong khoảng: mỗi hạng mục một lần, đã tick/bỏ qua ở bất kỳ ngày nào của khoảng thì không tồn
+            var k = run.routine.id + '|' + m.item.id + '|' + run.window.start;
+            if (seen[k]) return; seen[k] = 1;
+            if (doneInWindow(run.routine, m.item.id, p)) return;
+          }
+          var decided = !mr && m.status === 'carried' && carriedValid(m, d);
+          var en = entry(m, decided || keepDone ? 'carried' : 'missed', d);
+          // Mẫu khoảng ngày: ngày gốc là ngày đầu khoảng (mục tồn từ lúc khoảng bắt đầu), runDate vẫn là khóa của dòng ghi nhận
+          if (run.window) { en.since = run.window.start; en.label = run.routine.name + ' ' + D.fmt(en.since); }
+          out.push(en);
+        });
+      });
+      // Hạng mục +1 của lượt p đã tới hạn từ trước hôm nay (hôm nay tới hạn thì đã xử lý ở plusOneFor)
+      plusItemsOn(p).forEach(function (m) {
+        if (m.date >= d) return;
+        var keepDone = opts.withDone && doneToday(m, d, false);
+        if (!open(m) && !keepDone) return;
+        if (m.routine.repeat === 'month_range') { var k2 = m.routine.id + '|' + m.item.id + '|+1|' + (monthWindow(m.routine, p) || {}).start; if (seen[k2]) return; seen[k2] = 1; }
+        var en2 = entry(m, (m.status === 'carried' && carriedValid(m, d)) || keepDone ? 'carried' : 'missed', d);
+        var w2 = m.routine.repeat === 'month_range' ? monthWindow(m.routine, p) : null;
+        if (w2) { en2.since = w2.start; en2.label = m.routine.name + ' ' + D.fmt(en2.since); }
+        out.push(en2);
+      });
+      p = D.prevWorkday(p);
+    }
+    out.sort(function (a, b) { return (a.source === 'plus1' ? 0 : 1) - (b.source === 'plus1' ? 0 : 1) || (a.since < b.since ? -1 : a.since > b.since ? 1 : 0); });
+    if (LP.logic.tasks) LP.logic.tasks.leftoverTasks(d).forEach(function (t) { if (opts.all || t.fromDate >= lo) out.push(t); });
+    // unplaced: bỏ hạng mục đã được xếp giờ vào hôm nay (dùng chung cho mọi chỗ đếm "mục tồn")
+    if (opts.unplaced) out = out.filter(function (e) { return !(e.kind === 'item' && e.setTime); });
+    // pending: mục SÓT CHƯA QUYẾT (hạng mục bỏ sót, và việc quá ngày làm chưa xong/chưa hủy)
+    if (opts.pending) out = out.filter(function (e) { return e.kind === 'task' || (e.source === 'missed' && !e.setTime); });
+    // decided: mục ĐÃ QUYẾT làm hôm nay (+1 của lượt trước, đã "Mang sang mai", hoặc đã xếp giờ hôm nay). Chỉ hạng mục cố định
+    if (opts.decided) out = out.filter(function (e) { return e.kind === 'item' && (e.source === 'plus1' || e.source === 'carried' || e.setTime); });
+    return out;
+  }
+  function entry(m, source, d) {
+    var c = m.check, st = (c && c.set_time) || '';
+    if (st && c.note && /^xep-gio:/.test(c.note) && c.note.slice(8) !== d) st = '';
     return {
       kind: 'item', source: source, routineId: m.routine.id, itemId: m.item.id, runDate: m.runDate,
-      title: m.item.title, time: m.time, setTime: (m.check && m.check.set_time) || '',
+      title: m.item.title, time: st || m.item.time || '', setTime: st, since: m.runDate,
       label: m.routine.name + ' ' + D.fmt(m.runDate), ref: m
     };
   }

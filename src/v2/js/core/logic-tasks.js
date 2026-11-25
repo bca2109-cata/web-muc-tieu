@@ -14,7 +14,7 @@ LP.logic.tasks = (function () {
   }
 
   function urgency(task, today) {
-    if (!task || task.status === 'done' || !task.due_date) return '';
+    if (!task || task.status === 'done' || task.status === 'cancelled' || !task.due_date) return '';
     var left = D.diff(task.due_date, today || D.today());
     if (left <= 0) return 'rat-khan';
     if (left <= 2) return 'khan';
@@ -44,6 +44,7 @@ LP.logic.tasks = (function () {
   function tasksFor(d) {
     var out = [];
     S().tasks.forEach(function (t) {
+      if (t.status === 'cancelled') return;
       var steps = stepsOf(t.id);
       var dated = steps.filter(function (s) { return s.do_date; });
       if (dated.length) {
@@ -82,7 +83,7 @@ LP.logic.tasks = (function () {
   function leftoverTasks(d) {
     var out = [];
     S().tasks.forEach(function (t) {
-      if (t.status === 'done') return;
+      if (t.status === 'done' || t.status === 'cancelled') return;
       var f = nextDo(t);
       if (!f || f >= d) return;
       out.push({
@@ -91,6 +92,11 @@ LP.logic.tasks = (function () {
       });
     });
     return out.sort(function (a, b) { return a.fromDate < b.fromDate ? -1 : 1; });
+  }
+
+  // Hủy việc: việc không còn cần làm (khác "xong"). status 'cancelled'. Bỏ hủy thì về 'todo'.
+  function setCancelled(task, on) {
+    return LP.store.upsert('Tasks', Object.assign({}, task, { status: on ? 'cancelled' : 'todo', done_at: '' }));
   }
 
   function progress(task) {
@@ -117,6 +123,6 @@ LP.logic.tasks = (function () {
 
   return {
     urgency: urgency, capacity: capacity, suggestDoDate: suggestDoDate, tasksFor: tasksFor, stepsOf: stepsOf,
-    nextDo: nextDo, leftoverTasks: leftoverTasks, progress: progress, setDone: setDone, toggleStep: toggleStep
+    nextDo: nextDo, leftoverTasks: leftoverTasks, progress: progress, setDone: setDone, setCancelled: setCancelled, toggleStep: toggleStep
   };
 })();

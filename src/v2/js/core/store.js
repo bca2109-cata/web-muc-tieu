@@ -29,7 +29,8 @@ LP.store = (function () {
 
   // Tải toàn bộ. range { from, to } giới hạn các bảng theo ngày (lượt, thói quen, đột xuất)
   function load(range) {
-    range = range || { from: LP.date.add(LP.date.today(), -120), to: LP.date.add(LP.date.today(), 90) };
+    // Mặc định tải TOÀN BỘ lịch sử (from rỗng = không chặn dưới): màn Tồn tổng cần biết mục Daily sót từ bất kỳ ngày nào đã tick hay chưa
+    range = range || { from: '', to: LP.date.add(LP.date.today(), 90) };
     return LP.api.load(range).then(function (data) { state = normalize(data); afterLoad(); return state; });
   }
   // Tải thêm một khoảng ngày cũ hơn và gộp vào (xem lịch sử xa)

@@ -27,7 +27,7 @@ LP.search = (function () {
   /* ---------- Nguồn có sẵn ---------- */
   register('Việc', function (q) {
     return LP.store.get().tasks.filter(function (t) { return has(t.title, q) || has(t.requester, q); }).map(function (t) {
-      return { title: t.title, sub: (t.status === 'done' ? 'Đã xong' : t.due_date ? 'Hạn ' + LP.date.fmt(t.due_date) : 'Chưa có hạn'), icon: 'list',
+      return { title: t.title, sub: (t.status === 'done' ? 'Đã xong' : t.status === 'cancelled' ? 'Đã hủy' : t.due_date ? 'Hạn ' + LP.date.fmt(t.due_date) : 'Chưa có hạn'), icon: 'list',
         route: 'agenda', params: { date: t.do_date || t.due_date || LP.date.today() } };
     });
   });
