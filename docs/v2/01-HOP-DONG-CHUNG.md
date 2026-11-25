@@ -90,6 +90,21 @@ Dòng 1 là header. Ngày dạng `yyyy-mm-dd`, giờ dạng `HH:MM`. Mỗi dòng
 ## 6. Quy ước giao diện
 Theo `docs/v2/02-THIET-KE.md` (giữ phong cách web cũ). Phải dùng biến trong `tokens.css`, **không viết thẳng mã màu**. Không emoji. Chữ tiếng Việt.
 
+## 6b. Tên gọi trên giao diện (bắt buộc, mọi phần dùng đúng)
+Không dùng chữ "Việc" đứng một mình làm tên loại hay tiêu đề khối, vì tối nghĩa. Ba loại thứ cần làm:
+
+| Loại trong dữ liệu | Tên hiện trên giao diện | Nghĩa |
+|---|---|---|
+| Routines / RoutineItems | **Daily** | Danh sách lặp lại theo lịch (sáng, cuối ngày, tối, chốt số tháng…) |
+| Tasks `kind = adhoc` | **Ad-hoc** | Được TP/TBP giao, có người giao và hạn chót |
+| Tasks `kind = canhan` | **Personal** | Việc riêng của tôi |
+| Interruptions | **Chen ngang** | Thời gian bị kéo đi đột xuất (trước đây gọi "Đột xuất") |
+
+- Tiêu đề khối, nhãn tiến độ, bộ lọc, chú giải Lịch, Tổng kết, menu nút "+": dùng đúng 4 tên trên. Ví dụ Agenda: "Ad-hoc hôm nay", "Personal hôm nay"; nút "+": "Thêm Ad-hoc / Thêm Personal / Ghi chú nhanh / Chen ngang".
+- Tên khối Daily cụ thể (ví dụ "Chia số AI Class") giữ nguyên tên người dùng đặt.
+- Quỹ giờ: "Quỹ Ad-hoc", "Quỹ Personal".
+- Không đổi tên cột hay giá trị trong Sheet; chỉ đổi chữ hiển thị.
+
 ## 7. Kiểm thử (rẻ token)
 - `npm run test:v2 -- phan-N` chạy `tests-qa/v2/phan-N.js` bằng Playwright trên bản mock (`src/v2/index.html?mock=1&today=2026-11-25&now=11:05`).
 - Script chỉ in **JSON tóm tắt**: `{ pass, fail: [{ test, detail }] }`. Không in log dài, không chụp ảnh, trừ khi test giao diện thất bại.

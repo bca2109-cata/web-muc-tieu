@@ -6,7 +6,7 @@
 |---|---|---|---|---|---|
 | 0 | Khung chung | v2/khung | Chờ duyệt | (xem PR) | Test `core` 25/25. Chưa tạo Sheet V2 thật (làm theo `TRIEN-KHAI-SHEET.md`) |
 | 1 | 1 · Agenda + Soát | v2/phan-1 | Chờ duyệt | (xem PR) | Test `phan-1` 35/35, `core` 25/25. Luồng hôm nay lên đầu: mục đã quyết (+1, mang sang, đã xếp giờ) nằm trong khối của nó, nhãn 'Tồn từ'; mục sót chưa quyết chỉ còn dòng mảnh dẫn tới Tồn tổng `#/agenda?ton=1`; vòng hoàn thành không đếm mục sót; trạng thái Hủy cho việc (sửa phần chung theo yêu cầu, xem YEU-CAU-CHUNG 4, 6, 7). Soát mở bằng `#/agenda?soat=1`. Xem YEU-CAU-CHUNG mục 1-5 |
-| 1 | 2 · Lịch | v2/phan-2 | Chưa bắt đầu | | |
+| 1 | 2 · Lịch | v2/phan-2 | Xong, chờ duyệt (25/11/2026) | Tuần: kéo thả, hoàn tác 10s, menu ⋯, lọc quan trọng, cột Chưa có ngày. Tháng: ✓/!/Nghỉ, chấm hạn chót, thanh khoảng ngày. Test: 9 đạt | Xem YEU-CAU-CHUNG P2-1, P2-2 |
 | 2 | 3 · Ghi chú | v2/phan-3 | Chưa bắt đầu | | |
 | 2 | 4 · Mục tiêu + Tổng kết | v2/phan-4 | Chưa bắt đầu | | |
 | 3 | 5 · Mẫu + Cài đặt | v2/phan-5 | Chưa bắt đầu | | |
