@@ -47,7 +47,7 @@ LP.lich = (function () {
     var row = step || task, curDate = (step && step.do_date) || task.do_date, curTime = row.do_time || '';
     if (curDate === date && (time === undefined || time === curTime)) return Promise.resolve(false);
     var late = task.due_date ? D.diff(date, task.due_date) : 0;
-    var ask = late > 0 && date !== curDate ? UI.confirm('Chuyển sang ' + D.fmt(date) + '?', 'Việc này sẽ trễ hạn ' + late + ' ngày', { ok: 'Vẫn chuyển' }) : Promise.resolve(true);
+    var ask = late > 0 && date !== curDate ? UI.confirm('Chuyển sang ' + D.fmt(date) + '?', (task.kind === 'canhan' ? 'Personal' : 'Ad-hoc') + ' này sẽ trễ hạn ' + late + ' ngày', { ok: 'Vẫn chuyển' }) : Promise.resolve(true);
     return ask.then(function (yes) {
       if (!yes) return false;
       var before = setDate(task, step, date, time);
@@ -88,12 +88,12 @@ LP.lich = (function () {
       var max = Math.max(p.quota, p.used, 1), pct = Math.min(100, Math.round(p.used / max * 100));
       var q = Math.round(p.quota / max * 100);
       var inter = striped && p.interrupt ? Math.min(pct, Math.round(p.interrupt / max * 100)) : 0;
-      return '<div class="qbar' + (p.over ? ' over' : '') + '" title="' + label + ' ' + p.used + '/' + p.quota + ' phút">' +
+      return '<div class="qbar' + (p.over ? ' over' : '') + '" title="' + label + ' ' + p.used + '/' + p.quota + ' phút' + (p.interrupt ? ' (gồm Chen ngang ' + p.interrupt + ' phút)' : '') + '">' +
         '<div class="qbar-top"><span>' + label + '</span><b class="num">' + p.used + '/' + p.quota + 'p</b></div>' +
         '<div class="qbar-track"><i style="width:' + pct + '%"></i>' + (inter ? '<i class="stripe" style="width:' + inter + '%"></i>' : '') +
         (p.quota ? '<u style="left:' + q + '%"></u>' : '') + '</div></div>';
     }
-    return bar('Việc', c.work, true) + bar('Cá nhân', c.evening, false);
+    return bar('Quỹ Ad-hoc', c.work, true) + bar('Quỹ Personal', c.evening, false);
   }
 
   function cardHtml(x) {
@@ -104,7 +104,7 @@ LP.lich = (function () {
     return '<article class="lcard g-' + groupOf(t) + (x.done ? ' is-done' : '') + dim + '"' + drag +
       ' data-task="' + esc(t.id) + '" data-step="' + (x.step ? esc(x.step.id) : '') + '">' +
       '<div class="lcard-top"><span class="lcard-title">' + esc(x.title) + '</span>' +
-      '<button type="button" class="lcard-more" data-more aria-label="Mở menu việc ' + esc(x.title) + '">' + UI.icon('settings', 'ic18') + '</button></div>' +
+      '<button type="button" class="lcard-more" data-more aria-label="Mở menu ' + esc(x.title) + '">' + UI.icon('settings', 'ic18') + '</button></div>' +
       (x.step ? '<div class="lcard-sub muted">' + esc(t.title) + '</div>' : '') +
       '<div class="lcard-meta">' + (x.duration ? '<span class="num">' + LP.date.fmtMin(x.duration) + '</span>' : '') +
       UI.importance(imp) + UI.urgency(urg) + (t.requester ? '<span class="muted lcard-who">' + esc(t.requester) + '</span>' : '') + '</div></article>';
@@ -113,7 +113,7 @@ LP.lich = (function () {
     var imp = num(t.importance) || 1;
     return '<article class="lcard g-' + groupOf(t) + (st.onlyImp && imp < 2 ? ' dim' : '') + '" draggable="true" data-task="' + esc(t.id) + '" data-step="">' +
       '<div class="lcard-top"><span class="lcard-title">' + esc(t.title) + '</span>' +
-      '<button type="button" class="lcard-more" data-more aria-label="Mở menu việc ' + esc(t.title) + '">' + UI.icon('settings', 'ic18') + '</button></div>' +
+      '<button type="button" class="lcard-more" data-more aria-label="Mở menu ' + esc(t.title) + '">' + UI.icon('settings', 'ic18') + '</button></div>' +
       '<div class="lcard-meta">' + (num(t.duration_min) ? '<span class="num">' + LP.date.fmtMin(num(t.duration_min)) + '</span>' : '') + UI.importance(imp) +
       UI.urgency(LP.logic.tasks.urgency(t, D.today())) + '</div></article>';
   }
@@ -122,7 +122,7 @@ LP.lich = (function () {
     var today = D.today(), off = !D.isWorkday(d) && D.isDayOff(d), sun = D.dow(d) === 7;
     var runs = LP.logic.routines.runsFor(d), past = d < today;
     var sum = past ? LP.logic.routines.summary(d) : null;
-    var fixed = '<button type="button" class="lday-fixed" data-agenda="' + d + '">Cố định: <b class="num">' + runs.length + '</b> lượt' +
+    var fixed = '<button type="button" class="lday-fixed" data-agenda="' + d + '">Daily: <b class="num">' + runs.length + '</b> lượt' +
       (past && sum.total ? (sum.missed ? ' <span class="miss">! ' + sum.missed + ' sót</span>' : ' <span class="full">' + UI.icon('check', 'ic18') + ' đủ</span>') : '') + '</button>';
     var cards = LP.logic.tasks.tasksFor(d).map(cardHtml).join('');
     var dues = dueMarks(d).map(function (t) { return '<div class="ldue">' + UI.icon('flag', 'ic18') + '<span>' + esc(dueText(t)) + '</span></div>'; }).join('');
@@ -130,7 +130,7 @@ LP.lich = (function () {
       '<header class="lday-head"><span class="lday-dow">' + D.weekdayShort(d) + '</span><b class="num">' + D.fmt(d) + '</b>' +
       (d === today ? '<span class="pill pill-ok">Hôm nay</span>' : '') + (off ? '<span class="pill">Nghỉ</span>' : '') + '</header>' +
       fixed + quotaBars(LP.logic.tasks.capacity(d)) + dues +
-      '<div class="lday-cards">' + cards + (cards || dues ? '' : '<p class="muted lday-empty">Chưa có việc</p>') + '</div></section>';
+      '<div class="lday-cards">' + cards + (cards || dues ? '' : '<p class="muted lday-empty">Trống</p>') + '</div></section>';
   }
 
   /* ---------- Tuần: danh sách dọc (điện thoại) ---------- */
@@ -138,7 +138,7 @@ LP.lich = (function () {
     var days = allDates(st.anchor), un = unscheduled();
     st.el.innerHTML = head(days) + '<div class="lweek">' + days.map(dayHtml).join('') +
       '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
-      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section></div>';
+      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Trống</p>') + '</div></section></div>';
   }
   function head(days) {
     var lab = 'Tuần ' + D.fmt(days[0]) + ' – ' + D.fmt(days[6]) + '/' + days[6].slice(0, 4);
@@ -218,7 +218,7 @@ LP.lich = (function () {
       return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + now + '</div>';
     }).join('') + '</div>';
     h += '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
-      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section>';
+      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Trống</p>') + '</div></section>';
     st.el.innerHTML = head(days) + h;
   }
   function renderWeek() { if (isMobile()) renderList(); else renderGrid(); }

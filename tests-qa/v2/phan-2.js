@@ -206,6 +206,26 @@ module.exports = async function (h) {
     A.ok(await page.locator('.lmonth').count() === 1, 'không nhớ chế độ Tháng');
   });
 
+  await h.test('8. Tên gọi theo mục 6b: Daily, Ad-hoc, Personal, Quỹ; không còn "Cố định", "Đột xuất", "Việc" đứng một mình', async () => {
+    for (const w of [390, 1280]) {
+      const page = await h.open({ w, hash: WEEK });
+      await page.waitForTimeout(100);
+      let txt = await page.locator('#view').innerText();
+      await page.locator('[data-view="thang"]').click();
+      txt += '\n' + await page.locator('#view').innerText();
+      A.ok(!/Cố định|Đột xuất/.test(txt), 'còn tên cũ: ' + (txt.match(/Cố định|Đột xuất/) || [''])[0]);
+      A.ok(!/(^|\n)\s*(Việc|Cá nhân)\s*$/m.test(txt), 'còn nhãn "Việc"/"Cá nhân" đứng một mình');
+      if (w === 390) {
+        const p2 = await h.open({ w, hash: WEEK }); const t2 = await p2.locator('#view').innerText();
+        A.ok(/Daily: \d/.test(t2) && /Quỹ Ad-hoc/.test(t2) && /Quỹ Personal/.test(t2), 'thiếu Daily / Quỹ Ad-hoc / Quỹ Personal ở danh sách điện thoại');
+      }
+    }
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    await page.evaluate(() => { const t = LP.store.find('Tasks', 't-baohiem'); LP.store.upsert('Tasks', Object.assign({}, t, { due_date: '2026-11-27' })); });
+    await drag(page, '.lblk[data-task="t-baohiem"]', col(page, '2026-11-29'));
+    A.ok((await page.locator('.modal').innerText()).includes('Personal này sẽ trễ hạn'), 'hộp xác nhận phải gọi đúng loại');
+  });
+
   await h.test('7. Không cuộn ngang, không lỗi JS ở 1280, 1024, 390 (tuần và tháng, sáng và tối)', async () => {
     await h.checkScreen('lich', 'view=tuan&date=2026-11-25');
     await h.checkScreen('lich', 'view=thang&date=2026-11-25');

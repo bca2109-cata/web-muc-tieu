@@ -35,9 +35,9 @@
     if (dues.length > 3) dots += '<span class="mmore">+' + (dues.length - 3) + '</span>';
     var n = LP.logic.tasks.tasksFor(d).length;
     return '<button type="button" class="mcell' + (d === today ? ' is-today' : '') + (off || sun ? ' is-off' : '') + (other ? ' is-other' : '') + '" data-cell="' + d + '"' +
-      ' aria-label="' + D.weekdayName(d) + ' ' + D.fmt(d) + (n ? ', ' + n + ' việc' : '') + '">' +
+      ' aria-label="' + D.weekdayName(d) + ' ' + D.fmt(d) + (n ? ', ' + n + ' mục' : '') + '">' +
       '<span class="mtop"><b class="num">' + parseInt(d.slice(8), 10) + '</b>' + mark + '</span>' +
-      '<span class="mdots">' + dots + '</span><span class="mcount">' + (n ? '<b class="num">' + n + '</b> việc' : '') + '</span>' +
+      '<span class="mdots">' + dots + '</span><span class="mcount">' + (n ? '<b class="num">' + n + '</b> mục' : '') + '</span>' +
       '<span class="mbars">' + rangeBars(d, ctx.ranges) + '</span></button>';
   }
 
