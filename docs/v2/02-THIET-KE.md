@@ -36,7 +36,7 @@
 - **Lịch tháng:** ô ngày bo 14px. Ngày đủ có tick `--ok`, ngày có sót có dấu "!" `--warn`, chấm hạn chót `--q1-bar`.
 - **Ghi chú:** khung soạn trên nền `--surface`, tiêu đề tài liệu Baloo 2. Khung chú ý dùng `--butter`. Mục lục là các dòng có gạch trái `--line`, mục đang đọc có gạch `--accent`.
 - **Tổng kết:** 5 khối có tiêu đề Baloo 2. Biểu đồ cột, vòng, thanh chồng vẽ SVG theo kiểu "Biểu đồ tổng quan" của GĐ5 (thanh 14px, khe 2px, bo 4px, chú thích dưới thanh).
-- **Nút "+":** viên thuốc nổi 52px góc phải dưới, nằm trên thanh tab ở điện thoại. Menu gồm Việc ad-hoc / Việc cá nhân / Ghi chú nhanh / Đột xuất.
+- **Nút "+":** viên thuốc nổi 52px góc phải dưới, nằm trên thanh tab ở điện thoại. Menu gồm Thêm Ad-hoc / Thêm Personal / Ghi chú nhanh / Bị ngắt (xem tên gọi ở mục 6b của hợp đồng).
 
 ## 4. Bố cục và cỡ
 - Lưới 4px, lề 16px, khoảng giữa khối 20px.
