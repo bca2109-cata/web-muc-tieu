@@ -146,32 +146,57 @@ LP.logic.routines = (function () {
   }
 
   /* "Từ hôm qua" / "Việc tồn" của ngày d. Mỗi phần tử:
-     { kind:'item', source:'plus1'|'missed'|'carried', routineId, itemId, runDate, title, time, label, ref }
+     { kind:'item', source:'plus1'|'missed'|'carried', routineId, itemId, runDate, title, time, setTime, label, ref }
      { kind:'task', source:'task', taskId, title, fromDate, ref }
-     - plus1: hạng mục +1 của lượt hôm trước (cũng có trong itemsFor(d), màn Agenda tự gộp)
-     - missed: hạng mục lượt hôm trước chưa tick và không có dòng ghi nhận
-     - carried: hạng mục lượt hôm trước đã chọn "Mang sang mai" ở màn Soát
+     - plus1: hạng mục +1 của lượt hôm trước, hôm nay mới tới hạn (cũng có trong itemsFor(d), màn Agenda tự gộp)
+     - missed: hạng mục của lượt ngày trước chưa tick và không có dòng ghi nhận
+     - carried: hạng mục đã chọn "Mang sang mai" ở màn Soát
      - task: việc quá ngày làm mà chưa xong (xem logic-tasks)
-     Hạng mục đã xong (tick bù) hoặc đã "Bỏ qua" thì không hiện. */
-  function leftovers(d) {
-    var prev = D.prevWorkday(d), out = [];
-    plusOneFor(d).forEach(function (m) {
-      if (m.done || m.status === 'skipped') return;
-      out.push(entry(m, 'plus1'));
-    });
-    runsFor(prev).forEach(function (run) {
-      run.items.forEach(function (m) {
-        if (m.done || m.status === 'skipped') return;
-        out.push(entry(m, m.status === 'carried' ? 'carried' : 'missed'));
+     Mục tồn KHÔNG biến mất sau 1 ngày: giữ lại cho tới khi tick (done), bỏ qua (skipped) hoặc quá giới hạn
+     tra ngược `leftover_days` ngày lịch (Settings, mặc định 14). Việc (task) tồn thì giữ cho tới khi xong.
+     Mẫu theo khoảng ngày trong tháng: mỗi hạng mục chỉ hiện một lần (lượt gần nhất).
+     "Đặt giờ" (set_time) chỉ có hiệu lực trong đúng ngày đặt: ghi chú dạng 'xep-gio:yyyy-mm-dd'. Sang ngày khác
+     mục lại là tồn chưa xếp giờ (setTime rỗng). Ghi chú 'xep-gio' không có ngày (bản cũ) coi như còn hiệu lực. */
+  function leftoverDays() { var n = parseInt(LP.store.setting('leftover_days', 14), 10); return n > 0 ? n : 14; }
+
+  // Hạng mục ngày lệch +1 của các lượt ngày p (không kiểm tra ngày rơi)
+  function plusItemsOn(p) {
+    var out = [];
+    S().routines.forEach(function (r) {
+      if (!scheduled(r, p)) return;
+      itemsOf(r, p).forEach(function (it) {
+        if ((parseInt(it.day_offset, 10) || 0) > 0) { var m = mkItem(r, it, p); m.date = D.addWorkdays(p, 1); m.plus1 = true; out.push(m); }
       });
     });
+    return out;
+  }
+  function open(m) { return !m.done && m.status !== 'skipped'; }
+
+  function leftovers(d) {
+    var prev = D.prevWorkday(d), out = [], seen = {}, lo = D.add(d, -leftoverDays()), p = prev, guard = 0;
+    plusOneFor(d).forEach(function (m) { if (open(m)) out.push(entry(m, 'plus1', d)); });
+    while (p >= lo && guard++ < 80) {
+      runsFor(p).forEach(function (run) {
+        run.items.forEach(function (m) {
+          if (!open(m)) return;
+          if (run.routine.repeat === 'month_range') { var k = run.routine.id + '|' + m.item.id; if (seen[k]) return; seen[k] = 1; }
+          out.push(entry(m, m.status === 'carried' ? 'carried' : 'missed', d));
+        });
+      });
+      // Hạng mục +1 của lượt p đã tới hạn từ trước hôm nay (hôm nay tới hạn thì đã xử lý ở plusOneFor)
+      plusItemsOn(p).forEach(function (m) { if (m.date < d && open(m)) out.push(entry(m, 'missed', d)); });
+      p = D.prevWorkday(p);
+    }
+    out.sort(function (a, b) { return (a.source === 'plus1' ? 0 : 1) - (b.source === 'plus1' ? 0 : 1) || (a.runDate < b.runDate ? -1 : a.runDate > b.runDate ? 1 : 0); });
     if (LP.logic.tasks) LP.logic.tasks.leftoverTasks(d).forEach(function (t) { out.push(t); });
     return out;
   }
-  function entry(m, source) {
+  function entry(m, source, d) {
+    var c = m.check, st = (c && c.set_time) || '';
+    if (st && c.note && /^xep-gio:/.test(c.note) && c.note.slice(8) !== d) st = '';
     return {
       kind: 'item', source: source, routineId: m.routine.id, itemId: m.item.id, runDate: m.runDate,
-      title: m.item.title, time: m.time, setTime: (m.check && m.check.set_time) || '',
+      title: m.item.title, time: st || m.item.time || '', setTime: st,
       label: m.routine.name + ' ' + D.fmt(m.runDate), ref: m
     };
   }

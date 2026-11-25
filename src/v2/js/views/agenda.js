@@ -53,7 +53,7 @@ LP.agenda = (function () {
       if (c && c.status === 'skipped') return null;
       var it = LP.store.find('RoutineItems', e.itemId);
       o.done = !!c && c.status === 'done';
-      o.setTime = (c && c.set_time) || '';
+      o.setTime = e.setTime || '';
       o.origTime = it ? it.time || '' : '';
       o.from = e.runDate;
       if (c && c.status === 'carried' && e.source === 'missed') o.source = 'carried';
@@ -71,7 +71,7 @@ LP.agenda = (function () {
     o.title = sp ? sp.title : t.title;
     o.parent = sp ? t.title : '';
     o.from = e.fromDate;
-    o.label = 'chưa xong từ ' + D.fmt(e.fromDate);
+    o.label = 'tồn từ ' + D.fmt(e.fromDate);
     o.task = t; o.step = sp;
     return o;
   }
@@ -108,6 +108,7 @@ LP.agenda = (function () {
     var parts = [];
     if (o.parent) parts.push('Việc: ' + o.parent);
     parts.push(o.label);
+    if (o.kind === 'item' && o.source !== 'plus1') parts.push('tồn từ ' + D.fmt(o.from));
     if (o.kind === 'item' && o.origTime) parts.push('giờ gốc ' + o.origTime);
     if (o.setTime) parts.push('đã xếp ' + o.setTime);
     return parts.join(' · ');
@@ -148,6 +149,9 @@ LP.agenda = (function () {
   function chartsHtml(runs, left, tasks) {
     var done = 0, total = 0;
     runs.forEach(function (r) { done += r.done; total += r.total; });
+    // Vòng đếm tất cả: hạng mục cố định + việc hôm nay + mục tồn (Từ hôm qua)
+    tasks.forEach(function (x) { total++; if (x.done) done++; });
+    left.forEach(function (o) { total++; if (o.done) done++; });
     var cap = T.capacity(st.date), ev = cap.evening;
     var facts = '<div class="ag-fact' + (ev.over ? ' is-over' : '') + '"><b>Quỹ việc riêng</b><span class="num">' + D.fmtMin(ev.used) + ' / ' + D.fmtMin(ev.quota) + '</span>' + (ev.over ? ' vượt quỹ' : '') + '</div>' +
       '<div class="ag-fact"><b>Giờ đột xuất</b><span class="num">' + D.fmtMin(cap.interruptionMin) + '</span></div>';
@@ -241,7 +245,10 @@ LP.agenda = (function () {
     return '<li class="ag-item' + (o.done ? ' is-done' : '') + stateCls(s) + '">' + tickBtn('tick-left', attrs, o.done, o.title, o.key) +
       (t ? '<span class="ag-time num">' + esc(t) + '</span>' : '') +
       '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div><div class="ag-sub">' + esc(entrySub(o)) + '</div></div>' +
-      '<div class="ag-aside">' + (o.done ? '' : srcPill(o)) + '</div></li>';
+      '<div class="ag-aside">' + (o.done ? '' : srcPill(o) + skipBtn(o)) + '</div></li>';
+  }
+  function skipBtn(o) {
+    return o.kind === 'item' && !readOnly() ? '<button type="button" class="chip" data-act="skip-left" data-key="' + esc(o.key) + '">Bỏ qua</button>' : '';
   }
   function taskInfoSub(x) {
     var t = x.task, parts = [];
@@ -374,7 +381,7 @@ LP.agenda = (function () {
           var attrs = o.kind === 'item' ? 'data-key="' + esc(o.key) + '"' : 'data-key="' + esc(o.key) + '"';
           return '<li class="ag-item' + (o.done ? ' is-done' : '') + '">' + tickBtn('tick-left', 'data-key="' + esc(o.key) + '"', o.done, o.title, o.key) +
             '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div><div class="ag-sub">' + esc(entrySub(o)) + '</div>' +
-            (o.done ? '' : placeBox(o.key, attrs)) + '</div><div class="ag-aside">' + (o.done ? '' : srcPill(o)) + '</div></li>';
+            (o.done ? '' : placeBox(o.key, attrs)) + '</div><div class="ag-aside">' + (o.done ? '' : srcPill(o) + skipBtn(o)) + '</div></li>';
         }).join('') + '</ul></section>';
     }
     var tl = '<div class="ag-tl-head" aria-hidden="true"><span>Giờ</span><span>Công việc</span><span>Thuộc</span><span>Mức độ</span><span>Hạn</span><span>Trạng thái</span></div>', seg = '';
@@ -420,7 +427,7 @@ LP.agenda = (function () {
     var e = st.snapMap[key]; if (!e) return;
     if (e.kind === 'item') {
       var cur = R.checkOf(e.routineId, e.itemId, e.runDate), extra = { set_time: time };
-      if (!cur) extra.note = 'xep-gio';
+      if (!cur || !cur.note || /^xep-gio/.test(cur.note)) extra.note = 'xep-gio:' + st.date;
       R.check(e.routineId, e.itemId, e.runDate, cur ? cur.status : 'carried', extra);
       return;
     }
@@ -436,7 +443,7 @@ LP.agenda = (function () {
   function clearEntryTime(key) {
     var e = st.snapMap[key]; if (!e || e.kind !== 'item') return;
     var cur = R.checkOf(e.routineId, e.itemId, e.runDate); if (!cur) return;
-    if (cur.note === 'xep-gio' && cur.status === 'carried') R.check(e.routineId, e.itemId, e.runDate, '');
+    if (/^xep-gio/.test(cur.note || '') && cur.status === 'carried') R.check(e.routineId, e.itemId, e.runDate, '');
     else R.check(e.routineId, e.itemId, e.runDate, cur.status, { set_time: '' });
   }
   function setTaskTime(taskId, stepId, time) {
@@ -516,6 +523,11 @@ LP.agenda = (function () {
       if (!D.isTime(v)) { LP.ui.toast('Chọn giờ trước rồi bấm Đặt giờ nhé.'); return; }
       var key = b.getAttribute('data-key');
       if (key) setEntryTime(key, v); else setTaskTime(b.getAttribute('data-task'), b.getAttribute('data-step'), v);
+    },
+    'skip-left': function (b) {
+      var e = st.snapMap[b.getAttribute('data-key')]; if (!e || e.kind !== 'item') return;
+      R.check(e.routineId, e.itemId, e.runDate, 'skipped', { note: 'Bỏ qua từ Agenda', set_time: '' });
+      LP.ui.toast('Đã bỏ qua "' + e.title + '".', { actionLabel: 'Hoàn tác', actionIcon: 'back', action: function () { R.check(e.routineId, e.itemId, e.runDate, ''); } });
     },
     unplace: function (b) { clearEntryTime(b.getAttribute('data-key')); },
     'unplace-task': function (b) { clearTaskTime(b.getAttribute('data-task'), b.getAttribute('data-step')); },
