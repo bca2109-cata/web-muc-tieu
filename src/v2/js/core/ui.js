@@ -199,7 +199,30 @@ LP.ui = (function () {
     });
   }
 
+  /* Tài liệu trong tấm trượt: cắt theo mục (dòng '# Tiêu đề') khi có headingId */
+  function docSection(doc, headingId) {
+    var content = doc.content || '', heads = [];
+    try { heads = JSON.parse(doc.headings || '[]'); } catch (e) { heads = []; }
+    var hd = headingId ? heads.filter(function (x) { return x.id === headingId; })[0] : null;
+    if (!hd) return { title: '', body: content };
+    var lines = content.split('\n'), out = [], on = false, re = /^#{1,6}\s+(.*)$/;
+    for (var i = 0; i < lines.length; i++) {
+      var m = re.exec(lines[i]);
+      if (m) { if (on) break; if (m[1].trim() === hd.title) { on = true; continue; } }
+      if (on) out.push(lines[i]);
+    }
+    return on ? { title: hd.title, body: out.join('\n').trim() } : { title: '', body: content };
+  }
+  function docSheet(docId, headingId) {
+    if (!docId) { toast('Chưa gắn tài liệu.'); return; }
+    LP.api.docGet(docId).then(function (doc) {
+      var sec = docSection(doc, headingId);
+      sheet(doc.title || 'Ghi chú', '<div class="ag-doc-body">' + (sec.title ? '<h3>' + esc(sec.title) + '</h3>' : '') + esc(sec.body || 'Tài liệu này chưa có nội dung.') + '</div>');
+    }, function () { toast('Không mở được ghi chú.'); });
+  }
+
   return {
+    docSection: docSection, docSheet: docSheet,
     icon: icon, importance: importance, urgency: urgency, pill: pill, esc: esc,
     toast: toast, hideToast: hideToast, clearSticky: clearSticky,
     sheet: sheet, closeSheet: closeSheet, confirm: confirm, ICONS: ICONS

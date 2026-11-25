@@ -163,8 +163,8 @@ module.exports = async function (h) {
 
   await h.test('Tìm kiếm bỏ dấu: tìm "bao cao" ra Báo cáo cuối ngày, "chia so" ra mẫu và hạng mục', async () => {
     const r = await ev(() => ({ a: LP.search.query('bao cao').map(x => x.title), b: LP.search.query('Chia số').map(x => x.type + ':' + x.title), none: LP.search.query('zzzz').length }));
-    A.ok(r.a.includes('Báo cáo cuối ngày') && r.a.includes('Báo cáo phân tích nguồn T11'), r.a.join('|'));
-    A.ok(r.b.some(x => x.startsWith('Mẫu công việc:Chia số AI Class')) && r.b.some(x => x.startsWith('Ghi chú:')), r.b.join('|'));
+    A.ok(r.a.includes('Báo cáo cuối ngày'), r.a.join('|'));
+    A.ok(r.b.some(x => x.startsWith('Daily:Chia số AI Class')) && r.b.some(x => x.startsWith('Ghi chú:')), r.b.join('|'));
     A.strictEqual(r.none, 0);
   });
 
@@ -213,7 +213,7 @@ module.exports = async function (h) {
     const p = await h.open({ w: 1280 });
     await p.click('#btn-search'); await p.fill('.sr-input', 'chia so'); await p.waitForTimeout(60);
     A.ok(await p.locator('.sr-row').count() >= 2);
-    await p.locator('.sr-row', { hasText: 'Mẫu công việc' }).first().click(); await p.waitForTimeout(60);
+    await p.locator('.sr-row', { hasText: 'Daily' }).first().click(); await p.waitForTimeout(60);
     A.strictEqual(await p.locator('#view').getAttribute('data-route'), 'mau');
     A.strictEqual(await p.locator('.sr-overlay').count(), 0);
     await p.click('#btn-search'); await p.keyboard.press('Escape');

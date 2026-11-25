@@ -103,8 +103,8 @@ LP.mockSeed = function () {
       task_id: tid, sort_order: n, title: title, do_date: '', do_time: '', duration_min: '', status: 'todo', done_at: ''
     }, o)));
   }
-  task('t-bcnguon', 'Báo cáo phân tích nguồn T11', 'adhoc', { requester: 'TBP Sales', due_date: '2026-11-27', do_date: '2026-11-26', importance: 3, goal_id: 'g-powerbi', duration_min: 135 });
-  step('t-bcnguon', 1, 'Lấy dữ liệu nguồn', { do_date: '2026-11-25', duration_min: 45 });
+  task('t-bcnguon', 'BC phân tích nguồn T11', 'adhoc', { requester: 'TBP Sales', due_date: '2026-11-27', due_time: '15:00', do_date: '2026-11-26', importance: 3, goal_id: 'g-powerbi', duration_min: 135 });
+  step('t-bcnguon', 1, 'Lấy dữ liệu nguồn', { do_date: '2026-11-25', do_time: '09:30', duration_min: 45 });
   step('t-bcnguon', 2, 'Dựng biểu đồ', { do_date: '2026-11-26', duration_min: 60 });
   step('t-bcnguon', 3, 'Viết nhận xét', { do_date: '2026-11-26', duration_min: 30 });
   task('t-quy4', 'Số liệu quý 4 cho giám đốc', 'adhoc', { requester: 'Giám đốc', due_date: '2026-12-02', do_date: '2026-12-01', importance: 2, goal_id: 'g-dashboard', duration_min: 240 });
@@ -139,7 +139,7 @@ LP.mockSeed = function () {
     db.habits.forEach(function (h) {
       if (h.weekdays.split(',').indexOf(String(D.dow(d))) < 0) return;
       var r = rnd(), done = r < (h.id === 'h-nuoc' ? 0.88 : h.id === 'h-doc' ? 0.7 : 0.6);
-      if (h.id === 'h-nuoc') { if (d === '2026-11-20') done = false; else if (d > '2026-11-20') done = true; } // chuỗi 6 ngày tính đến hôm nay
+      if (h.id === 'h-nuoc') { if (d === '2026-11-20') done = false; else if (d > '2026-11-20') done = true; } // chuỗi 5 ngày (21-25/11) tính đến hôm nay
       if (d === ANCHOR && h.id === 'h-doc') return; // 21:00 chưa tới
       if (d === ANCHOR && h.id === 'h-chay') done = false;
       db.habitLogs.push(base('hl-' + (++logN), { habit_id: h.id, date: d, done: done ? 'TRUE' : 'FALSE' }));

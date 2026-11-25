@@ -109,7 +109,7 @@ LP.agenda = (function () {
   }
   function entrySub(o) {
     var parts = [];
-    if (o.parent) parts.push('Việc: ' + o.parent);
+    if (o.parent) parts.push('Ad-hoc: ' + o.parent);
     parts.push(o.label);
     if (o.kind === 'item' && o.source !== 'plus1') parts.push('tồn từ ' + D.fmt(o.from));
     if (o.kind === 'item' && o.origTime) parts.push('giờ gốc ' + o.origTime);
@@ -155,15 +155,15 @@ LP.agenda = (function () {
     cards.forEach(function (c) { done += c.done; total += c.total; });
     tasks.forEach(function (x) { total++; if (x.done) done++; });
     var cap = T.capacity(st.date), ev = cap.evening;
-    var facts = '<div class="ag-fact' + (ev.over ? ' is-over' : '') + '"><b>Quỹ việc riêng</b><span class="num">' + D.fmtMin(ev.used) + ' / ' + D.fmtMin(ev.quota) + '</span>' + (ev.over ? ' vượt quỹ' : '') + '</div>' +
-      '<div class="ag-fact"><b>Giờ đột xuất</b><span class="num">' + D.fmtMin(cap.interruptionMin) + '</span></div>';
+    var facts = '<div class="ag-fact' + (ev.over ? ' is-over' : '') + '"><b>Quỹ Personal</b><span class="num">' + D.fmtMin(ev.used) + ' / ' + D.fmtMin(ev.quota) + '</span>' + (ev.over ? ' vượt quỹ' : '') + '</div>' +
+      '<div class="ag-fact"><b>Giờ chen ngang</b><span class="num">' + D.fmtMin(cap.interruptionMin) + '</span></div>';
     var blocks = '';
     function blk(name, d, t) { blocks += '<div class="ag-blk"><span class="ag-blk-name">' + esc(name) + '</span><span class="num">' + d + '/' + t + '</span>' + barHtml(d, t) + '</div>'; }
     cards.forEach(function (c) { blk(c.routine.name, c.done, c.total); });
     var ad = tasks.filter(function (x) { return x.task.kind !== 'canhan'; }), cn = tasks.filter(function (x) { return x.task.kind === 'canhan'; });
     function dn(l) { return l.filter(function (x) { return x.done; }).length; }
-    if (ad.length) blk('Ad-hoc', dn(ad), ad.length);
-    if (cn.length) blk('Cá nhân', dn(cn), cn.length);
+    if (ad.length) blk('Ad-hoc hôm nay', dn(ad), ad.length);
+    if (cn.length) blk('Personal hôm nay', dn(cn), cn.length);
     if (!blocks) blocks = '<p class="ag-empty">Hôm nay chưa có khối nào.</p>';
     var cols = sixDays().map(function (x) {
       var h = x.pct == null ? 0 : Math.max(4, Math.round(x.pct * 0.8)); // 80px = 100%
@@ -284,7 +284,7 @@ LP.agenda = (function () {
   }
   function taskInfoSub(x) {
     var t = x.task, parts = [];
-    if (x.step) parts.push('Việc: ' + t.title);
+    if (x.step) parts.push((t.kind === 'canhan' ? 'Personal: ' : 'Ad-hoc: ') + t.title);
     if (t.requester) parts.push('Người đặt: ' + t.requester);
     if (t.due_date) parts.push('Hạn ' + D.fmt(t.due_date) + (t.due_time ? ' ' + t.due_time : ''));
     var p = T.progress(t);
@@ -330,11 +330,11 @@ LP.agenda = (function () {
     var h = '<div class="ag-list">';
     var infos = cards.map(runInfo).sort(function (a, b) { return a.key - b.key || a.idx - b.idx; });
     h += '<div class="ag-runs">' + (infos.length ? infos.map(runCard).join('') :
-      '<section class="card"><h2>Công việc cố định</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Hôm nay không có lượt cố định nào.' : 'Ngày nghỉ, không có lượt cố định.') + '</p></section>') + '</div>';
+      '<section class="card"><h2>Daily</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Hôm nay không có lượt Daily nào.' : 'Ngày nghỉ, không có lượt Daily.') + '</p></section>') + '</div>';
     var ad = tasks.filter(function (x) { return x.task.kind !== 'canhan'; }), cn = tasks.filter(function (x) { return x.task.kind === 'canhan'; });
-    if (ad.length) h += taskSection('Ad-hoc', ad, '');
-    if (cn.length) h += taskSection('Cá nhân', cn, '');
-    if (!tasks.length) h += taskSection('Việc ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)), [], 'Không có việc nào có ngày làm là hôm nay.');
+    if (ad.length) h += taskSection('Ad-hoc hôm nay', ad, '');
+    if (cn.length) h += taskSection('Personal hôm nay', cn, '');
+    if (!tasks.length) h += taskSection('Ad-hoc / Personal ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)), [], 'Không có việc nào có ngày làm là hôm nay.');
     h += '<section class="card ag-habits" aria-label="Thói quen"><div class="ag-sec-head"><h2>Thói quen</h2></div>' +
       (habits.length ? '<div class="chips">' + habits.map(habitChip).join('') + '</div>' : '<p class="ag-empty">Không có thói quen nào hôm nay.</p>') + '</section>';
     if (st.date === D.today()) h += '<div class="ag-foot"><button type="button" class="btn btn-primary" data-act="soat">' + icon('moon', 'ic18') + 'Soát cuối ngày</button></div>';
@@ -390,8 +390,8 @@ LP.agenda = (function () {
       var t = x.task, sid = x.step ? x.step.id : '', attrs = 'data-task="' + esc(t.id) + '" data-step="' + esc(sid) + '"';
       var row = {
         t: D.timeToMin(x.time), time: x.time || '', done: x.done, state: timeState(x.time, x.done), title: x.title,
-        flag: tonFlag(t), sub: x.step ? 'Việc: ' + t.title : (t.requester ? 'Người đặt: ' + t.requester : ''),
-        belong: t.kind === 'canhan' ? 'Việc cá nhân' : 'Việc ad-hoc', hearts: LP.ui.importance(t.importance), urg: LP.ui.urgency(T.urgency(t, st.date)),
+        flag: tonFlag(t), sub: x.step ? (t.kind === 'canhan' ? 'Personal: ' : 'Ad-hoc: ') + t.title : (t.requester ? 'Người đặt: ' + t.requester : ''),
+        belong: t.kind === 'canhan' ? 'Personal' : 'Ad-hoc', hearts: LP.ui.importance(t.importance), urg: LP.ui.urgency(T.urgency(t, st.date)),
         due: t.due_date ? 'Hạn ' + D.fmt(t.due_date) + (t.due_time ? ' ' + t.due_time : '') : '',
         tick: tickBtn('tick-task', attrs, x.done, x.title, 't|' + t.id + '|' + sid)
       };
@@ -414,7 +414,7 @@ LP.agenda = (function () {
     if (st.order === 'desc') rows.reverse();
 
     var h = '';
-    var tl = '<div class="ag-tl-head" aria-hidden="true"><span>Giờ</span><span>Công việc</span><span>Thuộc</span><span>Mức độ</span><span>Hạn</span><span>Trạng thái</span></div>', seg = '';
+    var tl = '<div class="ag-tl-head" aria-hidden="true"><span>Giờ</span><span>Tên</span><span>Thuộc</span><span>Mức độ</span><span>Hạn</span><span>Trạng thái</span></div>', seg = '';
     rows.forEach(function (r) {
       if (r.t != null) { var sg = segOf(r.t); if (sg !== seg) { seg = sg; tl += '<div class="ag-seg">' + sg + '</div>'; } }
       tl += r.now ? r.html : tlRow(r);
@@ -513,7 +513,7 @@ LP.agenda = (function () {
     off: function () {
       var d = st.date, row = S().daysOff.filter(function (r) { return r.date === d; })[0];
       LP.ui.confirm(row ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ',
-        row ? 'Ngày ' + D.fmt(d) + ' sẽ lại là ngày làm việc, các lượt cố định hiện lại.' : 'Ngày ' + D.fmt(d) + ' sẽ là ngày nghỉ: không có lượt cố định, quỹ việc ad-hoc về 0.',
+        row ? 'Ngày ' + D.fmt(d) + ' sẽ lại là ngày làm việc, các lượt Daily hiện lại.' : 'Ngày ' + D.fmt(d) + ' sẽ là ngày nghỉ: không có lượt Daily, Quỹ Ad-hoc về 0.',
         { ok: row ? 'Bỏ đánh dấu' : 'Đánh dấu nghỉ' }).then(function (yes) {
         if (!yes) return;
         if (row) LP.store.remove('DaysOff', row.id); else LP.store.upsert('DaysOff', { date: d, note: '' });
@@ -566,7 +566,7 @@ LP.agenda = (function () {
     },
     unplace: function (b) { clearEntryTime(b.getAttribute('data-key')); },
     'unplace-task': function (b) { clearTaskTime(b.getAttribute('data-task'), b.getAttribute('data-step')); },
-    doc: function (b) { tam_openDoc(b.getAttribute('data-doc'), b.getAttribute('data-head')); },
+    doc: function (b) { LP.ui.docSheet(b.getAttribute('data-doc'), b.getAttribute('data-head')); },
     more: function (b) { taskMenu(b.getAttribute('data-task'), b.getAttribute('data-step')); }
   };
 
@@ -601,8 +601,8 @@ LP.agenda = (function () {
       else if (m === 'edit') {
         if (LP.quickAdd && LP.quickAdd.edit) LP.quickAdd.edit('task', t.id);
         else LP.ui.toast('Form sửa việc đang làm (Phần 5 sẽ nối vào).');
-      } else if (t.doc_id) tam_openDoc(t.doc_id, t.heading_id);
-      else LP.ui.toast('Việc này chưa gắn ghi chú.');
+      } else if (t.doc_id) LP.ui.docSheet(t.doc_id, t.heading_id);
+      else LP.ui.toast('Mục này chưa gắn ghi chú.');
     });
   }
   function changeDate(t, sp) {
@@ -620,28 +620,6 @@ LP.agenda = (function () {
     });
   }
 
-  /* ---------- Tài liệu trong tấm trượt (tạm, Phần 3 sẽ có bản chung) ---------- */
-  function tam_docSection(doc, headingId) {
-    var content = doc.content || '', heads = [];
-    try { heads = JSON.parse(doc.headings || '[]'); } catch (e) { heads = []; }
-    var hd = headingId ? heads.filter(function (x) { return x.id === headingId; })[0] : null;
-    if (!hd) return { title: '', body: content };
-    var lines = content.split('\n'), out = [], on = false, re = /^#{1,6}\s+(.*)$/;
-    for (var i = 0; i < lines.length; i++) {
-      var m = re.exec(lines[i]);
-      if (m) { if (on) break; if (m[1].trim() === hd.title) { on = true; continue; } }
-      if (on) out.push(lines[i]);
-    }
-    return on ? { title: hd.title, body: out.join('\n').trim() } : { title: '', body: content };
-  }
-  function tam_openDoc(docId, headingId) {
-    if (!docId) { LP.ui.toast('Chưa gắn tài liệu.'); return; }
-    LP.api.docGet(docId).then(function (doc) {
-      var sec = tam_docSection(doc, headingId);
-      LP.ui.sheet(doc.title || 'Ghi chú', '<div class="ag-doc-body">' + (sec.title ? '<h3>' + esc(sec.title) + '</h3>' : '') + esc(sec.body || 'Tài liệu này chưa có nội dung.') + '</div>');
-    }, function () { LP.ui.toast('Không mở được ghi chú.'); });
-  }
-
   /* ---------- Thông báo tới giờ (chạy nền ở mọi tab của web) ---------- */
   function notifyCandidates(d) {
     var out = [];
@@ -654,7 +632,7 @@ LP.agenda = (function () {
       if (e.time) out.push({ key: 'l|' + e.routineId + '|' + e.itemId + '|' + e.runDate, title: e.title, time: e.time, from: e.label });
     });
     T.tasksFor(d).forEach(function (x) {
-      if (x.time && !x.done) out.push({ key: 't|' + x.task.id + '|' + (x.step ? x.step.id : ''), title: x.title, time: x.time, from: 'Việc' });
+      if (x.time && !x.done) out.push({ key: 't|' + x.task.id + '|' + (x.step ? x.step.id : ''), title: x.title, time: x.time, from: 'Ad-hoc / Personal' });
     });
     S().habits.forEach(function (h) {
       if (truthy(h.active) && h.time && ST.habitDue(h, d) && !ST.habitDone(h, d)) out.push({ key: 'h|' + h.id, title: h.name, time: h.time, from: 'Thói quen' });
@@ -702,5 +680,5 @@ LP.agenda = (function () {
   LP.router.on('route', function () { checkNotify(); });
 
   LP.router.register('agenda', { title: 'Agenda', mount: mount, unmount: unmount });
-  return { checkNotify: checkNotify, docSection: tam_docSection };
+  return { checkNotify: checkNotify, docSection: LP.ui.docSection };
 })();

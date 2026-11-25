@@ -11,6 +11,11 @@
 | 2 | 4 · Mục tiêu + Tổng kết | v2/phan-4 | Chưa bắt đầu | | |
 | 3 | 5 · Mẫu + Cài đặt | v2/phan-5 | Chưa bắt đầu | | |
 
+## Ghép Đợt 1 (nhánh v2/ghep-dot-1)
+- Đổi chữ giao diện theo mục 6b: Daily, Ad-hoc, Personal, Chen ngang (nút "+", khối Agenda, Soát, Tồn tổng, tìm kiếm, tiêu đề màn Mẫu, quỹ giờ). Không đổi tên cột hay giá trị Sheet.
+- Xử lý YEU-CAU-CHUNG: 1, 2, 5, 7, P2-1, P2-2, P2-3 xong; 3 chờ Phần 5.
+- Test `all`: core 25, phan-1 35, phan-2 16 đạt. Test cũ được cập nhật theo tên mới. Agent `v2-kiem-thu` chạy một lần cho toàn web.
+
 ## Đề xuất (chờ người dùng duyệt)
 - Hiện ô "Quỹ giờ" ở Agenda theo cả hai quỹ (ad-hoc và buổi tối). Cần Phần 1 xác nhận cách hiện.
 - Thông báo nhắc việc (`LP.notify`) mới có khung. Nối lịch nhắc cụ thể nếu người dùng muốn.

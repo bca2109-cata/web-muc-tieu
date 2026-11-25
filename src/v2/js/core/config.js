@@ -18,7 +18,7 @@ var LP = window.LP || (window.LP = {});
       Goals: 'goals', Reviews: 'reviews', Interruptions: 'interruptions', DaysOff: 'daysOff',
       Settings: 'settings', Docs: 'docs'
     },
-    ROUTES: ['agenda', 'lich', 'ghi-chu', 'muc-tieu', 'tong-ket', 'cai-dat', 'mau'],
+    ROUTES: ['agenda', 'lich', 'ghi-chu', 'muc-tieu', 'tong-ket', 'cai-dat', 'mau', 'soat', 'ton'],
     TOKEN_KEY: 'lpv2_token'
   };
 
