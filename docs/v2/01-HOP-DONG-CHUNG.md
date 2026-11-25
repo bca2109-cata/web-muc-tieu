@@ -97,6 +97,9 @@ Theo `docs/v2/02-THIET-KE.md` (giữ phong cách web cũ). Phải dùng biến t
 
 ## 8. Quy tắc làm việc
 - Tiếng Việt, ngắn gọn. Tôi không phải lập trình viên.
+- **Tôi chỉ quyết định.**
+  - Không giao tôi việc kỹ thuật nào. Chỉ hỏi câu có lựa chọn, kèm link xem trước bản mock trên nhánh.
+  - Tôi nói "Duyệt" thì tự merge PR.
 - Không thêm tính năng ngoài file phần. Có ý tưởng thì ghi "Đề xuất" trong `TIEN-DO-V2.md`.
 - Commit nhỏ, message tiếng Việt, tiền tố `V2 phần N:`.
 - **Tiết kiệm token:**
@@ -119,4 +122,7 @@ Theo `docs/v2/02-THIET-KE.md` (giữ phong cách web cũ). Phải dùng biến t
 5. `apps-script-v2/Code.gs`: `setup()` tạo các sheet ở mục 5, các action `load`, `save`, `remove`, cùng mã bí mật.
 6. Nút "+" (chỉ khung menu) và ô tìm kiếm chung, nối với `search.js`.
 7. `package.json`: thêm script `test:v2`. Tạo `docs/v2/TIEN-DO-V2.md` và `docs/v2/YEU-CAU-CHUNG.md`.
-8. Mở PR `v2/khung`. Viết hướng dẫn từng bước để tôi tạo Sheet V2 và triển khai Apps Script, chỉ cần trình duyệt.
+8. Mở PR `v2/khung`.
+9. Viết `docs/v2/TRIEN-KHAI-SHEET.md`: các bước tạo Sheet V2, dán `apps-script-v2/*.gs`, chạy `setup()`, triển khai Web App (Execute as: Me, Who has access: Anyone), lấy URL và mã bí mật, rồi điền vào `config.js` qua giao diện Cài đặt.
+   - Viết cho **Claude có quyền điều khiển Chrome của tôi** làm, không viết cho tôi làm.
+   - Đánh dấu rõ bước nào tôi phải tự bấm "Cho phép".
