@@ -139,7 +139,7 @@
 .mt-stack button{flex-wrap:nowrap}
 .mt-stot{flex:none;margin-left:auto;font-size:13px}
 .mt-u-rat-khan{background:var(--q1-bar)}.mt-u-khan{background:var(--q3-bar)}.mt-u-binh-thuong{background:var(--cv-rest)}
-.mt-sbar .mt-u-rat-khan{color:#fff}
+.mt-sbar .mt-u-rat-khan{color:var(--accent-ink)}
 
 .mt-hl{flex:none;width:86px;font-size:13px}
 .mt-ht{flex:1;min-width:0;height:14px;border-radius:4px;background:var(--track);overflow:hidden}
