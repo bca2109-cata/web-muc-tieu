@@ -150,24 +150,15 @@ LP.lich = (function () {
   var T0 = 6 * 60, T1 = 22 * 60, STEP = 30, ROW = 36;
   function yOf(min) { return (min - T0) / STEP * ROW; }
 
-  // Xếp các mục trùng giờ đứng cạnh nhau: cụm chồng lấn, mỗi mục một làn
+  // Mục trùng giờ xếp từ trên xuống: mỗi mục một dòng, dòng đã có người thì xuống dòng trống kế tiếp
   function layout(list) {
-    list.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
-    var cluster = [], end = -1;
-    function flush() {
-      var lanes = [];
-      cluster.forEach(function (e) {
-        var i = 0; while (lanes[i] > e.start) i++;
-        lanes[i] = e.end; e.lane = i;
-      });
-      cluster.forEach(function (e) { e.lanes = lanes.length; });
-      cluster = [];
-    }
+    list.sort(function (a, b) { return a.start - b.start; });
+    var used = {};
     list.forEach(function (e) {
-      if (cluster.length && e.start >= end) { flush(); end = -1; }
-      cluster.push(e); end = Math.max(end, e.end);
+      var r = Math.floor((e.start - T0) / STEP);
+      while (used[r]) r++;
+      used[r] = true; e.row = r;
     });
-    if (cluster.length) flush();
     return list;
   }
 
@@ -224,8 +215,7 @@ LP.lich = (function () {
     h += '<div class="lgut" style="height:' + yOf(T1) + 'px">' + gut + '</div>';
     h += days.map(function (d, i) {
       var blocks = per[i].timed.map(function (e) {
-        var w = 100 / e.lanes;
-        return blockHtml(e, 'top:' + yOf(e.start) + 'px;height:' + ROW + 'px;left:calc(' + (e.lane * w) + '% + 1px);width:calc(' + w + '% - 3px)');
+        return blockHtml(e, 'top:' + (e.row * ROW) + 'px;height:' + ROW + 'px;left:0;right:0');
       }).join('');
       var now = d === today && nowMin >= T0 && nowMin < T1 ? '<div class="lnow" style="top:' + yOf(nowMin) + 'px" title="Bây giờ ' + D.now() + '"><i></i></div>' : '';
       return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + now + '</div>';

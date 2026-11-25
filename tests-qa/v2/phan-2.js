@@ -89,23 +89,22 @@ module.exports = async function (h) {
 
   await h.test('G1. Lưới giờ: mục nằm đúng giờ, cao theo thời lượng, trùng giờ thì đứng cạnh nhau', async () => {
     const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
-    await setTimes(page, [['t-kham', '2026-11-25', '14:00', 60], ['t-bcnguon', '2026-11-25', '14:00', 45, 'st-t-bcnguon-1'], ['t-baohiem', '2026-11-28', '09:00', 90]]);
+    await setTimes(page, [['t-kham', '2026-11-25', '14:00', 60], ['t-bcnguon', '2026-11-25', '14:00', 45, 'st-t-bcnguon-1'], ['t-baohiem', '2026-11-28', '13:00', 90]]);
     const box = async sel => page.locator(sel).evaluate(e => { const r = e.getBoundingClientRect(), c = e.parentElement.getBoundingClientRect(); return { top: r.top - c.top, h: r.height, left: r.left - c.left, w: r.width, cw: c.width }; });
     const a = await box('.lblk[data-task="t-baohiem"]');
-    A.ok(Math.abs(a.top - (3 * 60 / 30 * 36)) <= 2, '09:00 phải ở y=216, có ' + a.top);
+    A.ok(Math.abs(a.top - (7 * 60 / 30 * 36)) <= 2, '13:00 phải ở y=504, có ' + a.top);
     const k = await box('.lblk[data-task="t-kham"]'), b = await box('.lblk[data-step="st-t-bcnguon-1"]');
-    A.ok(Math.abs(k.top - b.top) <= 1, 'cùng giờ bắt đầu');
-    A.ok(k.w < k.cw * 0.6 && b.w < b.cw * 0.6, 'mỗi dòng chiếm nửa cột');
-    A.ok(Math.abs(k.left - b.left) > k.cw * 0.3, 'hai khối phải đứng cạnh nhau');
+    A.ok(Math.abs(Math.abs(k.top - b.top) - 36) <= 1, 'hai mục trùng giờ phải cách nhau đúng một dòng, có ' + Math.abs(k.top - b.top));
+    A.ok(Math.abs(k.left - b.left) <= 1 && k.w > k.cw * 0.9 && b.w > b.cw * 0.9, 'phải cùng cột, không chung hàng');
     h.noErrors(page);
   });
 
   await h.test('G2. Hạng mục cố định hiện theo giờ; việc chưa có giờ nằm ở dải Cả ngày', async () => {
     const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
-    const fx = col(page, '2026-11-25').locator('.lblk.fixed', { hasText: 'Cop lại lần cuối' });
-    A.strictEqual(await fx.count(), 1, 'thiếu hạng mục +1 08:30');
+    const fx = col(page, '2026-11-25').locator('.lblk.fixed', { hasText: 'Lấy số liệu từ LMS' });
+    A.strictEqual(await fx.count(), 1, 'thiếu hạng mục 08:00');
     const top = await fx.evaluate(e => e.offsetTop);
-    A.ok(Math.abs(top - 180) <= 2, '08:30 phải ở y=180, có ' + top);
+    A.ok(Math.abs(top - 144) <= 2, '08:00 phải ở y=144, có ' + top);
     A.ok(await page.locator('.lallday[data-date="2026-11-25"] .lblk[data-task="t-kham"]').count() === 1, 't-kham chưa có giờ phải ở Cả ngày');
     A.strictEqual(await col(page, '2026-11-25').locator('.lblk[data-task="t-kham"]').count(), 0);
   });
