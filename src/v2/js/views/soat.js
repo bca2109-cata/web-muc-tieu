@@ -87,7 +87,7 @@ LP.soat = (function () {
       h += '<section class="card" aria-label="' + esc(g.name) + '"><div class="ag-sec-head"><h2>' + esc(g.name) + '</h2></div><ul class="ag-ul">' + rows + '</ul></section>';
     });
     h += '<div class="ag-so-done"><p>Lịch tháng sẽ đánh dấu ✓ nếu không còn bỏ sót.</p><button type="button" class="btn btn-primary" data-act="finish">Xong soát</button></div>';
-    var oldN = R.leftovers(st.date, { all: true }).length;
+    var oldN = R.leftovers(st.date, { all: true, unplaced: true }).length;
     if (oldN > 0) h += '<p class="ag-so-ton">Còn <b class="num">' + oldN + '</b> mục tồn đọng <button type="button" class="chip" data-act="ton">Xem</button></p>';
     h += '</div>';
     st.undecided = undecided;
@@ -226,9 +226,8 @@ LP.ton = (function () {
   // Danh sách tất cả mục tồn (trừ mục đã được xếp giờ vào hôm nay), cũ nhất trước
   function collect() {
     var today = D.today(), out = [];
-    R.leftovers(today, { all: true }).forEach(function (e) {
-      if (e.kind === 'item' && e.setTime) return;
-      var o = { key: key(e), e: e, kind: e.kind, title: e.title, from: e.kind === 'item' ? e.runDate : e.fromDate };
+    R.leftovers(today, { all: true, unplaced: true }).forEach(function (e) {
+      var o = { key: key(e), e: e, kind: e.kind, title: e.title, from: e.kind === 'item' ? (e.since || e.runDate) : e.fromDate };
       if (e.kind === 'item') { var r = R.byId(e.routineId); o.block = r ? r.name : 'Công việc cố định'; }
       else o.block = e.ref && e.ref.kind === 'canhan' ? 'Việc cá nhân' : 'Việc ad-hoc';
       o.age = D.diff(today, o.from);
@@ -267,8 +266,9 @@ LP.ton = (function () {
       return function () { restoreCheck(e, prev); };
     }
     var t = LP.store.find('Tasks', e.taskId);
+    var prevRow = Object.assign({}, t);
     T.setCancelled(t, true);
-    return function () { T.setCancelled(LP.store.find('Tasks', t.id), false); };
+    return function () { LP.store.upsert('Tasks', prevRow); };
   }
   // Việc: đặt ngày làm = hôm nay (sang "Việc hôm nay", ghi "Tồn từ"). Hạng mục cố định: hỏi giờ rồi xếp vào dòng thời gian hôm nay.
   function actTaskToday(o) {

@@ -155,6 +155,7 @@ LP.logic.routines = (function () {
      Khối "Từ hôm qua" chỉ lấy mục tồn trong `leftover_days` ngày lịch gần nhất (Settings, mặc định 7).
      leftovers(d, { all: true }) lấy TẤT CẢ mục chưa xử lý từ trước tới nay (tra ngược tối đa ALL_DAYS = 120 ngày, đúng
      khoảng dữ liệu LP.store tải, và không sớm hơn ngày tạo mẫu). Mục tồn giữ cho tới khi tick (done) hoặc bỏ qua (skipped).
+     Tùy chọn { unplaced: true }: bỏ hạng mục đã xếp giờ vào hôm nay. Mục có `since` = ngày gốc để hiển thị (mẫu khoảng ngày: ngày đầu khoảng).
      Việc (task) tồn giữ tới khi xong hoặc hủy (status 'cancelled'). Mẫu theo khoảng ngày: mỗi hạng mục chỉ hiện một lần.
      "Đặt giờ" (set_time) chỉ có hiệu lực trong đúng ngày đặt: ghi chú 'xep-gio:yyyy-mm-dd'. Sang ngày khác mục lại là
      tồn chưa xếp giờ (setTime rỗng). Ghi chú 'xep-gio' không có ngày (bản cũ) coi như còn hiệu lực. */
@@ -190,15 +191,20 @@ LP.logic.routines = (function () {
             if (seen[k]) return; seen[k] = 1;
             if (workdaysBetween(run.window.start, run.window.end).some(function (x) { var c = checkOf(run.routine.id, m.item.id, x); return c && (c.status === 'done' || c.status === 'skipped'); })) return;
           }
-          out.push(entry(m, m.status === 'carried' ? 'carried' : 'missed', d));
+          var en = entry(m, m.status === 'carried' ? 'carried' : 'missed', d);
+          // Mẫu khoảng ngày: ngày gốc là ngày đầu khoảng (mục tồn từ lúc khoảng bắt đầu), runDate vẫn là khóa của dòng ghi nhận
+          if (run.window) { en.since = run.window.start; en.label = run.routine.name + ' ' + D.fmt(en.since); }
+          out.push(en);
         });
       });
       // Hạng mục +1 của lượt p đã tới hạn từ trước hôm nay (hôm nay tới hạn thì đã xử lý ở plusOneFor)
       plusItemsOn(p).forEach(function (m) { if (m.date < d && open(m) && (m.routine.created_at || '').slice(0, 10) <= p) out.push(entry(m, 'missed', d)); });
       p = D.prevWorkday(p);
     }
-    out.sort(function (a, b) { return (a.source === 'plus1' ? 0 : 1) - (b.source === 'plus1' ? 0 : 1) || (a.runDate < b.runDate ? -1 : a.runDate > b.runDate ? 1 : 0); });
+    out.sort(function (a, b) { return (a.source === 'plus1' ? 0 : 1) - (b.source === 'plus1' ? 0 : 1) || (a.since < b.since ? -1 : a.since > b.since ? 1 : 0); });
     if (LP.logic.tasks) LP.logic.tasks.leftoverTasks(d).forEach(function (t) { if (opts.all || t.fromDate >= lo) out.push(t); });
+    // unplaced: bỏ hạng mục đã được xếp giờ vào hôm nay (dùng chung cho mọi chỗ đếm "mục tồn")
+    if (opts.unplaced) out = out.filter(function (e) { return !(e.kind === 'item' && e.setTime); });
     return out;
   }
   function entry(m, source, d) {
@@ -206,7 +212,7 @@ LP.logic.routines = (function () {
     if (st && c.note && /^xep-gio:/.test(c.note) && c.note.slice(8) !== d) st = '';
     return {
       kind: 'item', source: source, routineId: m.routine.id, itemId: m.item.id, runDate: m.runDate,
-      title: m.item.title, time: st || m.item.time || '', setTime: st,
+      title: m.item.title, time: st || m.item.time || '', setTime: st, since: m.runDate,
       label: m.routine.name + ' ' + D.fmt(m.runDate), ref: m
     };
   }

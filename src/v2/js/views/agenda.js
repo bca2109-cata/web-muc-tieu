@@ -55,7 +55,7 @@ LP.agenda = (function () {
       o.done = !!c && c.status === 'done';
       o.setTime = e.setTime || '';
       o.origTime = it ? it.time || '' : '';
-      o.from = e.runDate;
+      o.from = e.since || e.runDate;
       if (c && c.status === 'carried' && e.source === 'missed') o.source = 'carried';
       return o;
     }
@@ -284,7 +284,7 @@ LP.agenda = (function () {
   // Dòng "Tồn đọng cũ hơn": mục tồn nằm ngoài khoảng 7 ngày của khối Từ hôm qua. Hết mục thì ẩn.
   function oldLine() {
     if (readOnly()) return '';
-    var n = R.leftovers(st.date, { all: true }).length - R.leftovers(st.date).length;
+    var n = R.leftovers(st.date, { all: true, unplaced: true }).length - R.leftovers(st.date, { unplaced: true }).length;
     if (n <= 0) return '';
     return '<div class="ag-left ag-old"><span>Tồn đọng cũ hơn: <b class="num">' + n + '</b> mục</span>' +
       '<button type="button" class="chip" data-act="ton">' + icon('box', 'ic18') + 'Xem tất cả</button></div>';
@@ -553,8 +553,9 @@ LP.agenda = (function () {
   };
 
   function cancelWithUndo(task) {
+    var prev = Object.assign({}, task);   // hoàn tác khôi phục đúng trạng thái cũ (todo/done, done_at)
     T.setCancelled(task, true);
-    LP.ui.toast('Đã hủy việc "' + task.title + '".', { actionLabel: 'Hoàn tác', actionIcon: 'back', action: function () { T.setCancelled(LP.store.find('Tasks', task.id), false); } });
+    LP.ui.toast('Đã hủy việc "' + task.title + '".', { actionLabel: 'Hoàn tác', actionIcon: 'back', action: function () { LP.store.upsert('Tasks', prev); } });
   }
 
   function onClick(ev) {
@@ -572,7 +573,7 @@ LP.agenda = (function () {
       '<div class="choice-list"><button type="button" class="btn" data-m="date">' + icon('calendar', 'ic18') + 'Đổi ngày làm</button>' +
       '<button type="button" class="btn" data-m="edit">' + icon('edit', 'ic18') + 'Sửa</button>' +
       '<button type="button" class="btn" data-m="note">' + icon('note', 'ic18') + 'Mở ghi chú</button>' +
-      '<button type="button" class="btn btn-danger" data-m="cancel">' + icon('close', 'ic18') + 'Hủy việc</button></div>');
+      (t.status === 'done' ? '' : '<button type="button" class="btn btn-danger" data-m="cancel">' + icon('close', 'ic18') + 'Hủy việc</button>') + '</div>');
     s.el.addEventListener('click', function (e) {
       var b = e.target.closest('[data-m]'); if (!b) return;
       var m = b.getAttribute('data-m');

@@ -450,6 +450,62 @@ module.exports = async function (h) {
     h.noErrors(page);
   });
 
+  await h.test('Số "mục tồn" khớp giữa Agenda, Soát và Tồn tổng (kể cả mục đã xếp giờ hôm nay)', async () => {
+    const page = await h.open({ hash: '#/agenda' });
+    // Xếp giờ một mục tồn cũ và một mục tồn mới vào hôm nay
+    await page.evaluate(() => {
+      const R = LP.logic.routines;
+      R.check('r-chiaso', 'ri-r-chiaso-4', '2026-11-24', 'carried', { set_time: '15:00', note: 'xep-gio:2026-11-25' });
+      R.check('r-baocao', 'ri-r-baocao-1', '2026-11-12', 'carried', { set_time: '15:30', note: 'xep-gio:2026-11-25' });
+    });
+    await wait(page);
+    const exp = await page.evaluate(() => { const R = LP.logic.routines; return { all: R.leftovers('2026-11-25', { all: true, unplaced: true }).length, rec: R.leftovers('2026-11-25', { unplaced: true }).length }; });
+    A.ok((await tx(page, '.ag-old')).includes('Tồn đọng cũ hơn: ' + (exp.all - exp.rec) + ' mục'), 'dòng cũ hơn: ' + (await tx(page, '.ag-old')));
+    await page.goto(h.INDEX + '?' + q('2026-11-25', '11:05') + '#/agenda?soat=1');
+    await page.waitForFunction(() => window.LP && LP.ready === true);
+    await wait(page);
+    A.ok((await tx(page, '.ag-so-ton')).includes('Còn ' + exp.all + ' mục tồn đọng'), 'Soát: ' + (await tx(page, '.ag-so-ton')));
+    await page.click('.ag-so-ton [data-act="ton"]');
+    await wait(page);
+    A.ok((await tx(page, '.ag-tt-stat')).includes(String(exp.all)), 'Tồn tổng: ' + (await tx(page, '.ag-tt-stat')));
+    A.strictEqual(await page.locator('.ag-tt-row').count(), exp.all);
+  });
+
+  await h.test('Mẫu khoảng ngày: ngày gốc trong Tồn tổng là ngày đầu khoảng, không nhảy theo ngày', async () => {
+    const r = await (await h.open({ query: q('2026-12-10', '11:05'), hash: '#/agenda' })).evaluate(() => {
+      const R = LP.logic.routines;
+      return ['2026-12-10', '2026-12-11'].map(d => R.leftovers(d, { all: true }).filter(e => e.routineId === 'r-chotso').map(e => e.itemId + '@' + e.since));
+    });
+    A.deepStrictEqual(r[0], ['ri-r-chotso-1@2026-12-01', 'ri-r-chotso-2@2026-12-01']);
+    A.deepStrictEqual(r[1], r[0], 'ngày gốc đổi theo ngày xem');
+    const page = await h.open({ query: q('2026-12-10', '11:05'), hash: '#/agenda?ton=1' });
+    const row = await page.locator('.ag-tt-row', { hasText: 'Đối soát số liệu tháng' }).innerText();
+    A.ok(/tồn từ 01\/12/.test(row) && /9 ngày trước/.test(row), 'hàng: ' + row.replace(/\s+/g, ' '));
+  });
+
+  await h.test('Hủy việc: hoàn tác khôi phục đúng trạng thái cũ; việc đã xong không có nút Hủy', async () => {
+    const page = await h.open({ hash: '#/agenda' });
+    await page.locator('.ag-tasks .ag-item', { hasText: 'Đặt lịch khám sức khỏe' }).locator('.tick').click();
+    await wait(page);
+    const doneAt = await page.evaluate(() => LP.store.find('Tasks', 't-kham').done_at);
+    A.ok(doneAt, 'chưa có done_at');
+    await page.locator('.ag-tasks .ag-item', { hasText: 'Đặt lịch khám sức khỏe' }).locator('[data-act="more"]').click();
+    A.ok(!(await tx(page, '.modal')).includes('Hủy việc'), 'việc đã xong vẫn có nút Hủy việc');
+    await page.keyboard.press('Escape');
+    // Hủy việc tồn rồi hoàn tác: về đúng todo
+    await page.locator('.ag-left .ag-item', { hasText: 'Trả lời email đối tác' }).locator('[data-act="cancel-left"]').click();
+    await page.locator('.toast [data-t="act"]').click();
+    await wait(page);
+    A.strictEqual(await page.evaluate(() => LP.store.find('Tasks', 't-email').status), 'todo');
+    // Tồn tổng: hủy việc đã xong lúc nào đó rồi hoàn tác thì giữ done_at (khôi phục nguyên dòng)
+    const kept = await page.evaluate(() => {
+      const t = LP.store.find('Tasks', 't-kham'), prev = Object.assign({}, t);
+      LP.logic.tasks.setCancelled(t, true); LP.store.upsert('Tasks', prev);
+      const x = LP.store.find('Tasks', 't-kham'); return x.status + '|' + (x.done_at === prev.done_at);
+    });
+    A.strictEqual(kept, 'done|true');
+  });
+
   /* 8 */ await h.test('8. 390px và 1280px không cuộn ngang, không lỗi JS (Agenda, Toàn cảnh, Soát; sáng và tối)', async () => {
     await h.checkScreen('agenda');
     await h.checkScreen('agenda', 'soat=1');
