@@ -120,3 +120,16 @@ Theo `docs/v2/02-THIET-KE.md` (giữ phong cách web cũ). Phải dùng biến t
 6. Nút "+" (chỉ khung menu) và ô tìm kiếm chung, nối với `search.js`.
 7. `package.json`: thêm script `test:v2`. Tạo `docs/v2/TIEN-DO-V2.md` và `docs/v2/YEU-CAU-CHUNG.md`.
 8. Mở PR `v2/khung`. Viết hướng dẫn từng bước để tôi tạo Sheet V2 và triển khai Apps Script, chỉ cần trình duyệt.
+
+## Phụ lục: quyết định ở Giai đoạn 0 (đã làm, các phần cứ theo)
+- **File thêm vào [Chung]:** `js/core/shell.js` (đầu trang, tab, nút "+", tìm kiếm, trạng thái lưu, khởi động), `apps-script-v2/Code.gs`. `index.html` đã nạp sẵn mọi css và view của 5 phần: file view/css của phần đang là file trống, phần chỉ việc **ghi đè nội dung file của mình**, không cần sửa `index.html`.
+- **Xóa mềm:** mọi sheet có thêm cột `deleted` ở cuối (`TRUE` là đã xóa). `LP.store` tự lọc bỏ dòng đã xóa. Không viết thẳng dòng `deleted` ở nơi khác, gọi `LP.store.remove(sheet, id)`.
+- **Ghi dữ liệu:** `LP.store.upsert(sheet, row)` trả về dòng ngay (cập nhật tức thì, lưu nền). Sự kiện: `'change'` luôn chạy trước `'change:<Sheet>'`. `LP.store.flush()` chờ lưu xong. `LP.store.setting(key, mặc định)` đọc cài đặt dạng khóa/giá trị.
+- **Nút "+":** Phần 5 định nghĩa `LP.quickAdd = { open(kind) }`, `kind` là `adhoc | canhan | ghichu | dotxuat`. Chưa có thì nút "+" báo "đang làm".
+- **Tìm kiếm:** `LP.search.register(tên, fn(q) -> [{ title, sub, icon, route, params }])`. `q` đã bỏ dấu, chữ thường. Đã có sẵn nguồn Việc, Mẫu công việc, Mục tiêu, Thói quen, Ghi chú (theo tên).
+- **Màn đăng ký:** `LP.router.register(tên, { title, mount(el, params), unmount() })`. Điều hướng: `LP.router.go('agenda', { date: '2026-11-24' })`.
+- **Logic lượt:** `runsFor(d)` trả các lượt có hạng mục ngày lệch 0. `itemsFor(d)` thêm hạng mục +1 của lượt hôm trước (`plus1: true`). `leftovers(d)` là nội dung khối "Từ hôm qua": `source` là `plus1 | missed | carried | task`. Khối này **có cả +1**, nên màn Agenda khi hiện Toàn cảnh tự gộp để không đếm hai lần. Chỉ xét lượt của **ngày làm việc liền trước**.
+- **Bỏ tick:** `LP.logic.routines.check(routineId, itemId, runDate, '')` (trạng thái rỗng) xóa dòng ghi nhận. `status` hợp lệ: `done | skipped | carried`. `set_time` đặt qua `extra`: `check(..., 'carried', { set_time: '10:00' })`.
+- **Quỹ giờ:** `capacity(d)` trả `{ work, evening }`, mỗi quỹ có `quota, used, left, over`. Ad-hoc dùng quỹ `quota_work` (180p), cá nhân dùng `quota_evening` (90p), đột xuất trừ vào quỹ ad-hoc. Ngày nghỉ và Chủ nhật: quỹ ad-hoc 0, quỹ cá nhân `quota_off` (240p). Khóa trong sheet `Settings`.
+- **Dữ liệu mẫu cố định theo 25/11/2026** (Thứ Tư), 30/11 là ngày nghỉ. Test dùng `?mock=1&today=2026-11-25&now=11:05`. Bản mock lưu trong `localStorage` khóa `lpv2_mock_v1`.
+- **Test:** `tests-qa/v2/helpers.js` có `h.test`, `h.open`, `h.checkScreen(route)`. Xem `tests-qa/v2/core.js` để lấy mẫu.

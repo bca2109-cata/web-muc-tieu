@@ -1,0 +1,76 @@
+/* V2 · tokens: chép nguyên văn 3 khối :root (sáng, tối theo máy, tối chọn tay) từ src/css/style.css. Không đổi tên biến. */
+:root{
+  --bg:#fffafc; --surface:#ffffff; --ink:#3b2235; --muted:#7a5c70; --line:#f8e3ec;
+  --accent:#d6336c; --accent-soft:#ffe0ec; --accent-deep:#a8204f; --accent-ink:#ffffff;
+  --butter:#fff1b8; --mint:#d6f5e6; --sky:#dcecff;
+  --work:#2c58aa; --work-bg:#dcebff; --work-tape:#c6dcff;
+  --study:#6a40b5; --study-bg:#ede5ff; --study-tape:#ddd0ff;
+  --health:#1e7149; --health-bg:#d8f5e7; --health-tape:#c2eed8;
+  --q1:#b42339; --q1-bg:#ffe0e5; --q1-bar:#e5485f;   /* Khẩn cấp: quan trọng + khẩn cấp */
+  --q2:#7a5300; --q2-bg:#fff1b8; --q2-bar:#e8b400;   /* Lên lịch: quan trọng, không khẩn cấp */
+  --q3:#a3470a; --q3-bg:#ffdcc4; --q3-bar:#f08a4b;   /* Xử lý sau: khẩn cấp, không quan trọng */
+  --q4:#3d5a69; --q4-bg:#e3eef3; --q4-bar:#8fb0c0;   /* Xem xét */
+  --hot:#b42339; --hot-bg:#ffe0e5; --warm:#994705; --warm-bg:#ffe8d1; --calm:#1e7149; --calm-bg:#dcf5e9;
+  --ok:#1e7149; --ok-bar:#5cc49a; --pr:#855600; --pr-bar:#f2b84b; --warn:#b42339; --warn-bar:#ff8fa3;
+  --plain-bg:#f6edf2; --track:#fbeaf1; --tick-line:#c9729a; --dash:#f0b5cc;
+  --hello-1:#ffe0ec; --hello-2:#ffe8d6; --hello-3:#fff4c9;
+  /* Màu biểu đồ (đã chạy kiểm tra mù màu) */
+  --cv-done:#2e9a6a; --cv-doing:#d9951a; --cv-hi:#a8204f; --cv-mid:#e0577f;
+  --cv-over:#c42a45; --cv-today:#e07b22; --cv-tmr:#4a8fd6; --cv-rest:#e3d3db;
+  --cv-work:#2559b8; --cv-study:#a98af0; --cv-health:#1e8a57;
+  /* Nút đang chọn và thông báo nổi (bản tối đổi sang màu không chói) */
+  --sel-bg:#3b2235; --sel-ink:#ffffff; --toast-bg:#3b2235; --toast-ink:#ffffff;
+  /* Màu cánh hoa trang trí */
+  --petal-1:#ff9fc0; --petal-2:#ff8fb3; --petal-3:#c9b6ff; --petal-4:#ffcf6b; --petal-5:#9fcfff;
+  --petal-6:#ffb08a; --petal-7:#f7a1e0; --petal-8:#ffb3cf; --petal-9:#b8a4ff;
+  --petal-10:#8fe3c0; --petal-11:#ff8a8a; --petal-12:#ffe36b; --petal-13:#8fb8ff;
+  --shadow:0 4px 0 var(--line),0 10px 24px color-mix(in srgb,var(--accent) 7%,transparent);
+  --font:'Nunito',system-ui,sans-serif;
+  --display:'Baloo 2','Nunito',system-ui,sans-serif;
+}
+
+/* Chế độ tối (DESIGN.md): theo cài đặt máy, hoặc chọn tay trong Cài đặt (lưu trên từng thiết bị) */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#22151f; --surface:#2e1d2a; --ink:#fff1f7; --muted:#d9bfcd; --line:#46303f;
+  --accent:#ff8fb8; --accent-soft:#4a2438; --accent-deep:#f07fac; --accent-ink:#2a0f1d;
+  --butter:#463a14; --mint:#173d2c; --sky:#1b3050;
+  --work:#a9c6ff; --work-bg:#1f3157; --work-tape:#2b4373;
+  --study:#cfb8ff; --study-bg:#33264f; --study-tape:#45346b;
+  --health:#8fe3b8; --health-bg:#173d2c; --health-tape:#22553d;
+  --q1:#ffa3b0; --q1-bg:#4d1b25; --q1-bar:#e5485f;
+  --q2:#ffd772; --q2-bg:#45360d; --q2-bar:#e8b400;
+  --q3:#ffb98f; --q3-bg:#4a2610; --q3-bar:#f08a4b;
+  --q4:#b3d0dd; --q4-bg:#22333b; --q4-bar:#8fb0c0;
+  --hot:#ffa3b0; --hot-bg:#4d1b25; --warm:#ffbf85; --warm-bg:#45290f; --calm:#8fe3b8; --calm-bg:#173d2c;
+  --ok:#8fe3b8; --ok-bar:#4fb88a; --pr:#ffd772; --pr-bar:#e0a63a; --warn:#ffa3b0; --warn-bar:#e86a82;
+  --plain-bg:#3a2635; --track:#3e2a39; --tick-line:#d98bb0; --dash:#7a4a63;
+  --hello-1:#4a2438; --hello-2:#47301f; --hello-3:#45391a;
+  --cv-done:#2e9a6a; --cv-doing:#d9951a; --cv-hi:#d0306a; --cv-mid:#f59ac0;
+  --cv-over:#d8365a; --cv-today:#e8902f; --cv-tmr:#4a8fd6; --cv-rest:#5a4553;
+  --cv-work:#3463c4; --cv-study:#a585f0; --cv-health:#2f9c66;
+  --sel-bg:#ff8fb8; --sel-ink:#2a0f1d; --toast-bg:#4a3445; --toast-ink:#fff1f7;
+  --shadow:0 4px 0 #1a0f17,0 10px 24px rgba(0,0,0,.25);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#22151f; --surface:#2e1d2a; --ink:#fff1f7; --muted:#d9bfcd; --line:#46303f;
+  --accent:#ff8fb8; --accent-soft:#4a2438; --accent-deep:#f07fac; --accent-ink:#2a0f1d;
+  --butter:#463a14; --mint:#173d2c; --sky:#1b3050;
+  --work:#a9c6ff; --work-bg:#1f3157; --work-tape:#2b4373;
+  --study:#cfb8ff; --study-bg:#33264f; --study-tape:#45346b;
+  --health:#8fe3b8; --health-bg:#173d2c; --health-tape:#22553d;
+  --q1:#ffa3b0; --q1-bg:#4d1b25; --q1-bar:#e5485f;
+  --q2:#ffd772; --q2-bg:#45360d; --q2-bar:#e8b400;
+  --q3:#ffb98f; --q3-bg:#4a2610; --q3-bar:#f08a4b;
+  --q4:#b3d0dd; --q4-bg:#22333b; --q4-bar:#8fb0c0;
+  --hot:#ffa3b0; --hot-bg:#4d1b25; --warm:#ffbf85; --warm-bg:#45290f; --calm:#8fe3b8; --calm-bg:#173d2c;
+  --ok:#8fe3b8; --ok-bar:#4fb88a; --pr:#ffd772; --pr-bar:#e0a63a; --warn:#ffa3b0; --warn-bar:#e86a82;
+  --plain-bg:#3a2635; --track:#3e2a39; --tick-line:#d98bb0; --dash:#7a4a63;
+  --hello-1:#4a2438; --hello-2:#47301f; --hello-3:#45391a;
+  --cv-done:#2e9a6a; --cv-doing:#d9951a; --cv-hi:#d0306a; --cv-mid:#f59ac0;
+  --cv-over:#d8365a; --cv-today:#e8902f; --cv-tmr:#4a8fd6; --cv-rest:#5a4553;
+  --cv-work:#3463c4; --cv-study:#a585f0; --cv-health:#2f9c66;
+  --sel-bg:#ff8fb8; --sel-ink:#2a0f1d; --toast-bg:#4a3445; --toast-ink:#fff1f7;
+  --shadow:0 4px 0 #1a0f17,0 10px 24px rgba(0,0,0,.25);
+  color-scheme:dark;
+}
