@@ -2,6 +2,15 @@
 
 Dự án: web quản lý mục tiêu và tác vụ cá nhân. Một người dùng, giao diện tiếng Việt, dữ liệu lưu trong Google Sheets.
 
+## ƯU TIÊN: đang làm V2 (từ 25/11/2026)
+- Mọi việc mới là **V2**, nằm trong `src/v2/`. Web cũ (`src/` ngoài `v2/`) **giữ nguyên, không sửa**, trừ khi người dùng bảo.
+- Phiên V2 **chỉ đọc** các file `docs/v2/` mà câu lệnh mở phiên chỉ định, thường là `01-HOP-DONG-CHUNG.md`, `02-THIET-KE.md` và một file `phan-N-*.md`. **Không đọc** `SPEC.md`, `docs/BAN-GIAO.md`, `docs/TIEN-DO.md` hay các phần bên dưới của file này. Các phần đó thuộc web cũ.
+- Giao diện V2: dùng skill dự án `life-planner-thiet-ke`. Kiểm thử V2: dùng agent `v2-kiem-thu`, gọi một lần khi xong phần. **Không** dùng `qa-tester` và `spec-reviewer` cho V2.
+- Hướng dẫn cho người dùng: `docs/v2/00-BAT-DAU-V2.md`.
+
+---
+## (Web cũ) Các mục dưới đây chỉ áp dụng khi sửa web cũ
+
 ## Việc đầu tiên (chỉ làm một lần)
 Nếu thư mục `cai-dat-agents/` còn tồn tại:
 1. Chuyển 2 file `qa-tester.md` và `spec-reviewer.md` từ đó vào `.claude/agents/`. Nếu ở đó đã có file cùng tên thì ghi đè.
