@@ -116,14 +116,54 @@ LP.tongKet = (function () {
   function cell(title, inner) { return '<div class="mt-cell"><h3 class="mt-h3">' + esc(title) + '</h3>' + inner + '</div>'; }
   function empty(txt) { return '<p class="muted mt-none">' + esc(txt) + '</p>'; }
 
+  // Đường cong mượt kiểu "monotone": đi qua đúng từng điểm, không vọt quá 100% hay dưới 0.
+  function smoothPath(pts) {
+    if (pts.length < 2) return '';
+    var n = pts.length, d = [], m = [], k;
+    for (k = 0; k < n - 1; k++) d.push((pts[k + 1][1] - pts[k][1]) / (pts[k + 1][0] - pts[k][0]));
+    m[0] = d[0]; m[n - 1] = d[n - 2];
+    for (k = 1; k < n - 1; k++) m[k] = d[k - 1] * d[k] <= 0 ? 0 : (d[k - 1] + d[k]) / 2;
+    for (k = 0; k < n - 1; k++) {
+      if (d[k] === 0) { m[k] = 0; m[k + 1] = 0; continue; }
+      var a = m[k] / d[k], b = m[k + 1] / d[k], h = a * a + b * b;
+      if (h > 9) { var t = 3 / Math.sqrt(h); m[k] = t * a * d[k]; m[k + 1] = t * b * d[k]; }
+    }
+    var f = function (v) { return Math.round(v * 10) / 10; };
+    var out = 'M' + f(pts[0][0]) + ' ' + f(pts[0][1]);
+    for (k = 0; k < n - 1; k++) {
+      var dx = (pts[k + 1][0] - pts[k][0]) / 3;
+      out += 'C' + f(pts[k][0] + dx) + ' ' + f(pts[k][1] + m[k] * dx) + ' ' + f(pts[k + 1][0] - dx) + ' ' + f(pts[k + 1][1] - m[k + 1] * dx) + ' ' + f(pts[k + 1][0]) + ' ' + f(pts[k + 1][1]);
+    }
+    return out;
+  }
+
   function barChart(cols, r) {
-    var n = cols.length, showNum = n <= 12, every = n > 12 ? 5 : 1;
+    var n = cols.length, showNum = n <= 12, every = n > 12 ? 5 : 1, unitW = cols[0] && cols[0].day ? 'ngày' : 'tháng';
+    // Trục dọc bắt đầu từ mức thấp nhất (làm tròn xuống 20) để thấy rõ lên xuống
+    var minP = cols.reduce(function (m, c) { return c.pct != null && c.pct < m ? c.pct : m; }, 100);
+    var y0 = Math.max(0, Math.min(60, Math.floor((minP - 5) / 20) * 20));
+    var Y = function (v) { return (Math.min(100, Math.max(y0, v)) - y0) * 100 / (100 - y0); };
+    // Ngày không có mục (cuối tuần, chưa tới) thì đường nối thẳng qua các điểm có số
+    var seg = [];
+    cols.forEach(function (c, i) { if (c.pct != null) seg.push([(i + 0.5) * 1000 / n, 100 - Y(c.pct)]); });
+    var segs = seg.length ? [seg] : [];
+    var lines = '', fills = '';
+    segs.forEach(function (s) {
+      var p = smoothPath(s);
+      if (!p) return;
+      fills += '<path class="mt-tfill" fill="url(#mt-tgrad)" d="' + p + 'L' + s[s.length - 1][0] + ' 100L' + s[0][0] + ' 100Z"/>';
+      lines += '<path class="mt-tline" d="' + p + '"/>';
+    });
+    var svg = '<svg class="mt-trend" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+      '<defs><linearGradient id="mt-tgrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>' +
+      '<rect class="mt-tband" x="0" y="0" width="1000" height="' + (100 - Y(80)) + '"/>' + fills + lines + '</svg>';
     var area = cols.map(function (c, i) {
-      var has = c.pct != null, lv = LP.stats.level(c.pct);
+      var has = c.pct != null, low = has && c.pct < 80;
       var aria = (c.day ? c.wd + ' ' : '') + c.label + ': ' + (has ? c.pct + '% (' + c.done + '/' + c.total + ')' : 'không có hạng mục');
       return '<button type="button" class="mt-col' + (c.now ? ' is-now' : '') + '" data-col="' + i + '" aria-label="' + esc(aria) + '" title="' + esc(aria) + '">' +
-        (has ? '<span class="mt-bar-c ' + (c.now ? 'b-now' : 'b-' + lv) + '" style="height:' + Math.max(2, c.pct) + '%"></span>' : '<span class="mt-bar-c mt-bar-none"></span>') +
-        (has && showNum ? '<span class="mt-cv num" style="bottom:calc(' + Math.min(100, c.pct) + '% + 2px)">' + c.pct + '</span>' : '') + '</button>';
+        (has ? '<span class="mt-dot' + (low ? ' is-low' : '') + (c.now ? ' is-now' : '') + '" style="bottom:' + Y(c.pct) + '%"></span>' +
+          (low || showNum ? '<span class="mt-cv num' + (low ? ' is-low' : '') + '" style="' + (low ? 'top:calc(' + (100 - Y(c.pct)) + '% + 10px)' : 'bottom:calc(' + Y(c.pct) + '% + 9px)') + '">' + c.pct + '%</span>' : '') : '') +
+        '</button>';
     }).join('');
     var labs = cols.map(function (c, i) {
       var show = n <= 12 || (c.day ? c.wd === 'T2' : i % every === 0);
@@ -134,13 +174,13 @@ LP.tongKet = (function () {
     // Trung bình cả kỳ = tổng mục xong / tổng mục (khớp ô Hoàn thành ở Tổng quan)
     var sumD = withPct.reduce(function (t, c) { return t + (c.done || 0); }, 0), sumT = withPct.reduce(function (t, c) { return t + (c.total || 0); }, 0);
     var avg = sumT ? Math.round(sumD * 100 / sumT) : null;
-    var under = withPct.filter(function (c) { return c.pct < 80; }).length, unitW = cols[0] && cols[0].day ? 'ngày' : 'tháng';
-    var avgLine = avg == null ? '' : '<i class="mt-lavg" style="bottom:' + avg + '%"><span class="num">TB ' + avg + '%</span></i>';
-    return '<div class="mt-chart" data-n="' + n + '" data-axis="' + (cols[0] && cols[0].day ? 'ngay' : 'thang') + '"><div class="mt-yax"><span>100%</span><span>80%</span><span>0</span></div>' +
-      '<div class="mt-plot"><div class="mt-area"><i class="mt-l100"></i><i class="mt-l80"></i>' + avgLine + area + '</div><div class="mt-labs">' + labs + '</div></div></div>' +
-      '<div class="mt-legend"><span><i class="mt-sw b-ok"></i>100%</span><span><i class="mt-sw b-pr"></i>80–99%</span><span><i class="mt-sw b-warn"></i>Dưới 80%</span><span><i class="mt-sw b-now"></i>Kỳ đang diễn ra</span><span><i class="mt-sw mt-sw-avg"></i>Trung bình</span></div>' +
+    var under = withPct.filter(function (c) { return c.pct < 80; }).length;
+    var avgLine = avg == null ? '' : '<i class="mt-lavg" style="bottom:' + Y(avg) + '%"><span class="num">TB ' + avg + '%</span></i>';
+    return '<div class="mt-chart is-trend" data-n="' + n + '" data-axis="' + (cols[0] && cols[0].day ? 'ngay' : 'thang') + '"><div class="mt-yax"><span>100%</span><span style="top:' + (100 - Y(80)) + '%">80%</span><span>' + (y0 ? y0 + '%' : '0') + '</span></div>' +
+      '<div class="mt-plot"><div class="mt-area">' + svg + '<i class="mt-l80" style="top:' + (100 - Y(80)) + '%"></i>' + avgLine + area + '</div><div class="mt-labs">' + labs + '</div></div></div>' +
+      '<div class="mt-legend"><span><i class="mt-sw mt-sw-line"></i>% mỗi ' + unitW + '</span><span><i class="mt-sw mt-sw-band"></i>Vùng tốt ≥ 80%</span><span><i class="mt-sw mt-sw-low"></i>Dưới 80%</span><span><i class="mt-sw mt-sw-now"></i>' + (unitW === 'ngày' ? 'Hôm nay' : 'Tháng này') + '</span><span><i class="mt-sw mt-sw-avg"></i>Trung bình</span></div>' +
       (hi ? '<p class="muted mt-sum">Tốt nhất <span class="num">' + esc(hi.label) + '</span> (<span class="num">' + hi.pct + '%</span>), thấp nhất <span class="num">' + esc(lo.label) + '</span> (<span class="num">' + lo.pct + '%</span>). ' +
-        (under ? '<span class="num">' + under + '</span> ' + unitW + ' dưới mốc 80%.' : 'Không ' + unitW + ' nào dưới mốc 80%.') + ' Bấm một cột để xem chi tiết.</p>' : '');
+        (under ? '<span class="num">' + under + '</span> ' + unitW + ' dưới mốc 80%.' : 'Không ' + unitW + ' nào dưới mốc 80%.') + ' Bấm một điểm để xem chi tiết.</p>' : '');
   }
 
   function donut(a, total) {
@@ -197,7 +237,7 @@ LP.tongKet = (function () {
       tile('int', 'Chen ngang mỗi ngày', 'bolt', m.intAvg == null ? '–' : D.fmtMin(m.intAvg), m.intAvg == null ? '' : m.intAvg, m.intCount + ' lần, ' + D.fmtMin(m.intMin) + ' tổng', delta(m.intAvg, pm.intAvg, '', false, function (v) { return D.fmtMin(v); })) +
       '</div>');
 
-    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Mỗi cột là một ' + (cols[0] && cols[0].day ? 'ngày' : 'tháng') + ': phần trăm việc đã xong (Daily, Ad-hoc, Personal). Cột càng cao càng tốt; vạch đứt là mốc 80%.</p>' + barChart(cols, r));
+    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Mỗi điểm là một ' + (cols[0] && cols[0].day ? 'ngày' : 'tháng') + ': phần trăm việc đã xong (Daily, Ad-hoc, Personal). Đường nằm trong vùng xanh là tốt; điểm có ghi số là dưới 80%.</p>' + barChart(cols, r));
 
     var missRows = top.length ? '<ol class="mt-rank">' + top.map(function (t, i) {
       return '<li><button type="button" data-miss="' + i + '"><span class="mt-rn num">' + (i + 1) + '</span><span class="mt-rt"><span class="mt-rtitle">' + LP.cute.html(t.title) + esc(t.title) + '</span><span class="muted">' + esc(t.routineName) + '</span>' +

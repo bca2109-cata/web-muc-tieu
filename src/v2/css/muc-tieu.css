@@ -194,3 +194,23 @@
 /* Vòng Ad-hoc: chú giải gọn, số cạnh chữ */
 .mt-dleg{flex:0 1 220px}
 @media (max-width:620px){.mt-slab{width:84px}}
+/* Tỷ lệ hoàn thành: đường xu hướng mượt (26/11) */
+.mt-chart.is-trend .mt-area{overflow:visible}
+.mt-trend{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.mt-tband{fill:var(--ok-bar);opacity:.16}
+.mt-tfill{stroke:none}
+.mt-tline{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.mt-bandlab{position:absolute;left:6px;top:3px;font-size:11px;font-weight:700;color:var(--ok);pointer-events:none;z-index:1}
+.mt-chart.is-trend .mt-lavg span{top:auto;bottom:2px}
+.mt-chart.is-trend .mt-col{z-index:2}
+.mt-chart.is-trend .mt-col:hover{background:color-mix(in srgb,var(--accent-soft) 55%,transparent)}
+.mt-dot{position:absolute;left:50%;width:8px;height:8px;margin:0 0 -4px -4px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-sizing:border-box}
+.mt-dot.is-low{width:12px;height:12px;margin:0 0 -6px -6px;background:var(--warn-bar);border-color:var(--surface)}
+.mt-dot.is-now{width:12px;height:12px;margin:0 0 -6px -6px;background:var(--accent);border-color:var(--surface);box-shadow:0 0 0 2px var(--accent)}
+.mt-col:hover .mt-dot,.mt-col:focus-visible .mt-dot{transform:scale(1.35)}
+.mt-chart.is-trend .mt-cv{font-size:11px;font-weight:700;padding:0 3px;border-radius:5px;background:var(--surface)}
+.mt-chart.is-trend .mt-cv.is-low{color:var(--warn)}
+.mt-sw-line{height:3px;border-radius:2px;background:var(--accent)}
+.mt-sw-band{background:var(--ok-bar);opacity:.45}
+.mt-sw-low{border-radius:50%;background:var(--warn-bar)}
+.mt-sw-now{border-radius:50%;background:var(--accent)}
