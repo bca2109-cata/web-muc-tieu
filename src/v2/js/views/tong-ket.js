@@ -141,7 +141,8 @@ LP.tongKet = (function () {
     var n = cols.length, showNum = n <= 12, every = n > 12 ? 5 : 1, unitW = cols[0] && cols[0].day ? 'ngày' : 'tháng';
     // Trục dọc bắt đầu từ mức thấp nhất (làm tròn xuống 20) để thấy rõ lên xuống
     var minP = cols.reduce(function (m, c) { return c.pct != null && c.pct < m ? c.pct : m; }, 100);
-    var y0 = Math.max(0, Math.min(60, Math.floor((minP - 5) / 20) * 20));
+    var y0 = 0;   // trục dọc luôn từ 0% đến 100%
+    if (!cols.some(function (c) { return c.pct != null; })) return '<p class="muted mt-none">Chưa có dữ liệu</p>';
     var Y = function (v) { return (Math.min(100, Math.max(y0, v)) - y0) * 100 / (100 - y0); };
     // Ngày không có mục (cuối tuần, chưa tới) thì đường nối thẳng qua các điểm có số
     var seg = [];
@@ -176,7 +177,7 @@ LP.tongKet = (function () {
     var avg = sumT ? Math.round(sumD * 100 / sumT) : null;
     var under = withPct.filter(function (c) { return c.pct < 80; }).length;
     var avgLine = avg == null ? '' : '<i class="mt-lavg" style="bottom:' + Y(avg) + '%"><span class="num">TB ' + avg + '%</span></i>';
-    return '<div class="mt-chart is-trend" data-n="' + n + '" data-axis="' + (cols[0] && cols[0].day ? 'ngay' : 'thang') + '"><div class="mt-yax"><span>100%</span><span style="top:' + (100 - Y(80)) + '%">80%</span><span>' + (y0 ? y0 + '%' : '0') + '</span></div>' +
+    return '<div class="mt-chart is-trend" data-n="' + n + '" data-axis="' + (cols[0] && cols[0].day ? 'ngay' : 'thang') + '"><div class="mt-yax"><span>100%</span><span style="top:' + (100 - Y(80)) + '%">80%</span><span>' + '0%' + '</span></div>' +
       '<div class="mt-plot"><div class="mt-area">' + svg + '<i class="mt-l80" style="top:' + (100 - Y(80)) + '%"></i>' + avgLine + area + '</div><div class="mt-labs">' + labs + '</div></div></div>' +
       '<div class="mt-legend"><span><i class="mt-sw mt-sw-line"></i>% mỗi ' + unitW + '</span><span><i class="mt-sw mt-sw-band"></i>Vùng tốt ≥ 80%</span><span><i class="mt-sw mt-sw-low"></i>Dưới 80%</span><span><i class="mt-sw mt-sw-now"></i>' + (unitW === 'ngày' ? 'Hôm nay' : 'Tháng này') + '</span><span><i class="mt-sw mt-sw-avg"></i>Trung bình</span></div>' +
       (hi ? '<p class="muted mt-sum">Tốt nhất <span class="num">' + esc(hi.label) + '</span> (<span class="num">' + hi.pct + '%</span>), thấp nhất <span class="num">' + esc(lo.label) + '</span> (<span class="num">' + lo.pct + '%</span>). ' +
@@ -202,11 +203,12 @@ LP.tongKet = (function () {
   }
 
   /* ---------- Vẽ cả màn ---------- */
+  function nextWord(u) { return { week: 'Tuần', month: 'Tháng', quarter: 'Quý', year: 'Năm' }[u] || 'Kỳ'; }
   function review(r) {
     var rv = S().reviews.filter(function (x) { return x.period_type === r.unit && x.period_value === r.value; })[0] || {};
-    function ta(name, label, ic) { return '<label class="field"><span>' + icon(ic, 'ic14') + label + '</span><textarea class="textarea" name="' + name + '" rows="2" maxlength="600">' + esc(rv[name] || '') + '</textarea></label>'; }
-    return '<form class="mt-review" data-review novalidate>' + ta('good', 'Làm tốt', 'sparkle') + ta('bad', 'Chưa tốt', 'alert') + ta('next', 'Kỳ sau ưu tiên', 'flag') +
-      '<button type="submit" class="btn btn-primary">' + icon('check') + 'Lưu nhìn lại</button></form>';
+    function ta(name, label, ic, ph) { return '<label class="field"><span>' + icon(ic, 'ic14') + label + '</span><textarea class="textarea" name="' + name + '" rows="2" maxlength="600" placeholder="' + esc(ph) + '">' + esc(rv[name] || '') + '</textarea></label>'; }
+    return '<form class="mt-review" data-review novalidate>' + ta('good', 'Làm tốt', 'sparkle', 'Điều làm tốt…') + ta('bad', 'Chưa tốt', 'alert', 'Điều cần đổi…') + ta('next', 'Kỳ sau ưu tiên', 'flag', nextWord(r.unit) + ' sau tập trung…') +
+      '<button type="submit" class="btn btn-primary" data-save>' + icon('check') + '<span>Lưu nhìn lại</span></button></form>';
   }
 
   function render() {
@@ -338,7 +340,10 @@ LP.tongKet = (function () {
     e.preventDefault();
     var r = cur.r, old = S().reviews.filter(function (x) { return x.period_type === r.unit && x.period_value === r.value; })[0];
     LP.store.upsert('Reviews', Object.assign({}, old || {}, { period_type: r.unit, period_value: r.value, good: f.elements['good'].value.trim(), bad: f.elements['bad'].value.trim(), next: f.elements['next'].value.trim() }));
-    LP.ui.toast('Đã lưu nhìn lại ' + r.label.toLowerCase() + '.', { cheer: true });
+    var what = r.unit === 'month' ? 'tháng ' + parseInt(String(r.value).slice(5, 7), 10) : r.label.toLowerCase();
+    LP.ui.toast('Đã lưu nhìn lại ' + what, { cheer: true });
+    var b = f.querySelector('[data-save]');
+    if (b) { b.disabled = true; b.querySelector('span').textContent = 'Đã lưu'; setTimeout(function () { if (b.isConnected) { b.disabled = false; b.querySelector('span').textContent = 'Lưu nhìn lại'; } }, 2000); }
   }
 
   function mount(el) {

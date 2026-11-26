@@ -170,7 +170,7 @@ LP.views = LP.views || {};
       '<div class="modal-foot mc-foot">' +
       (isNew ? '' : '<button type="button" class="btn btn-danger" id="mc-del">' + icon('trash', 'ic18') + 'Xóa</button>' +
         '<button type="button" class="btn" id="mc-pause">' + icon(LP.util.truthy(r.active) ? 'pause' : 'play', 'ic18') + (LP.util.truthy(r.active) ? 'Tạm dừng' : 'Bật lại') + '</button>') +
-      '<span class="spacer"></span><button type="submit" class="btn btn-primary" id="mc-save">Lưu</button></div></form>';
+      '<span class="spacer"></span><button type="button" class="btn" data-back>Hủy</button><button type="submit" class="btn btn-primary" id="mc-save">Lưu</button></div></form>';
     return h;
   }
 
@@ -190,7 +190,7 @@ LP.views = LP.views || {};
     Array.prototype.forEach.call(form.querySelectorAll('[name="mc-repeat"]'), function (i) { i.addEventListener('change', syncRepeat); });
     syncRepeat(); countText();
 
-    form.querySelector('[data-back]').addEventListener('click', function () { LP.router.go('mau'); });
+    Array.prototype.forEach.call(form.querySelectorAll('[data-back]'), function (b) { b.addEventListener('click', function () { LP.router.go('mau'); }); });
     form.querySelector('#mc-add-item').addEventListener('click', function () {
       list.insertAdjacentHTML('beforeend', itemRowHTML()); countText();
       var last = list.lastElementChild; last.querySelector('[data-f="title"]').focus();

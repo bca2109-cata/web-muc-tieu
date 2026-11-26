@@ -89,3 +89,7 @@ label.btn:has(input:focus-visible){outline:3px solid var(--accent);outline-offse
   .qa-step .qa-est{grid-column:2 / 3}
   .qa-step [data-f="s_date"]{grid-column:1 / 2}
 }
+
+/* Form Daily (trang riêng): hàng Lưu/Hủy dính đáy màn hình khi cuộn */
+.mc-form .mc-foot{position:sticky;bottom:0;margin:12px -18px -18px;padding:10px 18px;border-radius:0 0 22px 22px;background:color-mix(in srgb,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);z-index:5}
+@media (max-width:899px){.mc-form .mc-foot{bottom:calc(84px + env(safe-area-inset-bottom));padding-right:84px}}
