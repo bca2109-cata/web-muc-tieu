@@ -38,7 +38,7 @@ LP.thoiQuen = (function () {
         '<span class="dot">' + icon('check') + '</span></button></span>';
     }).join('');
     return '<article class="card mt-habit" data-habit="' + esc(h.id) + '">' +
-      '<div class="mt-hhead"><div class="mt-hmain"><h3 class="mt-hname">' + esc(h.name) + '</h3>' +
+      '<div class="mt-hhead"><div class="mt-hmain"><h3 class="mt-hname">' + LP.cute.html(h.name, 'sprout') + esc(h.name) + '</h3>' +
       '<div class="mt-meta">' + (h.time ? '<span class="pill pill-note">' + icon('clock', 'ic14') + '<span class="num">' + esc(h.time) + '</span></span>' : '') +
       '<span class="mt-wd">' + esc(weekdaysText(h)) + '</span></div></div>' +
       '<div class="mt-hbtns"><button type="button" class="icon-btn" data-edit="' + esc(h.id) + '" aria-label="Sửa ' + esc(h.name) + '">' + icon('edit') + '</button>' +

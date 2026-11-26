@@ -111,7 +111,7 @@ LP.tongKet = (function () {
       '<div class="mt-tv num">' + val + '</div><div class="mt-ts">' + sub + '</div>' + cmp + '</div>';
   }
   function block(title, ic, inner, cls) {
-    return '<section class="card mt-block ' + (cls || '') + '"><h2 class="mt-h">' + icon(ic, 'ic18') + esc(title) + '</h2>' + inner + '</section>';
+    return '<section class="card mt-block ' + (cls || '') + '"><h2 class="mt-h">' + LP.cute.html('', { grid: 'chart', barchart: 'chart', list: 'clipboard', hourglass: 'calendar', leaf: 'sprout' }[ic] || 'sprout') + esc(title) + '</h2>' + inner + '</section>';
   }
   function cell(title, inner) { return '<div class="mt-cell"><h3 class="mt-h3">' + esc(title) + '</h3>' + inner + '</div>'; }
   function empty(txt) { return '<p class="muted mt-none">' + esc(txt) + '</p>'; }
@@ -190,7 +190,7 @@ LP.tongKet = (function () {
     var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Tính trên Daily, Ad-hoc và Personal (mỗi việc hoặc bước có ngày làm tính một mục, cùng cách với vòng Hoàn thành hôm nay ở Agenda), theo ' + (cols[0] && cols[0].day ? 'từng ngày' : 'từng tháng') + '. Ngày chưa tới và ngày nghỉ không có cột.</p>' + barChart(cols, r));
 
     var missRows = top.length ? '<ol class="mt-rank">' + top.map(function (t, i) {
-      return '<li><button type="button" data-miss="' + i + '"><span class="mt-rn num">' + (i + 1) + '</span><span class="mt-rt"><span class="mt-rtitle">' + esc(t.title) + '</span><span class="muted">' + esc(t.routineName) + '</span>' +
+      return '<li><button type="button" data-miss="' + i + '"><span class="mt-rn num">' + (i + 1) + '</span><span class="mt-rt"><span class="mt-rtitle">' + LP.cute.html(t.title) + esc(t.title) + '</span><span class="muted">' + esc(t.routineName) + '</span>' +
         '<span class="bar14 mt-mini"><span class="b-warn" style="width:' + Math.round(t.count * 100 / top[0].count) + '%"></span></span></span><span class="num mt-rc">' + t.count + ' lần</span></button></li>';
     }).join('') + '</ol>' : '<p class="mt-good">' + LP.flowers.html('sakura', 22, 1) + 'Không bỏ sót hạng mục nào trong kỳ này.</p>';
     var b3 = block('Daily và Ad-hoc', 'list', '<div class="mt-two">' + cell('Hạng mục hay bị sót', missRows) +

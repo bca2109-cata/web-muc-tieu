@@ -117,6 +117,8 @@ LP.agenda = (function () {
     return parts.join(' · ');
   }
 
+  var tam_cute = LP.cute.html;
+
   /* Hình khung chào theo buổi (nét như App.views.sun của web cũ, màu cố định) */
   function helloArt(h) {
     var sun = '<g stroke="#f2a33a" stroke-width="6" stroke-linecap="round"><path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l8 8M89 89l8 8M23 97l8-8M89 31l8-8"/></g>' +
@@ -274,7 +276,7 @@ LP.agenda = (function () {
     return '<li class="ag-item' + (m.done ? ' is-done' : '') + stateCls(s) + '">' +
       tickBtn('tick-item', 'data-r="' + esc(r.id) + '" data-i="' + esc(m.item.id) + '" data-d="' + esc(m.runDate) + '"', m.done, m.item.title, 'i|' + r.id + '|' + m.item.id) +
       '<span class="ag-time num">' + esc(m.time || '') + '</span>' +
-      '<div class="ag-main"><div class="ag-title">' + esc(m.item.title) + '</div>' + (sub ? '<div class="ag-sub">' + esc(sub) + '</div>' : '') + '</div>' +
+      '<div class="ag-main"><div class="ag-title">' + tam_cute(m.item.title) + esc(m.item.title) + '</div>' + (sub ? '<div class="ag-sub">' + esc(sub) + '</div>' : '') + '</div>' +
       '<div class="ag-aside">' + statePill(s) + link + '</div></li>';
   }
   function docLink(r) {
@@ -289,7 +291,7 @@ LP.agenda = (function () {
     }
     var tl = ri.c.fake ? '' : tomorrowLine(run);
     return '<section class="card ag-run' + (ri.fin ? ' is-done' : '') + '" aria-label="' + esc(r.name) + '">' +
-      '<div class="ag-sec-head"><h2>' + esc(r.name) + '</h2>' + LP.ui.importance(r.importance) +
+      '<div class="ag-sec-head"><h2>' + tam_cute(r.name, 'clipboard') + esc(r.name) + '</h2>' + LP.ui.importance(r.importance) +
       (run.remainDays != null ? pill('còn ' + run.remainDays + ' ngày', 'note') : '') +
       '<span class="num">' + ri.c.done + '/' + ri.c.total + '</span>' + docLink(r) +
       (ri.fin ? '<button type="button" class="icon-btn" data-act="collapse" data-run="' + esc(r.id) + '" aria-label="Thu gọn">' + icon('up') + '</button>' : '') + '</div>' +
@@ -301,7 +303,7 @@ LP.agenda = (function () {
     var t = o.setTime || o.origTime, s = timeState(t, o.done);
     return '<li class="ag-item' + (o.done ? ' is-done' : '') + stateCls(s) + '">' + tickBtn('tick-left', 'data-key="' + esc(o.key) + '"', o.done, o.title, o.key) +
       '<span class="ag-time num">' + esc(t || '') + '</span>' +
-      '<div class="ag-main"><div class="ag-title">' + esc(o.title) + '</div>' + (o.setTime ? '<div class="ag-sub">đã xếp ' + esc(o.setTime) + '</div>' : '') + '</div>' +
+      '<div class="ag-main"><div class="ag-title">' + tam_cute(o.title) + esc(o.title) + '</div>' + (o.setTime ? '<div class="ag-sub">đã xếp ' + esc(o.setTime) + '</div>' : '') + '</div>' +
       '<div class="ag-aside">' + pill('Tồn từ ' + D.fmt(o.from), 'note') + (o.done ? '' : statePill(s) + skipBtn(o)) + '</div></li>';
   }
   function skipBtn(o) {
@@ -323,7 +325,7 @@ LP.agenda = (function () {
     var attrs = 'data-task="' + esc(id) + '" data-step="' + esc(sid) + '"';
     return '<li class="ag-item' + (x.done ? ' is-done' : '') + stateCls(s) + '">' + tickBtn('tick-task', attrs, x.done, x.title, 't|' + id + '|' + sid) +
       (x.time ? '<span class="ag-time num">' + esc(x.time) + '</span>' : '') +
-      '<div class="ag-main"><div class="ag-title">' + esc(x.title) + '</div><div class="ag-sub">' + esc(taskInfoSub(x)) + '</div></div>' +
+      '<div class="ag-main"><div class="ag-title">' + tam_cute(x.title) + esc(x.title) + '</div><div class="ag-sub">' + esc(taskInfoSub(x)) + '</div></div>' +
       '<div class="ag-aside">' + tonFlag(t) + statePill(s) + LP.ui.importance(t.importance) + LP.ui.urgency(T.urgency(t, st.date)) +
       (readOnly() ? '' : '<button type="button" class="icon-btn ag-more" data-act="more" ' + attrs + ' aria-label="Thêm tùy chọn: ' + esc(x.title) + '">' + MORE + '</button>') + '</div></li>';
   }
@@ -335,7 +337,7 @@ LP.agenda = (function () {
     var on = ST.habitDone(h, st.date), n = ST.streak(h, st.date);
     return '<button type="button" class="chip' + (on ? ' is-on' : '') + '" data-act="tick-habit" data-h="' + esc(h.id) + '" data-fk="h|' + esc(h.id) + '" aria-pressed="' + on + '"' + (readOnly() ? ' disabled' : '') + '>' +
       (n > 0 ? '<span class="ag-streak" title="Chuỗi ' + n + ' ngày">' + icon('flame', 'ic18') + '<span class="num">' + n + '</span></span>' : '') +
-      esc(h.name) + (h.time ? ' <span class="muted num">' + esc(h.time) + '</span>' : '') + '</button>';
+      tam_cute(h.name, 'sprout') + esc(h.name) + (h.time ? ' <span class="muted num">' + esc(h.time) + '</span>' : '') + '</button>';
   }
 
   // Dòng mảnh ở đầu trang: mục SÓT CHƯA QUYẾT (không giới hạn ngày). Không có thì ẩn.
@@ -347,7 +349,7 @@ LP.agenda = (function () {
   }
 
   function taskSection(title, list, empty) {
-    return '<section class="card ag-tasks" aria-label="' + esc(title) + '"><div class="ag-sec-head"><h2>' + esc(title) + '</h2>' +
+    return '<section class="card ag-tasks" aria-label="' + esc(title) + '"><div class="ag-sec-head"><h2>' + tam_cute('', /Ad-hoc/.test(title) ? 'case' : 'house') + esc(title) + '</h2>' +
       (list.length ? '<span class="num">' + list.filter(function (x) { return x.done; }).length + '/' + list.length + '</span>' : '') + '</div>' +
       (list.length ? '<ul class="ag-ul">' + list.map(taskRow).join('') + '</ul>' : '<p class="ag-empty">' + empty + '</p>') + '</section>';
   }
@@ -361,7 +363,7 @@ LP.agenda = (function () {
     if (ad.length) h += taskSection('Ad-hoc hôm nay', ad, '');
     if (cn.length) h += taskSection('Personal hôm nay', cn, '');
     if (!tasks.length) h += taskSection('Ad-hoc / Personal ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)), [], 'Không có việc nào có ngày làm là hôm nay.');
-    h += '<section class="card ag-habits" aria-label="Thói quen"><div class="ag-sec-head"><h2>Thói quen</h2></div>' +
+    h += '<section class="card ag-habits" aria-label="Thói quen"><div class="ag-sec-head"><h2>' + tam_cute('', 'sprout') + 'Thói quen</h2></div>' +
       (habits.length ? '<div class="chips">' + habits.map(habitChip).join('') + '</div>' : '<p class="ag-empty">Không có thói quen nào hôm nay.</p>') + '</section>';
     if (st.date === D.today()) h += '<div class="ag-foot"><button type="button" class="btn btn-primary" data-act="soat">' + icon('moon', 'ic18') + 'Soát cuối ngày</button></div>';
     return h + '</div>';
@@ -377,7 +379,7 @@ LP.agenda = (function () {
     var status = r.done ? pill('Xong', 'ok') : s.late != null ? pill(lateText(s.late), 'late') : s.due ? '<span class="pill ag-pill-due">Đến giờ</span>' : pill('Chưa làm', 'undone');
     return '<div class="ag-tl-row' + (r.done ? ' is-done' : '') + stateCls(s) + '">' +
       '<div class="ag-c-time num' + (r.est ? ' is-est' : '') + '">' + (r.time ? (r.est ? '~' : '') + esc(r.time) : '') + '</div>' +
-      '<div class="ag-c-main">' + r.tick + '<div class="ag-main"><div class="ag-title">' + esc(r.title) + (r.flag ? ' ' + r.flag : '') + '</div>' + (r.sub ? '<div class="ag-sub">' + esc(r.sub) + '</div>' : '') + '</div></div>' +
+      '<div class="ag-c-main">' + r.tick + '<div class="ag-main"><div class="ag-title">' + tam_cute(r.title) + esc(r.title) + (r.flag ? ' ' + r.flag : '') + '</div>' + (r.sub ? '<div class="ag-sub">' + esc(r.sub) + '</div>' : '') + '</div></div>' +
       '<div class="ag-c-meta"><span class="ag-c-belong">' + esc(r.belong || '') + '</span><span class="ag-c-level">' + (r.hearts || '') + (r.urg || '') + '</span><span class="ag-c-due">' + esc(r.due || '') + '</span></div>' +
       '<div class="ag-c-status">' + status + '</div>' + (r.extra ? '<div class="ag-c-place">' + r.extra + '</div>' : '') + '</div>';
   }

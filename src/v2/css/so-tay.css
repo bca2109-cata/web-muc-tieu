@@ -1,0 +1,53 @@
+/* V2 · Lớp "sổ tay thân thiện" (thử 26/11), nạp sau cùng. Không sửa tokens.css (giữ khớp web cũ),
+   chỉ ghi đè ở đây: nền nhạt hơn, bỏ bóng gờ cứng dưới nút và thẻ, nút kiểu nhãn dán pastel. */
+:root{--bg:#fffdfe;--shadow:none}
+
+/* Thẻ: phẳng, viền giấy mảnh */
+.card{box-shadow:none;border:2px solid var(--line)}
+
+/* Nút chung: không gờ bóng, bo 14px, viền mảnh */
+.btn,.btn:hover:not(:disabled),.btn:active:not(:disabled){box-shadow:none}
+.btn{border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn:hover:not(:disabled){background:var(--track);transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:scale(.97)}
+
+/* Nút chính: nhãn dán hồng pastel, chữ màu mực (tương phản cao) */
+.btn-primary,.btn-primary:hover:not(:disabled),.btn-primary:active:not(:disabled){box-shadow:none}
+.btn-primary{background:var(--petal-1);border-color:var(--petal-2);color:var(--ink)}
+.btn-primary:hover:not(:disabled){background:var(--petal-2)}
+.btn-soft{color:var(--accent-deep)}
+
+/* Chip, nút tròn, nút ngày: không gờ bóng */
+.chip,.ag-daybtn,.round,.chip:hover,.ag-daybtn:hover,.round:hover,.chip:active,.ag-daybtn:active,.round:active{box-shadow:none}
+.chip:hover,.round:hover,.ag-daybtn:hover{background:var(--track)}
+
+/* Nút "+": cùng kiểu nhãn dán */
+.fab-main,.fab-main:active{background:var(--petal-1);color:var(--ink);border:2px solid var(--petal-2);box-shadow:0 6px 16px color-mix(in srgb,var(--ink) 12%,transparent)}
+
+/* Tối: chữ trên nút pastel giữ màu mực sẫm để đọc rõ; icon dễ thương có nền nhãn dán sáng */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn-primary,:root:not([data-theme="light"]) .fab-main{color:#2a1622}
+  :root:not([data-theme="light"]) .lp-cute{background:#fff3f8;border-radius:10px;padding:2px}}
+:root[data-theme="dark"] .btn-primary,:root[data-theme="dark"] .fab-main{color:#2a1622}
+:root[data-theme="dark"] .lp-cute{background:#fff3f8;border-radius:10px;padding:2px}
+
+/* Icon dễ thương (LP.cute) trước tên việc, tên khối, mục tiêu, thói quen, tài liệu */
+.lp-cute{display:inline-flex;vertical-align:-7px;margin-right:8px;flex:none}
+.lp-cute svg{display:block;width:28px;height:28px}
+h1 .lp-cute svg,h2 .lp-cute svg,h3 .lp-cute svg{width:32px;height:32px}
+h1 .lp-cute,h2 .lp-cute,h3 .lp-cute{vertical-align:-8px}
+.is-done .lp-cute{opacity:.55}
+.chip .lp-cute{margin-right:2px;vertical-align:middle}
+.chip .lp-cute svg{width:24px;height:24px}
+.lcard-title .lp-cute{margin-right:6px;vertical-align:-5px}
+.lcard-title .lp-cute svg{width:22px;height:22px}
+
+/* Tiêu đề viết tay (Mali) cho mọi màn; chữ thường và số vẫn Quicksand */
+:root{--hand:'Mali',var(--display)}
+main h1,main h2,.card h2,.page-head h1,.lich-title{font-family:var(--hand);font-weight:700;letter-spacing:0}
+/* Nhãn trạng thái: thẻ giấy góc vuông nhẹ; chỉ thứ bấm được mới bo tròn hẳn */
+.pill{border-radius:6px}
+.lblk .lp-cute{margin-right:4px;vertical-align:middle}
+.lblk .lp-cute svg{width:18px;height:18px}
+.lblk.lstrip .lp-cute{display:none}
+.mt-sticker .lp-cute{margin:0}
+.mt-sticker .lp-cute svg{width:30px;height:30px}

@@ -134,7 +134,7 @@ LP.views = LP.views || {};
         '<button type="button" class="icon-btn gc-add" data-new="' + esc(sp) + '" aria-label="Tạo tài liệu mới trong ' + esc(sp) + '">' + ui.icon('plus', 'ic18') + '</button></div>' +
         (rows.length ? '<ul class="gc-docs">' + rows.map(function (d) {
           return '<li><button type="button" class="gc-docrow' + (S && d.id === S.docId ? ' is-on' : '') + '" data-doc="' + esc(d.id) + '">' + ui.icon('doc', 'ic18') +
-            '<span class="gc-docrow-t">' + esc(d.title || 'Chưa đặt tên') + '</span><span class="gc-docrow-m muted num">' + esc(stampParts(d.updated_at).slice(0, 5)) + '</span></button></li>';
+            '<span class="gc-docrow-t">' + LP.cute.html(d.title, 'book') + esc(d.title || 'Chưa đặt tên') + '</span><span class="gc-docrow-m muted num">' + esc(stampParts(d.updated_at).slice(0, 5)) + '</span></button></li>';
         }).join('') + '</ul>' : '<p class="muted gc-none">Chưa có tài liệu.</p>') + '</section>';
     }).join('');
     h += '<section class="gc-space gc-trash"><button type="button" class="gc-trash-head" data-trash aria-expanded="' + (S && S.trashOpen ? 'true' : 'false') + '">' + ui.icon('trash', 'ic18') + '<span>Thùng rác</span><span class="num muted">' + trashRows.length + '</span></button>' +

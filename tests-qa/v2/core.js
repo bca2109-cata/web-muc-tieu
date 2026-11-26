@@ -29,7 +29,7 @@ module.exports = async function (h) {
     });
   });
   await h.test('Không viết thẳng mã màu trong css/js lõi (trừ tokens, hoa)', async () => {
-    const files = ['src/v2/css/base.css'].concat(fs.readdirSync(path.join(root, 'src/v2/js/core')).filter(f => !/^(flowers|mock-data)\.js$/.test(f)).map(f => 'src/v2/js/core/' + f));
+    const files = ['src/v2/css/base.css'].concat(fs.readdirSync(path.join(root, 'src/v2/js/core')).filter(f => !/^(flowers|cute|mock-data)\.js$/.test(f)).map(f => 'src/v2/js/core/' + f));
     files.forEach(f => { const m = read(f).match(/(^|[^'"\w-])#[0-9a-fA-F]{3,6}\b/g); A.ok(!m, f + ' có mã màu ' + (m && m[0])); });
   });
 
@@ -233,7 +233,8 @@ module.exports = async function (h) {
     const p = await h.open({ w: 390, scheme: 'dark' });
     A.strictEqual(await p.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(34, 21, 31)');
     const p2 = await h.open({ w: 390, scheme: 'light' });
-    A.strictEqual(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(255, 250, 252)');
+    // 26/11: người dùng muốn nền sáng nhạt hơn web cũ, ghi đè ở css/so-tay.css (--bg:#fffdfe)
+    A.strictEqual(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(255, 253, 254)');
   });
 
   await h.test('Khung ở 390px và 1280px, sáng và tối: không cuộn ngang, không lỗi JS', async () => {

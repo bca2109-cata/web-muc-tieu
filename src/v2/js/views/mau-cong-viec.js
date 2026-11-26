@@ -112,7 +112,7 @@ LP.views = LP.views || {};
       return '<section class="mc-group"><h2>' + g[1] + '</h2>' + (rows.length ? '<ul class="mc-rows">' + rows.map(function (r) {
         var on = LP.util.truthy(r.active), n = currentItems(r).length;
         return '<li><button type="button" class="mc-row' + (r.id === cur ? ' is-on' : '') + (on ? '' : ' is-off') + '" data-id="' + esc(r.id) + '">' +
-          '<span class="mc-row-main"><span class="mc-row-name">' + esc(r.name) + '</span>' +
+          '<span class="mc-row-main"><span class="mc-row-name">' + LP.cute.html(r.name, 'clipboard') + esc(r.name) + '</span>' +
           '<span class="mc-row-sub muted">' + n + ' hạng mục · ' + esc(repeatText(r)) + '</span></span>' +
           (on ? '' : ui.pill('Tạm dừng', 'undone')) + '</button></li>';
       }).join('') + '</ul>' : '<p class="muted mc-none">Chưa có Daily nào.</p>') + '</section>';
