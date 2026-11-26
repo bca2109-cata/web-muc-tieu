@@ -48,3 +48,8 @@
 - "Tỷ lệ hoàn thành công việc" đổi từ cột sang đường xu hướng mượt (đường cong monotone, không vọt quá 100%). Vùng xanh ≥ 80%, ngày dưới 80% có chấm và số, vạch trung bình "TB X%" (bằng ô Hoàn thành). Trục dọc bắt đầu từ mức thấp nhất làm tròn 20. Vẫn bấm từng điểm (`.mt-col`) để mở chi tiết.
 - Tổng quan có câu tóm tắt `.mt-say`; Mức quan trọng ghi tên mức và chi tiết khẩn bằng chữ.
 - Test `all` 125/125. Ảnh: `docs/v2/anh/tk-duong-*.png`.
+
+## Trang giới thiệu khớp giao diện mới (nhánh v2/gioi-thieu-cap-nhat, 26/11/2026)
+- `gioi-thieu.html` nạp thêm phông Mali, `so-tay.css`, `nut-giay.css`: tiêu đề viết tay, nút kiểu giấy như trong app.
+- Chụp lại 4 ảnh app trong `img/gioi-thieu/` (Agenda, Lịch, Ghi chú, Tổng kết có biểu đồ đường mới).
+- Nhánh `v2/nut-hoa` (thử nút + bông hoa / giấy note) bỏ, vì nút đã làm xong ở PR #21.
