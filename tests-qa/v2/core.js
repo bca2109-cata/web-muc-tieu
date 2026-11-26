@@ -29,7 +29,7 @@ module.exports = async function (h) {
     });
   });
   await h.test('Không viết thẳng mã màu trong css/js lõi (trừ tokens, hoa)', async () => {
-    const files = ['src/v2/css/base.css'].concat(fs.readdirSync(path.join(root, 'src/v2/js/core')).filter(f => !/^(flowers|mock-data)\.js$/.test(f)).map(f => 'src/v2/js/core/' + f));
+    const files = ['src/v2/css/base.css'].concat(fs.readdirSync(path.join(root, 'src/v2/js/core')).filter(f => !/^(flowers|cute|mock-data)\.js$/.test(f)).map(f => 'src/v2/js/core/' + f));
     files.forEach(f => { const m = read(f).match(/(^|[^'"\w-])#[0-9a-fA-F]{3,6}\b/g); A.ok(!m, f + ' có mã màu ' + (m && m[0])); });
   });
 

@@ -37,3 +37,9 @@
 ## Trang giới thiệu (nhánh v2/gioi-thieu, đã merge 26/11/2026)
 - `src/v2/gioi-thieu.html` + `css/gioi-thieu.css` (tiền tố `.gt-`), ảnh trong `src/v2/img/gioi-thieu/`. Trang riêng, chỉ người dùng xem, nút "Mở Life Planner" vào Agenda.
 - Đã kiểm 390 / 820 / 1280px, sáng và tối, bàn phím. Ảnh: `docs/v2/anh/gioi-thieu-*.png`.
+
+## Sổ tay thân thiện (nhánh v2/so-tay, người dùng duyệt 26/11/2026)
+- Lớp `css/so-tay.css` nạp sau cùng: nền sáng nhạt hơn (`--bg:#fffdfe`), bỏ gờ bóng dưới nút/thẻ/chip, nút chính kiểu nhãn dán hồng pastel chữ mực, nhãn trạng thái góc vuông nhẹ, tiêu đề viết tay Mali. `tokens.css` không đổi.
+- Agenda: dải biểu đồ một trang 2 cột không đều, băng dính washi trên khối Daily, góc gấp ở Ad-hoc/Personal, tab Checklist/Toàn cảnh gạch chân.
+- `js/core/cute.js` (`LP.cute.html(tên, hình mặc định)`): 18 icon dễ thương tự chọn theo tên việc; dùng ở Agenda, Lịch tuần, Ghi chú, Mục tiêu, Thói quen, Tổng kết, Mẫu Daily.
+- Test `core` cập nhật: màu nền sáng mới; `cute.js` được phép có mã màu như `flowers.js`. Test `all` 125/125. Ảnh: `docs/v2/anh/so-tay-*.png`.

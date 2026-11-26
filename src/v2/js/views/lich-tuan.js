@@ -94,7 +94,7 @@ LP.lich = (function () {
     var drag = x.done ? '' : ' draggable="true"';
     return '<article class="lcard g-' + groupOf(t) + (x.done ? ' is-done' : '') + dim + '"' + drag +
       ' data-task="' + esc(t.id) + '" data-step="' + (x.step ? esc(x.step.id) : '') + '">' +
-      '<div class="lcard-top"><span class="lcard-title">' + esc(x.title) + '</span>' +
+      '<div class="lcard-top"><span class="lcard-title">' + LP.cute.html(x.title) + esc(x.title) + '</span>' +
       '<button type="button" class="lcard-more" data-more aria-label="Mở menu ' + esc(x.title) + '">' + UI.icon('settings', 'ic18') + '</button></div>' +
       (x.step ? '<div class="lcard-sub muted">' + esc(t.title) + '</div>' : '') +
       '<div class="lcard-meta">' + (x.duration ? '<span class="num">' + LP.date.fmtMin(x.duration) + '</span>' : '') +
@@ -103,7 +103,7 @@ LP.lich = (function () {
   function plainCard(t) {
     var imp = num(t.importance) || 1;
     return '<article class="lcard g-' + groupOf(t) + (st.onlyImp && imp < 2 ? ' dim' : '') + '" draggable="true" data-task="' + esc(t.id) + '" data-step="">' +
-      '<div class="lcard-top"><span class="lcard-title">' + esc(t.title) + '</span>' +
+      '<div class="lcard-top"><span class="lcard-title">' + LP.cute.html(t.title) + esc(t.title) + '</span>' +
       '<button type="button" class="lcard-more" data-more aria-label="Mở menu ' + esc(t.title) + '">' + UI.icon('settings', 'ic18') + '</button></div>' +
       '<div class="lcard-meta">' + (num(t.duration_min) ? '<span class="num">' + LP.date.fmtMin(num(t.duration_min)) + '</span>' : '') + UI.importance(imp) +
       UI.urgency(LP.logic.tasks.urgency(t, D.today())) + '</div></article>';
@@ -168,7 +168,7 @@ LP.lich = (function () {
   }
 
   // Chỉ tên việc dạng chữ; giờ, thời lượng, mức quan trọng xem ở tooltip và menu
-  function blockInner(e) { return esc(e.kind === 'fix' ? e.m.item.title : e.x.title); }
+  function blockInner(e) { var t = e.kind === 'fix' ? e.m.item.title : e.x.title; return LP.cute.html(t) + esc(t); }
   function blockHtml(e, pos) {
     var cls = 'lblk' + (pos && e.end - e.start <= STEP ? ' short' : ''), attr = '';
     if (e.kind === 'fix') {
