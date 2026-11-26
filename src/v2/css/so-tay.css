@@ -52,14 +52,11 @@ main h1,main h2,.card h2,.page-head h1,.lich-title{font-family:var(--hand);font-
 .mt-sticker .lp-cute{margin:0}
 .mt-sticker .lp-cute svg{width:30px;height:30px}
 
-/* Hệ nút gọn (27/11): góc bo 12px thay vì viên thuốc, nền tô nhạt theo việc, viền liền 1px cùng tông.
+/* Hệ nút gọn (27/11): góc bo 12px thay vì viên thuốc, nền hồng tô nhạt, mọi nút phụ cùng một màu, viền liền 1px cùng tông.
    Không gạch đứt, không bóng. Chữ đậm vừa 700, màu đậm cùng tông để đọc rõ (≥ 4.5:1). */
 .btn{border-radius:12px;font-weight:700;letter-spacing:.1px}
 .btn-primary{border-width:1px}
 .btn-soft,.ag-pending .chip,.chip[data-act="doc"]{--tag:var(--accent);--tag-ink:var(--accent-deep)}
-.btn-soft[data-act="off"]{--tag:var(--petal-13);--tag-ink:var(--ink)}
-.ag-pending .chip{--tag:var(--pr-bar);--tag-ink:var(--ink)}
-.chip[data-act="doc"]{--tag:var(--ok-bar);--tag-ink:var(--ok)}
 .btn-soft,.ag-pending .chip,.chip[data-act="doc"]{border-radius:12px;border:1px solid color-mix(in srgb,var(--tag) 45%,var(--surface));
   background:color-mix(in srgb,var(--tag) 13%,var(--surface));color:var(--tag-ink);font-weight:700}
 .btn-soft:hover:not(:disabled),.ag-pending .chip:hover,.chip[data-act="doc"]:hover{background:color-mix(in srgb,var(--tag) 24%,var(--surface));border-color:color-mix(in srgb,var(--tag) 70%,var(--surface));transform:none}
