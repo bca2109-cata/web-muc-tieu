@@ -52,31 +52,43 @@ main h1,main h2,.card h2,.page-head h1,.lich-title{font-family:var(--hand);font-
 .mt-sticker .lp-cute{margin:0}
 .mt-sticker .lp-cute svg{width:30px;height:30px}
 
-/* Nhãn viền nét đứt nhiều màu (26/11): nút phụ, nút nhắc, nhãn trạng thái.
-   Mỗi nhãn có nền pastel + viền đứt cùng tông; chữ luôn màu mực hoặc màu đậm để đọc rõ. */
-.btn-soft,.ag-pending .chip,.chip[data-act="doc"]{--tag-bg:var(--accent-soft);--tag-bd:var(--petal-2);--tag-ink:var(--accent-deep)}
-.btn-soft:nth-of-type(3n+2){--tag-bg:var(--mint);--tag-bd:var(--ok-bar);--tag-ink:var(--ok)}
-.btn-soft:nth-of-type(3n+3){--tag-bg:var(--sky);--tag-bd:var(--petal-13);--tag-ink:var(--ink)}
-.btn-soft[data-act="off"]{--tag-bg:var(--sky);--tag-bd:var(--petal-13);--tag-ink:var(--ink)}
-.ag-pending .chip{--tag-bg:var(--butter);--tag-bd:var(--pr-bar);--tag-ink:var(--ink)}
-.chip[data-act="doc"]{--tag-bg:var(--mint);--tag-bd:var(--ok-bar);--tag-ink:var(--ok)}
-.btn-soft,.ag-pending .chip,.chip[data-act="doc"]{background:var(--tag-bg);border:2px dashed var(--tag-bd);color:var(--tag-ink)}
-.btn-soft:hover:not(:disabled),.ag-pending .chip:hover,.chip[data-act="doc"]:hover{background:var(--tag-bg);border-style:solid;filter:saturate(1.15)}
+/* Hệ nút gọn (27/11): góc bo 12px thay vì viên thuốc, nền tô nhạt theo việc, viền liền 1px cùng tông.
+   Không gạch đứt, không bóng. Chữ đậm vừa 700, màu đậm cùng tông để đọc rõ (≥ 4.5:1). */
+.btn{border-radius:12px;font-weight:700;letter-spacing:.1px}
+.btn-primary{border-width:1px}
+.btn-soft,.ag-pending .chip,.chip[data-act="doc"]{--tag:var(--accent);--tag-ink:var(--accent-deep)}
+.btn-soft[data-act="off"]{--tag:var(--petal-13);--tag-ink:var(--ink)}
+.ag-pending .chip{--tag:var(--pr-bar);--tag-ink:var(--ink)}
+.chip[data-act="doc"]{--tag:var(--ok-bar);--tag-ink:var(--ok)}
+.btn-soft,.ag-pending .chip,.chip[data-act="doc"]{border-radius:12px;border:1px solid color-mix(in srgb,var(--tag) 45%,var(--surface));
+  background:color-mix(in srgb,var(--tag) 13%,var(--surface));color:var(--tag-ink);font-weight:700}
+.btn-soft:hover:not(:disabled),.ag-pending .chip:hover,.chip[data-act="doc"]:hover{background:color-mix(in srgb,var(--tag) 24%,var(--surface));border-color:color-mix(in srgb,var(--tag) 70%,var(--surface));transform:none}
+.btn-soft:active:not(:disabled),.ag-pending .chip:active,.chip[data-act="doc"]:active{transform:translateY(1px)}
 .btn-soft .icon,.chip[data-act="doc"] .icon{color:currentColor}
-.ag-pending{border:2px dashed var(--pr-bar);background:var(--butter)}
+.chip{border-radius:10px;font-weight:700}
+.ag-pending .chip{min-height:32px;padding:2px 12px}
+/* Dòng "N mục tồn": dải ghi chú vàng, vạch màu bên trái thay cho viền đứt */
+.ag-pending{border:0;border-left:4px solid var(--pr-bar);border-radius:10px;background:color-mix(in srgb,var(--butter) 75%,var(--surface));padding:4px 6px 4px 14px}
 
-.pill{border:1.5px dashed var(--dash);font-weight:700}
-.pill-late{border-color:var(--warn-bar)}
-.pill-missed{border-color:var(--pr-bar)}
-.pill-ok{border-color:var(--ok-bar)}
-.pill-undone{border-color:var(--dash)}
-.ag-pill-due{border:1.5px dashed var(--accent)}
+/* Nhãn trạng thái: thẻ nhỏ góc 6px, nền tô nhạt, chấm màu phía trước */
+.pill{border:0;border-radius:6px;font-weight:700;padding:2px 9px}
+.pill-late::before,.pill-missed::before,.pill-ok::before,.ag-pill-due::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.ag-pill-due{border:0}
 
-/* Nút "+": bông hoa 5 cánh, nhụy vàng có dấu +. Mở menu thì hoa xoay. */
-.fab-main,.fab-main:active,.fab-main:hover{width:64px;height:64px;padding:0;border:0;background:transparent;box-shadow:none}
-.fab-flower{width:64px;height:64px;display:block;filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--ink) 18%,transparent));transition:transform .4s var(--spring)}
-.fab-main:hover .fab-flower{transform:rotate(18deg) scale(1.06)}
-.fab-main[aria-expanded="true"] .fab-flower{transform:rotate(72deg)}
-.fab-main[aria-expanded="true"] .fab-plus{transform:rotate(-27deg);transform-origin:40px 40px}
-.fab-main:focus-visible{border-radius:99px}
-@media (prefers-reduced-motion:reduce){.fab-flower,.fab-main:hover .fab-flower,.fab-main[aria-expanded="true"] .fab-flower{transition:none;transform:none}}
+/* Nút "+": tờ giấy note. Giấy vuông, mép keo đậm hơn ở trên, góc dưới phải hơi cong lên,
+   bóng đổ lệch về góc cong như giấy thật. Mở menu: giấy thẳng lại, dấu + xoay thành ×. */
+.fab-main,.fab-main:active{position:relative;width:58px;height:58px;padding:0;border:0;color:var(--ink);
+  border-radius:3px 3px 16px 3px/3px 3px 8px 3px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--pr-bar) 28%,var(--butter)) 0 9px,var(--butter) 9px,color-mix(in srgb,var(--pr-bar) 14%,var(--butter)) 100%);
+  box-shadow:0 1px 1px color-mix(in srgb,var(--ink) 10%,transparent),2px 7px 10px -5px color-mix(in srgb,var(--ink) 30%,transparent);
+  transform:rotate(-3deg);transition:transform .25s var(--spring),box-shadow .25s}
+.fab-main::after{content:"";position:absolute;right:0;bottom:0;width:18px;height:12px;border-radius:0 0 16px 0/0 0 8px 0;
+  background:linear-gradient(135deg,transparent 45%,color-mix(in srgb,var(--ink) 7%,transparent));pointer-events:none}
+.fab-main:hover{transform:rotate(-1deg) translateY(-2px);box-shadow:0 1px 1px color-mix(in srgb,var(--ink) 10%,transparent),3px 12px 14px -6px color-mix(in srgb,var(--ink) 32%,transparent)}
+.fab-main[aria-expanded="true"]{transform:rotate(0)}
+.fab-main .icon{width:26px;height:26px;stroke-width:2.6;margin-top:4px}
+.fab-main:focus-visible{outline-offset:4px}
+/* Tối: giấy vẫn vàng sáng như giấy thật, chữ mực sẫm */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fab-main{background:linear-gradient(180deg,var(--petal-4) 0 9px,color-mix(in srgb,var(--petal-12) 70%,var(--petal-4)) 9px,var(--petal-4) 100%);color:#2a1622;box-shadow:0 1px 1px rgba(0,0,0,.4),2px 8px 12px -5px rgba(0,0,0,.7)}}
+:root[data-theme="dark"] .fab-main{background:linear-gradient(180deg,var(--petal-4) 0 9px,color-mix(in srgb,var(--petal-12) 70%,var(--petal-4)) 9px,var(--petal-4) 100%);color:#2a1622;box-shadow:0 1px 1px rgba(0,0,0,.4),2px 8px 12px -5px rgba(0,0,0,.7)}
+@media (prefers-reduced-motion:reduce){.fab-main,.fab-main:hover{transition:none;transform:rotate(-3deg)}}
