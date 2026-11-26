@@ -205,12 +205,12 @@
 @media (max-width:430px){.ag-hello{padding-right:76px}.ag-hello .ag-sun{width:60px;height:60px;right:8px}.ag-daypick{padding:2px 8px}}
 
 /* ---------- Sổ tay (thử 26/11): bớt kiểu bảng điều khiển, giống trang sổ kế hoạch ----------
-   Tiêu đề viết tay (Pangolin), thẻ phẳng có viền giấy, băng dính washi trên khối Daily,
+   Tiêu đề viết tay (Mali), thẻ phẳng có viền giấy, băng dính washi trên khối Daily,
    dải 3 biểu đồ gộp thành một trang có vạch đứt ngăn cột. */
-.ag{--hand:'Pangolin',var(--display)}
-.ag-hello h1,.ag h2{font-family:var(--hand);font-weight:400;letter-spacing:.2px}
-.ag-hello h1{font-size:28px;line-height:1.15}
-.ag h2{font-size:21px}
+.ag{--hand:'Mali',var(--display)}
+.ag-hello h1,.ag h2{font-family:var(--hand);font-weight:700;letter-spacing:0}
+.ag-hello h1{font-size:26px;line-height:1.2}
+.ag h2{font-size:19px}
 
 /* Thẻ phẳng: viền giấy thay cho bóng */
 .ag .card{box-shadow:none;border:2px solid var(--line)}
@@ -221,7 +221,23 @@
 .ag-charts>.ag-chart{border:0;border-radius:0;background:transparent;padding:16px 18px}
 .ag-charts>.ag-chart+.ag-chart{border-top:2px dashed var(--line)}
 @media (min-width:900px){.ag-charts>.ag-chart+.ag-chart{border-top:0;border-left:2px dashed var(--line)}}
-.ag-chart h2{font-size:19px}
+.ag-chart h2{font-size:18px}
+/* Máy tính: 2 cột không đều, Hoàn thành và 6 ngày xếp chồng bên trái, Tiến độ theo khối chiếm cột phải */
+@media (min-width:900px){
+  .ag-charts{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
+  .ag-charts>.ag-chart:nth-child(1){grid-column:1;grid-row:1}
+  .ag-charts>.ag-chart:nth-child(2){grid-column:2;grid-row:1 / span 2}
+  .ag-charts>.ag-chart:nth-child(3){grid-column:1;grid-row:2;border-left:0;border-top:2px dashed var(--line)}
+  .ag-charts .ag-cols{height:104px}
+}
+
+/* Nhãn trạng thái: thẻ giấy góc vuông nhẹ, chỉ nút bấm mới bo tròn hẳn */
+.ag .pill{border-radius:6px}
+/* Checklist / Toàn cảnh: như tab sổ, gạch chân ở mục đang chọn */
+.ag-switch{gap:14px}
+.ag-switch .chip{border:0;border-radius:0;background:none;padding:4px 2px;min-height:44px;font-size:15px;color:var(--muted)}
+.ag-switch .chip.is-on{background:none;color:var(--accent-deep);box-shadow:inset 0 -3px 0 var(--accent)}
+.ag-switch .chip:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
 /* Băng dính washi trên đầu khối Daily, màu đổi theo thứ tự khối */
 .ag-run,.ag-tasks{position:relative;overflow:visible}
