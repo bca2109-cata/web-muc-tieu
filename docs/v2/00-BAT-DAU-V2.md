@@ -17,6 +17,7 @@
 | 2 | Phần 3 · Ghi chú | Sonnet | `v2/phan-3` | Song song với phần 4 |
 | 2 | Phần 4 · Mục tiêu + Thói quen + Tổng kết | Sonnet | `v2/phan-4` | Song song với phần 3 |
 | 3 | Phần 5 · Mẫu công việc + Cài đặt | Sonnet | `v2/phan-5` | |
+| 4 | Phần 6 · Tinh chỉnh giao diện | Opus | `v2/phan-6` | Sau khi Phần 5 merge |
 | Sau mỗi đợt | **Điều phối · Ghép** | Opus | gộp PR vào `main` | |
 
 Cách chọn model: trong phiên Claude Code trên web, chọn ở ô model cạnh khung chat, hoặc gõ `/model`.
