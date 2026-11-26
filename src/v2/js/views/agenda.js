@@ -139,7 +139,7 @@ LP.agenda = (function () {
   }
 
   /* ---------- Đầu trang ---------- */
-  function headHtml() {
+  function headHtml(extra) {
     var d = st.date, t = D.today(), pills = '';
     if (d < t) pills += pill('Đã qua · chỉ xem', 'plain'); else if (d > t) pills += pill('Sắp tới', 'note');
     if (D.isDayOff(d)) pills += pill('Ngày nghỉ', 'missed'); else if (D.dow(d) === 7) pills += pill('Chủ nhật', 'plain');
@@ -155,7 +155,7 @@ LP.agenda = (function () {
       '<button type="button" class="ag-daybtn" data-act="prev" aria-label="Ngày trước">' + icon('back', 'ic18') + '</button>' +
       '<span class="ag-daypick"><span class="ag-dayrel">' + rel + '</span><span class="ag-daylabel">' + esc(dateLabel(d)) + '</span></span>' +
       '<button type="button" class="ag-daybtn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ic18 ag-flip') + '</button></div></section>' +
-      (pills || tools ? '<div class="ag-sub"><div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>' : '') + '</div>';
+      '<div class="ag-side">' + (pills || tools ? '<div class="ag-sub"><div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>' : '') + (extra || '') + '</div></div>';
   }
 
   /* ---------- Dải 3 biểu đồ ---------- */
@@ -460,7 +460,7 @@ LP.agenda = (function () {
     var y = window.scrollY, ae = document.activeElement, fk = ae && ae.getAttribute ? ae.getAttribute('data-fk') : null;
     var cards = buildCards(R.runsFor(st.date), leftEntries()), tasks = T.tasksFor(st.date), habits = habitsDue();
     st.lastNow = D.now();
-    st.el.innerHTML = '<div class="ag">' + headHtml() + pendingLine() + chartsHtml(cards, tasks) + switchHtml() +
+    st.el.innerHTML = '<div class="ag">' + headHtml(pendingLine()) + chartsHtml(cards, tasks) + switchHtml() +
       (st.mode === 'overview' ? overviewHtml(cards, tasks, habits) : checklistHtml(cards, tasks, habits)) + '</div>';
     if (fk) {
       var cand = st.el.querySelectorAll('[data-fk]');
