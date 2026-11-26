@@ -10,7 +10,7 @@
 | Thứ | Lấy từ | Cách làm |
 |---|---|---|
 | Bộ màu sáng/tối và biến | `src/css/style.css` khối `:root` | Chép **nguyên văn** vào `src/v2/css/tokens.css`. Không đổi tên biến |
-| Font | `src/v2/index.html` | **Quicksand** 500/600/700 cho mọi chữ. Số dùng `tabular-nums`, đậm 700. Thang cỡ 12/13/15/17/21/28 (+34 lời chào) |
+| Font | `src/v2/index.html` | **Quicksand** 500/600/700 cho mọi chữ. Số dùng `tabular-nums`, đậm 700 |
 | Logo "LIFE PLANNER" | `.logo-text` có gạch lượn sóng hồng | Giữ |
 | Hoa rơi nền, hoa bung khi xong | `src/js/flowers.js` | Giữ, kèm cài đặt Hoa rơi (Luôn bật / Theo máy / Tắt) |
 | Icon | `src/js/ui.js` | Giữ nét tròn, stroke 2, lưới 24. Không emoji |
