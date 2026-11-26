@@ -122,7 +122,9 @@ function load_(range) {
       for (var i = 1; i < values.length; i++) {
         var obj = {};
         head.forEach(function (h, j) { if (h) obj[h] = fromCell_(values[i][j], tz, h); });
-        if (!obj.id || obj.deleted === 'TRUE') continue;
+        if (!obj.id) continue;
+        // P5-1: range.deleted === true thì trả cả dòng đã xóa mềm của Tasks, TaskSteps (cho Thùng rác)
+        if (obj.deleted === 'TRUE' && !(range && range.deleted === true && (name === 'Tasks' || name === 'TaskSteps'))) continue;
         if (range && field && obj[field]) {
           if (range.from && obj[field] < range.from) continue;
           if (range.to && obj[field] > range.to) continue;

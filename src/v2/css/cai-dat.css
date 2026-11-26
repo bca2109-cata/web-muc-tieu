@@ -1,1 +1,91 @@
-/* V2 · css của phần này. Phần sở hữu file (xem hợp đồng mục 3). Giai đoạn 0: để trống. */
+/* V2 · Phần 5 · Daily (route mau), Cài đặt, form nút "+". Chỉ dùng biến trong tokens.css. */
+
+/* ---------- Màn Daily: danh sách bên trái, form bên phải ---------- */
+.mc{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}
+.mc[data-tier="form"] .mc-list{display:none}
+.mc[data-tier="list"] .mc-main{display:none}
+.mc-list-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mc-list-head h1{flex:1;font-size:24px;font-weight:800}
+.mc-group+.mc-group{margin-top:16px}
+.mc-group h2{font-size:17px;font-weight:700;color:var(--muted);margin:0 0 6px}
+.mc-rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.mc-row{display:flex;align-items:center;gap:8px;width:100%;min-height:56px;padding:8px 14px;border:2px solid var(--line);border-radius:16px;background:var(--surface);text-align:left}
+.mc-row:hover{border-color:var(--accent)}
+.mc-row.is-on{background:var(--accent-soft);border-color:var(--accent)}
+.mc-row.is-off .mc-row-name{color:var(--muted)}
+.mc-row-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.mc-row-name{font-weight:800;overflow:hidden;text-overflow:ellipsis}
+.mc-row-sub{font-size:13px}
+.mc-none{margin:0;font-size:14px}
+.mc-empty{text-align:center;padding:40px 20px}
+.mc-empty h2{font-size:24px;font-weight:800;margin:6px 0}
+.mc-empty p{margin:0}
+.mc-form-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.mc-form-head h1{flex:1;min-width:0;font-size:24px;font-weight:800}
+.mc-items-head{display:flex;align-items:baseline;gap:8px;margin:6px 0 8px}
+.mc-items-head h2{font-size:19px;font-weight:700}
+.mc-items{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:10px}
+.mc-item{display:flex;align-items:flex-start;gap:6px;padding:10px 6px 10px 4px;border:2px dashed var(--dash);border-radius:16px;background:var(--surface)}
+.mc-item.is-drag{opacity:.5;border-color:var(--accent)}
+.mc-grip{flex:none;width:30px;height:44px;display:grid;place-items:center;color:var(--muted);cursor:grab;touch-action:none}
+.mc-item-fields{flex:1;min-width:0;display:grid;gap:8px}
+.mc-item-top{display:grid;grid-template-columns:116px minmax(0,1fr);gap:8px}
+.mc-item-mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.mc-est,.cd-min{display:flex;align-items:center;gap:6px;min-width:0}
+.mc-est .input,.cd-min .input{min-width:0}
+.mc-item-act{display:flex;flex-direction:column;gap:2px}
+.mc-item-act .icon-btn{width:36px;height:36px}
+.mc-apply{margin-top:16px}
+.mc-apply small{display:block;margin-top:6px;font-weight:600}
+.mc-foot{align-items:center}
+@media (min-width:900px){
+  .mc{grid-template-columns:320px minmax(0,1fr)}
+  .mc[data-tier] .mc-list,.mc[data-tier] .mc-main{display:block}
+  .mc-back{display:none}
+  .mc-item-act{flex-direction:row}
+}
+@media (max-width:420px){
+  .mc-item-top{grid-template-columns:1fr}
+}
+
+/* ---------- Màn Cài đặt ---------- */
+.cd{max-width:720px;margin:0 auto;display:grid;gap:16px}
+.cd .page-head{margin-bottom:0}
+.cd-card h2{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:700;margin-bottom:12px}
+.cd-card h2 .icon{color:var(--accent)}
+.cd-card h3{font-size:16px;font-weight:700;margin:14px 0 6px;color:var(--muted)}
+.cd-note{margin:6px 0 0;font-size:13px}
+.cd-none{margin:4px 0;font-size:14px}
+.cd-daily p{margin:0 0 12px}
+.cd-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.cd-conn{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+.cd-conn .icon{color:var(--accent)}
+.cd-toggle{margin-bottom:4px}
+.cd-list{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px}
+.cd-list li{display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 6px 4px 14px;border-radius:14px;background:var(--plain-bg)}
+.cd-list li.is-past{opacity:.6}
+.cd-li-note{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cd-li-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.cd-li-title{font-weight:800;overflow:hidden;text-overflow:ellipsis}
+.cd-off-add{padding-top:6px;border-top:2px dashed var(--dash)}
+.cd-trash-head{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin-top:12px;padding:6px 14px;border:2px solid var(--line);border-radius:14px;background:var(--surface);font-weight:800;text-align:left}
+.cd-trash-head[aria-expanded="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.cd-trash-head .icon{color:var(--accent)}
+.cd-trash-head:focus-visible,.mc-row:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#cd-trash{padding-top:4px}
+label.btn:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- Form nút "+" ---------- */
+.qa-modal{max-width:560px}
+.qa-steps{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:8px}
+.qa-step{display:grid;grid-template-columns:minmax(0,1fr) 150px 96px 44px;gap:6px;align-items:center}
+.qa-est{display:flex;align-items:center;gap:4px;min-width:0}
+.qa-est .input{min-width:0}
+.qa-form .field>span .icon{color:var(--accent)}
+.qa-form .seg label>span .hearts{margin-right:4px}
+@media (max-width:540px){
+  .qa-step{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px}
+  .qa-step>[data-f="s_title"]{grid-column:1 / -1}
+  .qa-step .qa-est{grid-column:2 / 3}
+  .qa-step [data-f="s_date"]{grid-column:1 / 2}
+}
