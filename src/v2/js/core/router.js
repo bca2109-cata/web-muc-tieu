@@ -15,8 +15,9 @@ LP.router = (function () {
   function parseHash() {
     var h = (location.hash || '').replace(/^#\/?/, ''), q = h.indexOf('?'), name = q < 0 ? h : h.slice(0, q), params = {};
     if (q >= 0) new URLSearchParams(h.slice(q + 1)).forEach(function (v, k) { params[k] = v; });
+    var unknown = !!name && LP.config.ROUTES.indexOf(name) < 0;
     if (LP.config.ROUTES.indexOf(name) < 0) name = 'agenda';
-    return { name: name, params: params };
+    return { name: name, params: params, unknown: unknown };
   }
   function build(name, params) {
     var q = new URLSearchParams(params || {}).toString();
@@ -36,8 +37,14 @@ LP.router = (function () {
     var el = document.getElementById('view');
     if (!el) return;
     var p = parseHash(), def = views[p.name];
+    if (p.unknown) {   // route lạ: đổi hẳn địa chỉ về Agenda (không để lại trong lịch sử) rồi báo nhỏ
+      location.replace('#/agenda');
+      LP.ui.toast('Không có trang này, đã về Agenda.');
+      p = parseHash(); def = views[p.name];
+    }
     if (cur && cur.def && cur.def.unmount) { try { cur.def.unmount(); } catch (e) { console.error(e); } }
     el.innerHTML = '';
+    el.removeAttribute('aria-busy');
     el.setAttribute('data-route', p.name);
     cur = { name: p.name, params: p.params, def: def, placeholder: !def };
     document.title = ((def && def.title) || TITLES[p.name]) + ' · Life Planner';

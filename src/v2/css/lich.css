@@ -101,7 +101,7 @@
 .mcell:hover{border-color:var(--accent-soft)}
 .mcell.is-today{border-color:var(--accent)}
 .mcell.is-off{background:var(--plain-bg)}
-.mcell.is-other{opacity:.5}
+.mcell.is-other{opacity:.4}
 .mtop{display:flex;justify-content:space-between;align-items:center;gap:2px}
 .mmark{display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;min-width:20px}
 .mmark.du{color:var(--ok)}
@@ -155,3 +155,30 @@
 .ldue{padding:0 8px;font-size:12px}
 .lnow{background:var(--accent);height:2px;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
 .lnow i{left:-5px;top:-5px;width:12px;height:12px}
+
+/* ---- Sửa lỗi soát: lịch ---- */
+.ldue{display:flex;align-items:flex-start;gap:4px;width:100%;border:0;background:transparent;text-align:left;cursor:pointer;font-family:inherit}
+.ldue:hover{text-decoration:underline}
+.lblk.ldue-blk{color:var(--q1);font-weight:800;cursor:pointer;width:auto}
+.lblk.lstrip.ldue-blk{padding:2px 8px;display:block}
+.lallday .lblk.lstrip{cursor:pointer}
+.mlines{display:flex;flex-direction:column;gap:1px;min-width:0}
+.mline{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mline.due{color:var(--q1)}
+.mline.is-done{text-decoration:line-through;color:var(--muted)}
+.mline .mdot{flex:none}
+.mlines+.mdots,.mlines~.mcount{display:none}
+.li-day-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
+.li-day-row{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 12px;border:2px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;font-weight:700}
+.li-day-row:hover{border-color:var(--accent)}
+.li-day-row.is-due{color:var(--q1)}
+.li-day-row.is-done{text-decoration:line-through;color:var(--muted)}
+.lich-bar .lich-filter{margin-left:auto}
+.lich-filter .sg-btn .icon{color:var(--accent)}
+/* Hàng thứ/ngày dính trên đầu khi cuộn lưới giờ */
+.lgrid .lg-corner,.lgrid .lhead{position:sticky;top:var(--head-h,0px);z-index:4;background:var(--surface)}
+@media (max-width:767px){
+  .mline{display:none}
+  .mlines+.mdots,.mlines~.mcount{display:flex}
+  .mlines .mmore{display:none}
+}

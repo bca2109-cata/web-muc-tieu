@@ -15,16 +15,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@600;700&family=Quicksand:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="css/tokens.css?v=v2c">
-  <link rel="stylesheet" href="css/base.css?v=v2c">
-  <link rel="stylesheet" href="css/agenda.css?v=v2c">
-  <link rel="stylesheet" href="css/lich.css?v=v2c">
-  <link rel="stylesheet" href="css/ghi-chu.css?v=v2c">
-  <link rel="stylesheet" href="css/muc-tieu.css?v=v2c">
-  <link rel="stylesheet" href="css/cai-dat.css?v=v2c">
-  <link rel="stylesheet" href="css/motion.css?v=v2c">
-  <link rel="stylesheet" href="css/so-tay.css?v=v2c">
-  <link rel="stylesheet" href="css/nut-giay.css?v=v2f">
+  <link rel="stylesheet" href="css/tokens.css?v=v2d">
+  <link rel="stylesheet" href="css/base.css?v=v2d">
+  <link rel="stylesheet" href="css/agenda.css?v=v2d">
+  <link rel="stylesheet" href="css/lich.css?v=v2d">
+  <link rel="stylesheet" href="css/ghi-chu.css?v=v2d">
+  <link rel="stylesheet" href="css/muc-tieu.css?v=v2d">
+  <link rel="stylesheet" href="css/cai-dat.css?v=v2d">
+  <link rel="stylesheet" href="css/motion.css?v=v2d">
+  <link rel="stylesheet" href="css/so-tay.css?v=v2d">
+  <link rel="stylesheet" href="css/nut-giay.css?v=v2g">
 </head>
 <body>
   <div class="bg-flowers" id="bg-flowers" aria-hidden="true"></div>
@@ -74,8 +74,8 @@
       </a>
     </nav>
   </header>
-  <div class="update-bar" id="update-bar" role="status" hidden><span>Có bản mới.</span><button type="button" class="btn btn-primary" onclick="location.reload()">Tải lại</button></div>
-  <main class="main" id="view"><p class="muted loading">Đang tải…</p></main>
+  <div class="update-bar" id="update-bar" role="status" hidden><span>Có bản mới.</span><button type="button" class="btn btn-primary" onclick="location.reload()">Tải lại</button><button type="button" class="icon-btn" id="update-close" aria-label="Tắt thông báo bản mới"><svg class="icon ic18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <main class="main" id="view" aria-busy="true"><span class="sr-only">Đang tải…</span><div class="sk" aria-hidden="true"><div class="sk-bar"></div><div class="sk-row"><div class="sk-card"></div><div class="sk-card"></div><div class="sk-card"></div></div><div class="sk-bar is-short"></div><div class="sk-card"></div></div></main>
 
   <div class="fab-wrap" id="fab-wrap">
     <div class="fab-menu" id="fab-menu" role="menu" hidden>
@@ -90,36 +90,36 @@
   </div>
 
   <!-- Lõi (Chung) -->
-  <script src="js/core/config.js?v=v2c"></script>
-  <script src="js/core/date.js?v=v2c"></script>
-  <script src="js/core/mock-data.js?v=v2c"></script>
-  <script src="js/core/api-mock.js?v=v2c"></script>
-  <script src="js/core/api-sheet.js?v=v2c"></script>
-  <script src="js/core/api.js?v=v2c"></script>
-  <script src="js/core/flowers.js?v=v2c"></script>
-  <script src="js/core/cute.js?v=v2c"></script>
-  <script src="js/core/ui.js?v=v2c"></script>
-  <script src="js/core/store.js?v=v2c"></script>
-  <script src="js/core/logic-routines.js?v=v2c"></script>
-  <script src="js/core/logic-tasks.js?v=v2c"></script>
-  <script src="js/core/stats.js?v=v2c"></script>
-  <script src="js/core/router.js?v=v2c"></script>
-  <script src="js/core/search.js?v=v2c"></script>
-  <script src="js/core/notify.js?v=v2c"></script>
-  <script src="js/core/shell.js?v=v2c"></script>
-  <script src="js/core/motion.js?v=v2c"></script>
+  <script src="js/core/config.js?v=v2d"></script>
+  <script src="js/core/date.js?v=v2d"></script>
+  <script src="js/core/mock-data.js?v=v2d"></script>
+  <script src="js/core/api-mock.js?v=v2d"></script>
+  <script src="js/core/api-sheet.js?v=v2d"></script>
+  <script src="js/core/api.js?v=v2d"></script>
+  <script src="js/core/flowers.js?v=v2d"></script>
+  <script src="js/core/cute.js?v=v2d"></script>
+  <script src="js/core/ui.js?v=v2d"></script>
+  <script src="js/core/store.js?v=v2d"></script>
+  <script src="js/core/logic-routines.js?v=v2d"></script>
+  <script src="js/core/logic-tasks.js?v=v2d"></script>
+  <script src="js/core/stats.js?v=v2d"></script>
+  <script src="js/core/router.js?v=v2d"></script>
+  <script src="js/core/search.js?v=v2d"></script>
+  <script src="js/core/notify.js?v=v2d"></script>
+  <script src="js/core/shell.js?v=v2d"></script>
+  <script src="js/core/motion.js?v=v2d"></script>
   <!-- Các màn (mỗi phần sở hữu file của mình) -->
-  <script src="js/views/agenda.js?v=v2c"></script>
-  <script src="js/views/soat.js?v=v2c"></script>
-  <script src="js/views/lich-tuan.js?v=v2c"></script>
-  <script src="js/views/lich-thang.js?v=v2c"></script>
-  <script src="js/views/editor.js?v=v2c"></script>
-  <script src="js/views/ghi-chu.js?v=v2c"></script>
-  <script src="js/views/thoi-quen.js?v=v2c"></script>
-  <script src="js/views/muc-tieu.js?v=v2c"></script>
-  <script src="js/views/tong-ket.js?v=v2c"></script>
-  <script src="js/views/mau-cong-viec.js?v=v2c"></script>
-  <script src="js/views/cai-dat.js?v=v2c"></script>
-  <script src="js/views/them-nhanh.js?v=v2c"></script>
+  <script src="js/views/agenda.js?v=v2d"></script>
+  <script src="js/views/soat.js?v=v2d"></script>
+  <script src="js/views/lich-tuan.js?v=v2d"></script>
+  <script src="js/views/lich-thang.js?v=v2d"></script>
+  <script src="js/views/editor.js?v=v2d"></script>
+  <script src="js/views/ghi-chu.js?v=v2d"></script>
+  <script src="js/views/thoi-quen.js?v=v2d"></script>
+  <script src="js/views/muc-tieu.js?v=v2d"></script>
+  <script src="js/views/tong-ket.js?v=v2d"></script>
+  <script src="js/views/mau-cong-viec.js?v=v2d"></script>
+  <script src="js/views/cai-dat.js?v=v2d"></script>
+  <script src="js/views/them-nhanh.js?v=v2d"></script>
 </body>
 </html>

@@ -51,18 +51,18 @@ LP.thoiQuen = (function () {
   function render() {
     if (!root) return;
     var today = D.today(), list = activeHabits();
-    root.innerHTML = '<div class="mt-toolbar"><p class="muted mt-hint">Tick tròn để ghi thói quen. Thói quen có giờ sẽ hiện trên dòng thời gian của Agenda.</p>' +
+    root.innerHTML = '<div class="mt-toolbar"><p class="muted mt-hint">Bấm vào vòng tròn để đánh dấu đã làm. Thói quen có giờ sẽ hiện trên dòng thời gian của Agenda.</p>' +
       '<button type="button" class="btn btn-primary" data-add>' + icon('plus') + 'Thêm thói quen</button></div>' +
       (list.length ? '<div class="mt-hlist">' + list.map(function (h) { return card(h, today); }).join('') + '</div>'
-        : '<section class="card mt-empty">' + LP.flowers.html('daisy', 48, 2) + '<p>Chưa có thói quen nào. Thêm một thói quen để bắt đầu chuỗi.</p></section>');
+        : '<section class="card mt-empty">' + LP.flowers.html('daisy', 48, 2) + '<p>Chưa có thói quen nào. Thêm một thói quen để bắt đầu chuỗi.</p><button type="button" class="btn btn-primary" data-add>' + icon('plus') + 'Thêm thói quen</button></section>');
   }
 
   function form(h) {
     h = h || { name: '', time: '', weekdays: '1,2,3,4,5,6,7' };
     var sel = String(h.weekdays || '').split(',');
     var body = '<form class="mt-form" novalidate>' +
-      '<label class="field"><span>Tên thói quen</span><input class="input" name="name" maxlength="80" value="' + esc(h.name) + '" required></label>' +
-      '<label class="field"><span>Giờ (không bắt buộc)</span><input class="input" type="time" name="time" value="' + esc(h.time) + '"></label>' +
+      '<label class="field is-req"><span>Tên thói quen</span><input class="input" name="name" maxlength="80" value="' + esc(h.name) + '" required></label>' +
+      '<label class="field"><span>Giờ (không bắt buộc)</span><input class="input" type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time name="time" value="' + esc(h.time) + '"></label>' +
       '<div class="field"><span>Các ngày trong tuần</span><div class="chips">' + WD.map(function (w) {
         return '<label><input type="checkbox" name="wd" value="' + w[0] + '"' + (sel.indexOf(w[0]) >= 0 ? ' checked' : '') + '><span>' + w[1] + '</span></label>';
       }).join('') + '</div></div>' +
@@ -74,8 +74,8 @@ LP.thoiQuen = (function () {
       e.preventDefault();
       var name = f.elements['name'].value.trim(), wds = Array.prototype.map.call(f.querySelectorAll('input[name=wd]:checked'), function (i) { return i.value; });
       var err = f.querySelector('.form-error');
-      if (!name) { err.textContent = 'Nhập tên thói quen.'; err.hidden = false; return; }
-      if (!wds.length) { err.textContent = 'Chọn ít nhất một ngày trong tuần.'; err.hidden = false; return; }
+      if (!name) { LP.ui.fieldError(f.elements['name'], 'Nhập tên thói quen.'); return; }
+      if (!wds.length) { LP.ui.fieldError(f.querySelector('input[name=wd]'), 'Chọn ít nhất một ngày trong tuần.'); return; }
       LP.store.upsert('Habits', Object.assign({}, h, { name: name, time: f.time.value, weekdays: wds.join(','), active: 'TRUE' }));
       s.close(); LP.ui.toast(h.id ? 'Đã lưu thói quen.' : 'Đã thêm thói quen.');
     });

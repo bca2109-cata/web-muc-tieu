@@ -136,7 +136,7 @@ module.exports = async function (h) {
     await page.click('#fab'); await page.click('[data-kind="dotxuat"]');
     A.strictEqual(await page.locator('.modal-head h2').innerText(), 'Chen ngang');
     await page.click('#qa-save');   // chưa nhập tên
-    A.ok(await page.locator('#qa-err').isVisible(), 'phải báo thiếu tên');
+    A.ok(await page.locator('.modal .field-error').isVisible(), 'phải báo thiếu tên');
     await page.fill('.modal [data-f="title"]', 'Hỗ trợ sale thử');
     await page.locator('label:has([name="qa-dur"][value="60"])').click();
     await page.click('#qa-save'); await page.waitForTimeout(60);
@@ -246,7 +246,7 @@ module.exports = async function (h) {
     const page = await h.open({ w: 1280 });
     await page.click('#fab'); await page.click('[data-kind="ghichu"]');
     await page.click('#qa-save');
-    A.ok(await page.locator('#qa-err').isVisible(), 'phải báo thiếu nội dung');
+    A.ok(await page.locator('.modal .field-error').isVisible(), 'phải báo thiếu nội dung');
     await page.fill('#qa-text', 'Ý tưởng thử dòng 1\nDòng 2');
     await page.click('#qa-save'); await page.waitForTimeout(200);
     const r = await page.evaluate(async () => { const d = await LP.api.docGet('d-y-tuong'); const all = await LP.api.docsIndex(); return { c: d.content, n: all.length }; });
@@ -279,7 +279,7 @@ module.exports = async function (h) {
     await page.fill('[data-set="quota_work"]', '240'); await page.dispatchEvent('[data-set="quota_work"]', 'change');
     await page.fill('[data-set="work_start"]', '08:30'); await page.dispatchEvent('[data-set="work_start"]', 'change');
     await page.fill('[data-set="evening_start"]', '19:30'); await page.dispatchEvent('[data-set="evening_start"]', 'change');
-    A.ok((await page.locator('[data-read="quota_work"]').innerText()).includes('4h'));
+    A.ok((await page.locator('[data-read="quota_work"]').innerText()).includes('4 giờ'));
     const t = await page.evaluate(() => ({ q: LP.logic.tasks.capacity('2026-11-25').work.quota, ws: LP.store.setting('work_start'), ev: LP.store.setting('evening_start') }));
     A.deepStrictEqual(t, { q: 240, ws: '08:30', ev: '19:30' });
     await page.locator('label:has([name="cd-theme"][value="dark"])').click();
@@ -361,15 +361,16 @@ module.exports = async function (h) {
   await h.test('18. Kiểm hợp lệ: form Daily và form việc báo lỗi, không lưu', async () => {
     const page = await h.open({ w: 390, hash: MAU + '?id=new' });
     await page.click('#mc-save');
-    A.ok((await page.locator('#mc-err').innerText()).includes('tên'), 'thiếu tên');
+    A.ok((await page.locator('.field-error').innerText()).includes('tên'), 'thiếu tên (lỗi hiện ngay dưới ô)');
+    A.ok(await page.locator('#mc-name').evaluate(e => e.classList.contains('is-invalid') && document.activeElement === e), 'ô tên phải viền đỏ và có con trỏ');
     await page.fill('#mc-name', 'Thử lỗi'); await page.click('#mc-save');
-    A.ok((await page.locator('#mc-err').innerText()).includes('hạng mục'), 'thiếu hạng mục');
+    A.ok((await page.locator('.field-error').innerText()).includes('hạng mục'), 'thiếu hạng mục');
     await page.click('#mc-add-item'); await page.click('#mc-save');
-    A.ok((await page.locator('#mc-err').innerText()).includes('chưa có tên'), 'hạng mục thiếu tên');
+    A.ok((await page.locator('.field-error').innerText()).includes('chưa có tên'), 'hạng mục thiếu tên');
     A.strictEqual(await page.evaluate(() => LP.store.get().routines.filter(r => r.name === 'Thử lỗi').length), 0, 'không được lưu');
     await page.evaluate(() => LP.quickAdd.open('canhan'));
     await page.click('#qa-save');
-    A.ok(await page.locator('#qa-err').isVisible(), 'việc thiếu tên');
+    A.ok(await page.locator('.modal .field-error').isVisible(), 'việc thiếu tên');
     await page.fill('.modal [data-f="title"]', 'Việc Personal thử'); await page.fill('.modal [data-f="do_date"]', ''); await page.click('#qa-save'); await page.waitForTimeout(60);
     const t = await page.evaluate(() => LP.store.get().tasks.filter(t => t.title === 'Việc Personal thử')[0]);
     A.strictEqual(t.kind, 'canhan'); A.strictEqual(t.do_date, ''); A.strictEqual(t.due_date, '');

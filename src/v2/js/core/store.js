@@ -27,11 +27,30 @@ LP.store = (function () {
     emit('ready');
   }
 
+  /* ---------- Bản lưu gần nhất: hiện ngay khi mở, cập nhật khi Google Sheet trả về (chỉ bản thật, không dùng cho mock) ---------- */
+  var CACHE_KEY = 'lpv2_cache', cacheSig = '', cacheTimer = null;
+  function cacheOn() { return !LP.config.mock && !!LP.settings.getToken(); }
+  function writeCache() {
+    if (!cacheOn() || !ready) return;
+    try { var j = JSON.stringify(state); localStorage.setItem(CACHE_KEY, j); cacheSig = j; } catch (e) { /* đầy bộ nhớ hoặc bị chặn: bỏ qua */ }
+  }
+  function loadCached() {
+    if (!cacheOn()) return false;
+    try {
+      var j = localStorage.getItem(CACHE_KEY); if (!j) return false;
+      state = normalize(JSON.parse(j)); cacheSig = j; afterLoad(); return true;
+    } catch (e) { return false; }
+  }
   // Tải toàn bộ. range { from, to } giới hạn các bảng theo ngày (lượt, thói quen, đột xuất)
   function load(range) {
     // Mặc định tải TOÀN BỘ lịch sử (from rỗng = không chặn dưới): màn Tồn tổng cần biết mục Daily sót từ bất kỳ ngày nào đã tick hay chưa
     range = range || { from: '', to: LP.date.add(LP.date.today(), 90) };
-    return LP.api.load(range).then(function (data) { state = normalize(data); afterLoad(); return state; });
+    return LP.api.load(range).then(function (data) {
+      state = normalize(data); afterLoad();
+      var j = ''; try { j = JSON.stringify(state); } catch (e) { /* bỏ qua */ }
+      var changed = !!cacheSig && j !== cacheSig; writeCache(); load.changed = changed;
+      return state;
+    });
   }
   // Tải thêm một khoảng ngày cũ hơn và gộp vào (xem lịch sử xa)
   function loadRange(from, to) {
@@ -51,6 +70,7 @@ LP.store = (function () {
   /* ---------- Hàng đợi lưu ---------- */
   function setSync() {
     emit('sync', { pending: pending, error: lastError, failed: failed.length });
+    if (!pending && !lastError) { clearTimeout(cacheTimer); cacheTimer = setTimeout(writeCache, 600); }
   }
   function enqueue(label, fn) {
     pending++; setSync();
@@ -103,7 +123,7 @@ LP.store = (function () {
   function flush() { return queue.then(function () { return pending === 0 ? true : flush(); }); }
 
   return {
-    get: function () { return state; }, load: load, loadRange: loadRange, find: find, upsert: upsert, remove: remove,
+    get: function () { return state; }, load: load, loadCached: loadCached, changedSinceCache: function () { return !!load.changed; }, loadRange: loadRange, find: find, upsert: upsert, remove: remove,
     setting: setting, setSetting: setSetting, on: on, off: off, emit: emit, flush: flush, retry: retry,
     isReady: function () { return ready; }, syncState: function () { return { pending: pending, error: lastError }; },
     // Chỉ dùng cho test: nạp thẳng một bộ dữ liệu

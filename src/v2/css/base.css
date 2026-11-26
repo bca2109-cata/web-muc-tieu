@@ -1,6 +1,6 @@
 /* V2 · base: nền, đầu trang, thanh tab, nút, thẻ, form, tick, hộp thoại, thông báo, hoa. Phần lớn lấy lại nguyên từ web cũ (src/css/style.css). Chỉ dùng biến trong tokens.css. */
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;scrollbar-gutter:stable}
 body{
   margin:0;background:var(--bg);color:var(--ink);
   font-family:var(--font);font-size:16px;font-weight:600;line-height:1.5;
@@ -32,7 +32,13 @@ a{color:inherit}
 @keyframes flip{0%{transform:perspective(300px) translateX(0) rotateX(0deg) rotateY(0deg) rotate(0deg)}25%{transform:perspective(300px) translateX(var(--sw)) rotateX(90deg) rotateY(45deg) rotate(calc(var(--sp) * .25))}50%{transform:perspective(300px) translateX(0) rotateX(180deg) rotateY(90deg) rotate(calc(var(--sp) * .5))}75%{transform:perspective(300px) translateX(calc(var(--sw) * -1)) rotateX(270deg) rotateY(135deg) rotate(calc(var(--sp) * .75))}100%{transform:perspective(300px) translateX(0) rotateX(360deg) rotateY(180deg) rotate(var(--sp))}}
 :root.tab-hidden .bg-flowers .fall,:root.tab-hidden .bg-flowers .flower{animation-play-state:paused}
 :root[data-bg="plain"] .bg-flowers{display:none}
-.site-head{position:relative;z-index:2}
+.site-head{position:sticky;top:0;z-index:20}
+.site-head::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.site-head .logo-mark,.site-head .logo-text{transition:font-size .2s,width .2s,height .2s}
+:root.is-scrolled .topbar{padding-top:6px}
+:root.is-scrolled .logo-mark{width:34px;height:34px}
+:root.is-scrolled .logo-text{font-size:clamp(18px,5vw,28px)}
+:root.is-scrolled .statusline{display:none}
 .main{position:relative;z-index:1}
 /* ---------- Đầu trang ---------- */
 .topbar{position:relative;display:flex;align-items:center;gap:8px;max-width:1120px;margin:0 auto;padding:14px 16px 2px}
@@ -152,10 +158,11 @@ a{color:inherit}
 .chips label>span,.chip-toggle>span{display:inline-flex;align-items:center;gap:4px}
 .chips label:has(input:checked),.chip-toggle:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
 .chip-toggle .icon{color:var(--accent)}
-.update-bar{position:fixed;left:12px;right:12px;top:calc(8px + env(safe-area-inset-top));z-index:80;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 16px;border-radius:99px;background:var(--surface);border:2px solid var(--accent);box-shadow:var(--shadow);font-weight:800}
-.update-bar span{flex:1}
+.update-bar{position:fixed;left:12px;bottom:calc(88px + env(safe-area-inset-bottom));max-width:calc(100% - 92px);z-index:45;display:flex;align-items:center;gap:6px;padding:6px 6px 6px 14px;border-radius:99px;background:var(--surface);border:2px solid var(--accent);box-shadow:var(--shadow);font-weight:800;font-size:14px}
+.update-bar .btn{min-height:40px;padding:4px 14px}
+.update-bar .icon-btn{width:40px;height:40px;border:0;border-radius:99px;background:transparent;color:var(--muted);display:grid;place-items:center}
 .update-bar[hidden]{display:none}
-@media (min-width:620px){.update-bar{left:50%;right:auto;transform:translateX(-50%);min-width:320px}}
+@media (min-width:900px){.update-bar{bottom:20px;left:20px}}
 
 /* ================= V2 · thành phần thêm ================= */
 [hidden]{display:none !important}
@@ -224,3 +231,24 @@ a.round{text-decoration:none}
 .btn:focus-visible,.round:focus-visible,.tab:focus-visible,.tick:focus-visible,.fab-main:focus-visible,.icon-btn:focus-visible,.pill:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .hearts{display:inline-flex;align-items:center;gap:1px;color:var(--accent)}
 .hearts .icon{width:16px;height:16px;stroke-width:2.2}
+
+/* Khung xám giả nội dung khi tải lần đầu */
+.sk{display:grid;gap:16px}
+.sk-bar,.sk-card{border-radius:22px;background:linear-gradient(90deg,var(--plain-bg) 25%,color-mix(in srgb,var(--plain-bg) 55%,var(--surface)) 50%,var(--plain-bg) 75%);background-size:200% 100%;animation:sk 1.4s ease-in-out infinite}
+.sk-bar{height:44px;max-width:360px}
+.sk-bar.is-short{height:18px;max-width:180px;border-radius:9px}
+.sk-card{height:132px}
+.sk-row{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+@keyframes sk{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk-bar,.sk-card{animation:none}}
+
+/* ---- Form: lỗi ngay dưới ô, dấu * bắt buộc, nhãn mức quan trọng, nút Lưu/Hủy dính cuối hộp ---- */
+.field.is-req>span::after{content:" *";color:var(--warn);font-weight:800}
+.input.is-invalid,.select.is-invalid,.textarea.is-invalid{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 6%,var(--surface))}
+.field-error{display:block;margin-top:4px;color:var(--warn);font-size:13px;font-weight:800}
+.field.has-error>span{color:var(--warn)}
+.imp-opt{display:inline-flex;flex-direction:column;align-items:center;gap:1px;line-height:1.1}
+.imp-opt small{font-size:11px;font-weight:700}
+.modal{--pad:18px;--padx:16px}
+@media (min-width:620px){.modal{--pad:22px;--padx:22px}}
+.modal-foot{position:sticky;bottom:calc(var(--pad) * -1 - env(safe-area-inset-bottom));z-index:3;margin-left:calc(var(--padx) * -1);margin-right:calc(var(--padx) * -1);padding:10px var(--padx) calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-top:2px dashed var(--line)}
