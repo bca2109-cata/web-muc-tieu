@@ -19,7 +19,7 @@ module.exports = async function (h) {
     const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
     // Mock chưa có giờ hạn: đặt giờ 15:00 như canvas (xem YEU-CAU-CHUNG #P2-1)
     await page.evaluate(() => { const t = LP.store.find('Tasks', 't-bcnguon'); LP.store.upsert('Tasks', Object.assign({}, t, { due_time: '15:00' })); });
-    const txt = await page.locator('.lallday[data-date="2026-11-27"] .ldue').allInnerTexts();
+    const txt = await page.locator('.lcol[data-date="2026-11-27"] .ldue-blk').allInnerTexts();   // có giờ hạn thì nằm đúng khung giờ, không ở Cả ngày
     A.ok(txt.some(x => /Hạn 15:00 · .*phân tích nguồn T11/.test(x)), 'mốc hạn: ' + txt.join('|'));
     A.strictEqual(await page.locator('.lcol').count(), 7, 'cần 7 cột ngày');
     A.strictEqual(await page.locator('.lday-un').count(), 1, 'cần dải Chưa có ngày');
@@ -79,7 +79,8 @@ module.exports = async function (h) {
     const q = () => page.evaluate(() => LP.logic.tasks.capacity('2026-11-28').evening.used);
     const quotaBefore = await q();
     A.strictEqual(await page.locator('.lhead .qbar, .lhead .lday-fixed').count(), 0, 'đầu cột không còn thanh quỹ/cố định');
-    await page.locator('.lich-filter').click();
+    await page.locator('[data-imp]').click();
+    A.strictEqual(await page.locator('[data-imp]').getAttribute('aria-pressed'), 'true');
     const low = page.locator('.lblk[data-task="t-baohiem"]'), high = page.locator('.lblk[data-task="t-kham"]');
     A.ok(await low.evaluate(e => e.classList.contains('dim')), 'thẻ 1 trái tim chưa mờ');
     A.ok(!(await high.evaluate(e => e.classList.contains('dim'))), 'thẻ 2 trái tim bị mờ');
@@ -149,10 +150,11 @@ module.exports = async function (h) {
     A.deepStrictEqual(r.bad, [], 'còn ô trang trí: ' + r.bad);
     A.strictEqual(r.dueBg, 'rgba(0, 0, 0, 0)'); A.ok(r.dueColor !== 'rgb(0, 0, 0)' && /^rgb\(1[5-9]\d|^rgb\(2/.test(r.dueColor), 'hạn chót phải chữ đỏ: ' + r.dueColor);
     A.strictEqual(r.line, 'line-through');
-    // Vẫn bấm mở menu được trên dòng chữ
+    // Bấm vào dòng chữ mở form sửa việc
     await page.evaluate(() => LP.logic.tasks.setDone(LP.store.find('Tasks', 't-kham'), false));
     await page.locator('.lblk[data-task="t-kham"]').click();
-    A.ok(await page.locator('[data-pick]').count() === 1, 'không mở menu');
+    A.ok(await page.locator('#qa-form').count() === 1, 'không mở form sửa');
+    A.strictEqual(await page.locator('#qa-title').inputValue(), 'Đặt lịch khám sức khỏe');
   });
 
   await h.test('G5. Lưới giờ 06:00–22:00 (32 hàng 30 phút)', async () => {
@@ -187,12 +189,17 @@ module.exports = async function (h) {
 
   await h.test('6. Bấm ô ngày đã qua mở Agenda ngày đó; ngày tới mở Tuần chứa ngày đó', async () => {
     const page = await h.open({ w: 1280, hash: MONTH });
+    // Bấm ô ngày mở ô nổi liệt kê việc, không nhảy thẳng; có nút Mở Agenda và Xem tuần này
     await page.locator('.mcell[data-cell="2026-11-18"]').click();
+    await page.waitForSelector('.modal');
+    A.ok(page.url().includes('view=thang'), 'không được nhảy khỏi lịch tháng: ' + page.url());
+    await page.locator('[data-agenda-day]').click();
     await page.waitForTimeout(100);
     A.ok(page.url().includes('#/agenda?date=2026-11-18'), page.url());
     await page.goto(page.url().split('#')[0] + '#/lich?view=thang&date=2026-11-25');
     await page.waitForSelector('.lmonth');
     await page.locator('.mcell[data-cell="2026-12-02"]').click();
+    await page.locator('[data-week]').click();
     await page.waitForSelector('.lgrid');
     A.ok((await page.locator('.lich-title').innerText()).includes('30/11'), 'tuần chứa 02/12');
   });

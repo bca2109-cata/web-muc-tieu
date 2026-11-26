@@ -634,7 +634,7 @@ module.exports = async function (h) {
     const page = await h.open({ hash: '#/agenda' });
     A.strictEqual(await page.locator('.ag-chart').count(), 3);
     const facts = await tx(page, '.ag-facts');
-    A.ok(/Quỹ Personal 20p \/ 1h30/.test(facts) && /Giờ chen ngang 30p/.test(facts), facts);
+    A.ok(/Quỹ Personal 20 phút \/ 1 giờ 30/.test(facts) && /Giờ chen ngang 30 phút/.test(facts), facts);
     const blk = (await page.locator('.ag-blk').allInnerTexts()).map(b => b.replace(/\n/g, ' '));
     A.ok(blk.some(b => /Chia số AI Class\s+1\/4/.test(b)), blk.join('|'));
     A.ok(blk.some(b => /^Ad-hoc hôm nay\s+0\/1/.test(b)) && blk.some(b => /^Personal hôm nay\s+0\/1/.test(b)), 'thiếu khối Ad-hoc / Cá nhân: ' + blk.join('|'));
@@ -731,7 +731,7 @@ module.exports = async function (h) {
     await wait(page);
     A.strictEqual((await page.locator('.ag-tl-head span').allInnerTexts()).join('|'), 'Giờ|Tên|Thuộc|Mức độ|Hạn|Trạng thái');
     const row = (await page.locator('.ag-tl-row', { hasText: 'Chia số cho các tổ' }).innerText()).replace(/\s+/g, ' ');
-    A.ok(/08:30/.test(row) && /Chia số AI Class/.test(row) && /trước 09:30/.test(row) && /Trễ 2h35/.test(row), row);
+    A.ok(/08:30/.test(row) && /Chia số AI Class/.test(row) && /trước 09:30/.test(row) && /Trễ 2 giờ 35/.test(row), row);
     A.ok(/Xong/.test((await page.locator('.ag-tl-row', { hasText: 'Lấy số liệu từ LMS' }).innerText()).replace(/\s+/g, ' ')));
     await page.locator('.ag-tl-row', { hasText: 'Chia số cho các tổ' }).locator('.tick').click();
     await wait(page);

@@ -18,7 +18,7 @@ LP.views = LP.views || {};
     }).join('') + '</div>';
   }
   function timeField(key, label, def) {
-    return '<label class="field"><span>' + esc(label) + '</span><input type="time" class="input" data-set="' + key + '" data-kind="time" value="' + esc(set(key, def)) + '"></label>';
+    return '<label class="field"><span>' + esc(label) + '</span><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input" data-set="' + key + '" data-kind="time" value="' + esc(set(key, def)) + '"></label>';
   }
   function minField(key, label, def) {
     var v = num(set(key, def));

@@ -206,7 +206,38 @@ LP.ui = (function () {
     toast('Chưa mở được ghi chú.');
   }
 
+  /* ---------- Lỗi form: hiện ngay dưới ô sai, viền đỏ, con trỏ quay lại ô đó ---------- */
+  function clearFieldErrors(root) {
+    root = root || document;
+    Array.prototype.forEach.call(root.querySelectorAll('.field-error'), function (n) { n.remove(); });
+    Array.prototype.forEach.call(root.querySelectorAll('.is-invalid,.has-error'), function (n) { n.classList.remove('is-invalid', 'has-error'); n.removeAttribute('aria-invalid'); });
+  }
+  function fieldError(el, msg) {
+    if (!el) return;
+    var form = el.closest('form') || document;
+    clearFieldErrors(form);
+    var field = el.closest('.field') || el.parentNode, isInput = el.matches('input,select,textarea');
+    field.classList.add('has-error');
+    if (isInput) { el.classList.add('is-invalid'); el.setAttribute('aria-invalid', 'true'); }
+    var m = document.createElement('small');
+    m.className = 'field-error'; m.setAttribute('role', 'alert'); m.textContent = msg;
+    field.appendChild(m);
+    var f = isInput || el.matches('button') ? el : field.querySelector('input,select,textarea,button');
+    if (f) { f.focus(); if (f.scrollIntoView) f.scrollIntoView({ block: 'nearest' }); }
+    var off = function () { clearFieldErrors(form); form.removeEventListener('input', off); form.removeEventListener('change', off); };
+    form.addEventListener('input', off); form.addEventListener('change', off);
+  }
+  // Ba mức quan trọng: trái tim kèm nhãn chữ (đọc được cả khi không nhìn rõ trái tim)
+  var IMP_LABEL = ['', 'Thường', 'Quan trọng', 'Rất quan trọng'];
+  function importancePicker(name, cur) {
+    cur = parseInt(cur, 10) || 1;
+    return '<div class="seg" role="radiogroup" aria-label="Mức quan trọng">' + [1, 2, 3].map(function (n) {
+      return '<label aria-label="' + IMP_LABEL[n] + '"><input type="radio" name="' + name + '" value="' + n + '"' + (cur === n ? ' checked' : '') + '><span class="imp-opt">' + importance(n) + '<small>' + IMP_LABEL[n] + '</small></span></label>';
+    }).join('') + '</div>';
+  }
+
   return {
+    clearFieldErrors: clearFieldErrors, fieldError: fieldError, importancePicker: importancePicker, IMP_LABEL: IMP_LABEL,
     docSheet: docSheet,
     icon: icon, importance: importance, urgency: urgency, pill: pill, esc: esc,
     toast: toast, hideToast: hideToast, clearSticky: clearSticky,

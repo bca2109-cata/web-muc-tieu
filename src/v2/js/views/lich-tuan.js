@@ -4,7 +4,7 @@ var LP = window.LP || (window.LP = {});
 LP.lich = (function () {
   var D = LP.date, UI = LP.ui, esc = LP.ui.esc, num = LP.util.num;
   var KEY = 'lpv2_lich_view';
-  var st = { view: 'tuan', anchor: '', onlyImp: false, el: null, off: null };
+  var st = { view: 'tuan', anchor: '', onlyImp: false, needScroll: false, el: null, off: null };
   var month = null; // gắn bởi lich-thang.js
 
   function savedView() { try { var v = localStorage.getItem(KEY); return v === 'thang' ? 'thang' : 'tuan'; } catch (e) { return 'tuan'; } }
@@ -28,6 +28,15 @@ LP.lich = (function () {
   function dueMarks(d) {
     return LP.store.get().tasks.filter(function (t) { return t.due_date === d && t.status !== 'done' && t.status !== 'cancelled'; });
   }
+  function impOk(t) { return !st.onlyImp || (num(t.importance) || 1) >= 2; }
+  // Mục của một ngày cho ô nổi ở lịch tháng: hạn chót và việc có ngày làm
+  function dayItems(d) {
+    var out = [];
+    dueMarks(d).filter(impOk).forEach(function (t) { out.push({ task: t, due: true, time: t.due_time || '', title: 'Hạn ' + (t.due_time ? t.due_time + ' · ' : '· ') + t.title }); });
+    LP.logic.tasks.tasksFor(d).filter(function (x) { return impOk(x.task); }).forEach(function (x) { out.push({ task: x.task, step: x.step, time: x.time, done: x.done, title: x.title }); });
+    return out;
+  }
+  function editTask(id) { if (LP.quickAdd && LP.quickAdd.edit) LP.quickAdd.edit('task', id); }
   function dueText(t) { return 'Hạn ' + (t.due_time ? t.due_time + ' · ' : '· ') + t.title; }
 
   /* ---------- Đổi ngày và giờ làm ---------- */
@@ -51,7 +60,7 @@ LP.lich = (function () {
     var s = UI.sheet('Chuyển sang ngày…',
       '<p class="muted">' + esc(step ? step.title : task.title) + '</p>' +
       '<label class="lich-field">Ngày làm<input type="date" id="lich-pick" min="' + D.today() + '" value="' + (cur < D.today() ? D.today() : cur) + '"></label>' +
-      '<label class="lich-field">Giờ làm (để trống = cả ngày)<input type="time" id="lich-time" value="' + esc((step || task).do_time || '') + '"></label>' +
+      '<label class="lich-field">Giờ làm (để trống = cả ngày)<input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time id="lich-time" value="' + esc((step || task).do_time || '') + '"></label>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button>' +
       '<button type="button" class="btn btn-primary" data-ok>Chuyển</button></div>');
     s.el.querySelector('[data-ok]').addEventListener('click', function () {
@@ -80,11 +89,11 @@ LP.lich = (function () {
       var q = Math.round(p.quota / max * 100);
       var inter = striped && p.interrupt ? Math.min(pct, Math.round(p.interrupt / max * 100)) : 0;
       return '<div class="qbar' + (p.over ? ' over' : '') + '" title="' + label + ' ' + p.used + '/' + p.quota + ' phút' + (p.interrupt ? ' (gồm Chen ngang ' + p.interrupt + ' phút)' : '') + '">' +
-        '<div class="qbar-top"><span>' + label + '</span><b class="num">' + p.used + '/' + p.quota + 'p</b></div>' +
+        '<div class="qbar-top"><span>' + label + '</span><b class="num">' + D.fmtMin(p.used) + ' / ' + D.fmtMin(p.quota) + '</b></div>' +
         '<div class="qbar-track"><i style="width:' + pct + '%"></i>' + (inter ? '<i class="stripe" style="width:' + inter + '%"></i>' : '') +
         (p.quota ? '<u style="left:' + q + '%"></u>' : '') + '</div></div>';
     }
-    return bar('Quỹ Ad-hoc', c.work, true) + bar('Quỹ Personal', c.evening, false);
+    return (c.work.used ? bar('Quỹ Ad-hoc', c.work, true) : '') + (c.evening.used ? bar('Quỹ Personal', c.evening, false) : '');
   }
 
   function cardHtml(x) {
@@ -113,15 +122,15 @@ LP.lich = (function () {
     var today = D.today(), off = !D.isWorkday(d) && D.isDayOff(d), sun = D.dow(d) === 7;
     var runs = LP.logic.routines.runsFor(d), past = d < today;
     var sum = past ? LP.logic.routines.summary(d) : null;
-    var fixed = '<button type="button" class="lday-fixed" data-agenda="' + d + '">Daily: <b class="num">' + runs.length + '</b> lượt' +
+    var fixed = !runs.length ? '' : '<button type="button" class="lday-fixed" data-agenda="' + d + '">Daily: <b class="num">' + runs.length + '</b> lượt' +
       (past && sum.total ? (sum.missed ? ' <span class="miss">! ' + sum.missed + ' sót</span>' : ' <span class="full">' + UI.icon('check', 'ic18') + ' đủ</span>') : '') + '</button>';
     var cards = LP.logic.tasks.tasksFor(d).map(cardHtml).join('');
-    var dues = dueMarks(d).map(function (t) { return '<div class="ldue">' + UI.icon('flag', 'ic18') + '<span>' + esc(dueText(t)) + '</span></div>'; }).join('');
+    var dues = dueMarks(d).map(function (t) { return '<button type="button" class="ldue" data-task="' + esc(t.id) + '">' + UI.icon('flag', 'ic18') + '<span>' + esc(dueText(t)) + '</span></button>'; }).join('');
     return '<section class="lday' + (d === today ? ' is-today' : '') + (off || sun ? ' is-off' : '') + (past ? ' is-past' : '') + '" data-date="' + d + '">' +
       '<header class="lday-head"><span class="lday-dow">' + D.weekdayShort(d) + '</span><b class="num">' + D.fmt(d) + '</b>' +
       (d === today ? '<span class="pill pill-ok">Hôm nay</span>' : '') + (off ? '<span class="pill">Nghỉ</span>' : '') + '</header>' +
       fixed + quotaBars(LP.logic.tasks.capacity(d)) + dues +
-      '<div class="lday-cards">' + cards + (cards || dues ? '' : '<p class="muted lday-empty">Trống</p>') + '</div></section>';
+      '<div class="lday-cards">' + cards + (cards || dues ? '' : '<p class="muted lday-empty">Không có việc</p>') + '</div></section>';
   }
 
   /* ---------- Tuần: danh sách dọc (điện thoại) ---------- */
@@ -129,12 +138,15 @@ LP.lich = (function () {
     var days = allDates(st.anchor), un = unscheduled();
     st.el.innerHTML = head(days) + '<div class="lweek">' + days.map(dayHtml).join('') +
       '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
-      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Trống</p>') + '</div></section></div>';
+      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section></div>';
+  }
+  function filterHtml() {
+    return '<span class="lich-filter"><button type="button" class="sg-btn" data-imp aria-pressed="' + st.onlyImp + '">' + UI.icon('heart', 'ic18') + 'Quan trọng trở lên</button></span>';
   }
   function head(days) {
     var lab = 'Tuần ' + D.fmt(days[0]) + ' – ' + D.fmt(days[6]) + '/' + days[6].slice(0, 4);
     return '<div class="lich-bar">' + seg('tuan') + nav(lab, 'Tuần trước', 'Tuần sau', 'Tuần này') +
-      '<label class="chip-toggle lich-filter"><input type="checkbox" data-imp' + (st.onlyImp ? ' checked' : '') + '><span>' + UI.icon('heart', 'ic18') + 'Quan trọng trở lên</span></label></div>';
+      filterHtml() + '</div>';
   }
 
   /* ---------- Tuần: lưới giờ kiểu Outlook ---------- */
@@ -164,14 +176,20 @@ LP.lich = (function () {
       put({ kind: 'fix', m: m, time: m.time, dur: num(m.item.est_min) || STEP });
     });
     LP.logic.tasks.tasksFor(d).forEach(function (x) { put({ kind: 'task', x: x, time: x.time, dur: x.duration || STEP }); });
+    dueMarks(d).forEach(function (t) { put({ kind: 'due', t: t, time: t.due_time, dur: STEP }); });
     return { timed: layout(timed), allday: allday };
   }
 
   // Chỉ tên việc dạng chữ; giờ, thời lượng, mức quan trọng xem ở tooltip và menu
-  function blockInner(e) { var t = e.kind === 'fix' ? e.m.item.title : e.x.title; return LP.cute.html(t) + esc(t); }
+  function blockInner(e) {
+    if (e.kind === 'due') return esc('Hạn ' + (e.t.due_time ? e.t.due_time + ' · ' : '· ') + e.t.title);
+    var t = e.kind === 'fix' ? e.m.item.title : e.x.title; return LP.cute.html(t) + esc(t);
+  }
   function blockHtml(e, pos) {
     var cls = 'lblk' + (pos && e.end - e.start <= STEP ? ' short' : ''), attr = '';
-    if (e.kind === 'fix') {
+    if (e.kind === 'due') {
+      cls += ' ldue ldue-blk'; attr = ' tabindex="0" data-due-task="' + esc(e.t.id) + '" title="' + esc(dueText(e.t)) + '"';
+    } else if (e.kind === 'fix') {
       cls += ' fixed' + (e.m.done ? ' is-done' : '');
       attr = ' data-fixed="1" title="' + esc(e.m.item.title) + ' ' + esc(e.m.time) + '"';
     } else {
@@ -190,6 +208,20 @@ LP.lich = (function () {
       '</div>';
   }
 
+  // Mở tuần: cuộn tới giờ hiện tại (vạch Bây giờ ở khoảng 1/3 khung); tuần khác thì tới mục sớm nhất
+  function scrollGrid(per, days, nowMin) {
+    var y = null;
+    if (days.indexOf(D.today()) >= 0 && nowMin >= T0 && nowMin < T1) y = yOf(nowMin);
+    else {
+      var first = null;
+      per.forEach(function (p) { p.timed.forEach(function (e) { if (first == null || e.start < first) first = e.start; }); });
+      y = yOf(first == null ? 8 * 60 : first);
+    }
+    requestAnimationFrame(function () {
+      var col = st.el && st.el.querySelector('.lcol'); if (!col) return;
+      window.scrollTo(0, Math.max(0, col.getBoundingClientRect().top + window.pageYOffset + y - window.innerHeight / 3));
+    });
+  }
   function renderGrid() {
     var days = allDates(st.anchor), un = unscheduled(), today = D.today(), nowMin = D.timeToMin(D.now());
     var per = days.map(entriesFor), h = '';
@@ -197,8 +229,7 @@ LP.lich = (function () {
     for (var m = T0; m < T1; m += 60) gut += '<span style="top:' + yOf(m) + 'px">' + D.minToTime(m) + '</span>';
     h += '<div class="lgrid" style="--row:' + ROW + 'px"><div class="lg-corner"></div>' + days.map(headHtml).join('');
     h += '<div class="lg-ad-label">Cả ngày</div>' + days.map(function (d, i) {
-      var dues = dueMarks(d).map(function (t) { return '<div class="ldue">' + esc(dueText(t)) + '</div>'; }).join('');
-      return '<div class="lallday' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + '" data-date="' + d + '">' + dues + per[i].allday.map(function (e) { return blockHtml(e, ''); }).join('') + '</div>';
+      return '<div class="lallday' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + '" data-date="' + d + '">' + per[i].allday.map(function (e) { return blockHtml(e, ''); }).join('') + '</div>';
     }).join('');
     h += '<div class="lgut" style="height:' + yOf(T1) + 'px">' + gut + '</div>';
     h += days.map(function (d, i) {
@@ -209,8 +240,9 @@ LP.lich = (function () {
       return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + now + '</div>';
     }).join('') + '</div>';
     h += '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
-      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Trống</p>') + '</div></section>';
+      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section>';
     st.el.innerHTML = head(days) + h;
+    if (st.needScroll) { st.needScroll = false; scrollGrid(per, days, nowMin); }
   }
   function renderWeek() { if (isMobile()) renderList(); else renderGrid(); }
 
@@ -276,6 +308,26 @@ LP.lich = (function () {
     });
   }
 
+  /* ---------- Lịch tháng: bấm ngày mở ô nổi liệt kê việc, có nút sang lịch tuần ---------- */
+  function openDay(d) {
+    var items = dayItems(d), runs = LP.logic.routines.runsFor(d);
+    var rows = items.map(function (x, i) {
+      return '<li><button type="button" class="li-day-row' + (x.due ? ' is-due' : '') + (x.done ? ' is-done' : '') + '" data-i="' + i + '">' + (x.due ? UI.icon('flag', 'ic18') : '') +
+        (x.time && !x.due ? '<b class="num">' + esc(x.time) + '</b>' : '') + '<span>' + esc(x.title) + '</span></button></li>';
+    }).join('');
+    var s = UI.sheet(D.weekdayName(d) + ' ' + D.fmt(d),
+      (rows ? '<ul class="li-day-list">' + rows + '</ul>' : '<p class="muted">Không có việc</p>') +
+      (runs.length ? '<p class="muted li-day-daily">Daily: <b class="num">' + runs.length + '</b> lượt</p>' : '') +
+      '<div class="modal-foot"><button type="button" class="btn" data-agenda-day>Mở Agenda ngày này</button><span class="spacer"></span><button type="button" class="btn" data-close>Đóng</button>' +
+      '<button type="button" class="btn btn-primary" data-week>Xem tuần này</button></div>');
+    s.el.addEventListener('click', function (e) {
+      var r = e.target.closest('.li-day-row');
+      if (r) { var it = items[+r.getAttribute('data-i')]; s.close(); editTask(it.task.id); return; }
+      if (e.target.closest('[data-week]')) { s.close(); st.view = 'tuan'; saveView('tuan'); st.anchor = d; st.needScroll = true; render(); return; }
+      if (e.target.closest('[data-agenda-day]')) { s.close(); LP.router.go('agenda', { date: d }); }
+    });
+  }
+
   /* ---------- Màn ---------- */
   function render() {
     if (!st.el) return;
@@ -285,23 +337,22 @@ LP.lich = (function () {
     if (dir === 0) st.anchor = D.today();
     else if (st.view === 'thang') st.anchor = D.addMonths(D.monthStart(st.anchor), dir);
     else st.anchor = D.add(st.anchor, 7 * dir);
+    st.needScroll = true;
     render();
   }
 
   function onClick(e) {
     var b;
-    if ((b = e.target.closest('[data-view]'))) { st.view = b.getAttribute('data-view'); saveView(st.view); render(); return; }
+    if ((b = e.target.closest('[data-imp]'))) { st.onlyImp = !st.onlyImp; render(); return; }
+    if ((b = e.target.closest('[data-view]'))) { st.view = b.getAttribute('data-view'); saveView(st.view); st.needScroll = true; render(); return; }
     if ((b = e.target.closest('[data-nav]'))) { shift(parseInt(b.getAttribute('data-nav'), 10)); return; }
-    if ((b = e.target.closest('[data-more],.lblk[data-task]'))) { var c = findCard(b); if (c) menuFor(c); return; }
+    if ((b = e.target.closest('[data-more]'))) { var c = findCard(b); if (c) menuFor(c); return; }
+    if ((b = e.target.closest('.ldue-blk[data-due-task]'))) { editTask(b.getAttribute('data-due-task')); return; }
+    if ((b = e.target.closest('.lcard,.lblk[data-task],.ldue[data-task]'))) { editTask(b.getAttribute('data-task')); return; }
     if ((b = e.target.closest('[data-agenda]'))) { LP.router.go('agenda', { date: b.getAttribute('data-agenda') }); return; }
     if ((b = e.target.closest('[data-cell]'))) {
-      var d = b.getAttribute('data-cell');
-      if (d < D.today()) LP.router.go('agenda', { date: d });
-      else { st.view = 'tuan'; saveView('tuan'); st.anchor = d; render(); }
+      openDay(b.getAttribute('data-cell'));
     }
-  }
-  function onChange(e) {
-    if (e.target.matches('[data-imp]')) { st.onlyImp = e.target.checked; render(); }
   }
 
   function mount(el, params) {
@@ -309,15 +360,15 @@ LP.lich = (function () {
     el.appendChild(st.el); el = st.el; // bộ lắng nghe gắn vào khối riêng, router xóa khi đổi màn
     st.view = params && params.view === 'thang' ? 'thang' : params && params.view === 'tuan' ? 'tuan' : savedView();
     st.anchor = params && D.isValid(params.date) ? params.date : D.today();
+    st.needScroll = true;
     el.classList.add('lich');
     el.addEventListener('click', onClick);
-    el.addEventListener('change', onChange);
     bindWeek();
     var mq = window.matchMedia('(max-width: 767px)'), h = function () { render(); };
     if (mq.addEventListener) mq.addEventListener('change', h);
     el.addEventListener('keydown', function (e) {
-      var b = e.target.closest && e.target.closest('.lblk[data-task]');
-      if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); var c = findCard(b); if (c) menuFor(c); }
+      var b = e.target.closest && e.target.closest('.lblk[data-task],.ldue-blk[data-due-task]');
+      if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); editTask(b.getAttribute('data-task') || b.getAttribute('data-due-task')); }
     });
     ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.on('change:' + s, h); });
     st.off = function () { if (mq.removeEventListener) mq.removeEventListener('change', h); ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.off('change:' + s, h); }); };
@@ -329,5 +380,5 @@ LP.lich = (function () {
   }
 
   LP.router.register('lich', { title: 'Lịch', mount: mount, unmount: unmount });
-  return { seg: seg, nav: nav, setMonth: function (m) { month = m; }, moveTo: moveTo, unscheduled: unscheduled, dueMarks: dueMarks, dueText: dueText };
+  return { seg: seg, nav: nav, filterHtml: filterHtml, impOk: impOk, dayItems: dayItems, setMonth: function (m) { month = m; }, moveTo: moveTo, unscheduled: unscheduled, dueMarks: dueMarks, dueText: dueText };
 })();

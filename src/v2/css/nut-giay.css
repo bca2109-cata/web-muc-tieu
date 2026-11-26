@@ -35,24 +35,33 @@
 .btn-block.btn-primary::after,.btn-block.btn-soft::after{left:22%}
 .btn-primary:focus-visible,.btn-soft:focus-visible{outline:3px dashed var(--accent);outline-offset:4px}
 
-/* ---------- 2. Tab chia trang sổ ---------- */
-.ag-switch,.lich-seg,.mt-switch,.seg{display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px;padding:0 0 0 8px;background:none!important;border:0!important;
-  border-radius:0!important;box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--accent) 30%,var(--line))}
-.ag-switch>.chip,.lich-seg>button,.mt-switch>button,.seg label{
-  --tab:#fff3f7;position:relative;min-height:38px;margin:0;padding:7px 16px 6px!important;border:1.5px solid color-mix(in srgb,var(--accent) 28%,var(--line))!important;
+/* ---------- 2. Nhóm nút chọn (bộ lọc): nút liền nhau, MỘT màu kem; nút đang chọn màu hồng ---------- */
+.ag-switch,.lich-seg,.mt-switch:not(.mt-tabs),.seg{display:inline-flex;flex-wrap:wrap;align-items:stretch;gap:0;padding:0;max-width:100%;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:drop-shadow(0 2px 1px var(--paper-shadow))}
+.ag-switch>.chip,.lich-seg>button,.mt-switch:not(.mt-tabs)>button,.seg label,.sg-btn{
+  --sg:#fff6e0;position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;margin:0 0 0 -2px;padding:7px 16px!important;
+  border:2px solid color-mix(in srgb,var(--accent) 25%,var(--line))!important;border-radius:0!important;clip-path:none!important;transform:none!important;
+  font-weight:700;font-size:14px;color:#6b4d0e!important;box-shadow:none!important;cursor:pointer;
+  background:linear-gradient(var(--sg),var(--sg)),var(--grain)!important;background-blend-mode:multiply;transition:background-color .15s,color .15s}
+.ag-switch>.chip:first-child,.lich-seg>button:first-child,.mt-switch:not(.mt-tabs)>button:first-child,.seg label:first-child,.sg-btn:first-child{margin-left:0;border-radius:12px 0 0 12px!important}
+.ag-switch>.chip:last-child,.lich-seg>button:last-child,.mt-switch:not(.mt-tabs)>button:last-child,.seg label:last-child,.sg-btn:last-child{border-radius:0 12px 12px 0!important}
+.ag-switch>.chip:only-child,.lich-seg>button:only-child,.mt-switch:not(.mt-tabs)>button:only-child,.seg label:only-child,.sg-btn:only-child{border-radius:12px!important}
+.ag-switch>.chip:hover,.lich-seg>button:hover,.mt-switch:not(.mt-tabs)>button:hover,.seg label:hover,.sg-btn:hover{--sg:#ffefc8}
+.ag-switch>.chip:active,.lich-seg>button:active,.mt-switch:not(.mt-tabs)>button:active,.seg label:active,.sg-btn:active{--sg:#ffe6ad}
+.ag-switch>.chip[aria-pressed="true"],.lich-seg>button[aria-pressed="true"],.mt-switch:not(.mt-tabs)>button[aria-pressed="true"],.seg label:has(input:checked),.sg-btn[aria-pressed="true"]{
+  --sg:#ffdbe8;color:#7a1c43!important;font-weight:800;border-color:var(--accent)!important;z-index:1}
+.seg label:has(input:focus-visible){outline:3px dashed var(--accent);outline-offset:2px;z-index:2}
+
+/* ---------- 2b. Tab chia trang sổ: chỉ để điều hướng (Mục tiêu / Thói quen) ---------- */
+.mt-tabs{display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px;padding:0 0 0 8px;background:none!important;border:0!important;border-radius:0!important;box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--accent) 30%,var(--line))}
+.mt-tabs>button{--tab:#fff3f7;position:relative;min-height:38px;margin:0;padding:7px 16px 6px!important;border:1.5px solid color-mix(in srgb,var(--accent) 28%,var(--line))!important;
   border-bottom:0!important;border-radius:10px 10px 0 0!important;font-weight:700;color:var(--muted);box-shadow:none!important;
   background:linear-gradient(var(--tab),var(--tab)),var(--grain)!important;background-blend-mode:multiply;
   transition:transform .18s var(--np-spring),padding .18s var(--np-spring),background-color .15s,color .15s}
-.ag-switch>.chip:nth-child(4n+2),.lich-seg>button:nth-child(4n+2),.mt-switch>button:nth-child(4n+2),.seg label:nth-of-type(4n+2){--tab:#fff6d6}
-.ag-switch>.chip:nth-child(4n+3),.lich-seg>button:nth-child(4n+3),.mt-switch>button:nth-child(4n+3),.seg label:nth-of-type(4n+3){--tab:#e8f7ef}
-.ag-switch>.chip:nth-child(4n+4),.lich-seg>button:nth-child(4n+4),.mt-switch>button:nth-child(4n+4),.seg label:nth-of-type(4n+4){--tab:#e8f1fb}
-.ag-switch>.chip:hover,.lich-seg>button:hover,.mt-switch>button:hover,.seg label:hover{transform:translateY(-3px);color:var(--ink)}
-.ag-switch>.chip:active,.lich-seg>button:active,.mt-switch>button:active,.seg label:active{transform:translateY(0);transition-duration:.06s}
-.ag-switch>.chip.is-on,.lich-seg>button.on,.mt-switch>button.on,.seg label:has(input:checked){
-  --tab:#ffdbe8;padding-top:11px!important;color:#7a1c43!important;border-color:color-mix(in srgb,var(--accent) 55%,var(--line))!important;transform:none;z-index:1}
-.ag-switch>.chip.is-on::after,.lich-seg>button.on::after,.mt-switch>button.on::after,.seg label:has(input:checked)::after{
-  content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--tab)}
-.seg label:has(input:focus-visible){outline:3px dashed var(--accent);outline-offset:2px}
+.mt-tabs>button:nth-child(4n+2){--tab:#fff6d6}
+.mt-tabs>button:hover{transform:translateY(-3px);color:var(--ink)}
+.mt-tabs>button:active{transform:translateY(0);transition-duration:.06s}
+.mt-tabs>button.on{--tab:#ffdbe8;padding-top:11px!important;color:#7a1c43!important;border-color:color-mix(in srgb,var(--accent) 55%,var(--line))!important;transform:none;z-index:1}
+.mt-tabs>button.on::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:var(--tab)}
 
 /* Thanh tab trên cùng (máy tính): tab giấy dán mép sổ */
 @media (min-width:900px){

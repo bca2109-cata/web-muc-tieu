@@ -125,7 +125,7 @@ LP.views = LP.views || {};
     return '<li class="mc-item" data-src="' + esc(it.id || '') + '">' +
       '<span class="mc-grip" title="Kéo để đổi thứ tự">' + icon('sort', 'ic18') + '</span>' +
       '<div class="mc-item-fields">' +
-      '<div class="mc-item-top"><input type="time" class="input mc-time" data-f="time" aria-label="Giờ" value="' + esc(it.time || '') + '">' +
+      '<div class="mc-item-top"><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input mc-time" data-f="time" aria-label="Giờ" value="' + esc(it.time || '') + '">' +
       '<input class="input" data-f="title" aria-label="Tên hạng mục" placeholder="Tên hạng mục" value="' + esc(it.title || '') + '"></div>' +
       '<div class="mc-item-mid"><select class="select" data-f="day_offset" aria-label="Ngày làm"><option value="0">Cùng ngày</option><option value="1"' + (parseInt(it.day_offset, 10) > 0 ? ' selected' : '') + '>+1 ngày</option></select>' +
       '<label class="mc-est"><input type="number" class="input" data-f="est_min" min="0" step="5" aria-label="Thời lượng ước tính (phút)" placeholder="0" value="' + esc(it.est_min || '') + '"><span class="muted">phút</span></label></div>' +
@@ -144,15 +144,14 @@ LP.views = LP.views || {};
     var h = '<form class="card mc-form" id="mc-form" novalidate>' +
       '<div class="mc-form-head"><button type="button" class="icon-btn mc-back" data-back aria-label="Về danh sách">' + icon('back') + '</button>' +
       '<h1>' + (isNew ? 'Daily mới' : esc(r.name)) + '</h1></div>' +
-      '<label class="field"><span>Tên</span><input class="input" id="mc-name" value="' + esc(r.name) + '" placeholder="Ví dụ: Chia số AI Class" autocomplete="off"></label>' +
+      '<label class="field is-req"><span>Tên</span><input class="input" id="mc-name" value="' + esc(r.name) + '" placeholder="Ví dụ: Chia số AI Class" autocomplete="off"></label>' +
       '<div class="field"><span>Nhóm</span><div class="seg" role="radiogroup" aria-label="Nhóm">' +
       [['cong_viec', 'Công việc'], ['ca_nhan', 'Cá nhân']].map(function (g) {
         return '<label><input type="radio" name="mc-group" value="' + g[0] + '"' + ((r.group || 'cong_viec') === g[0] ? ' checked' : '') + '><span>' + g[1] + '</span></label>';
       }).join('') + '</div></div>' +
       docPickerHTML('Ghi chú gắn kèm') +
-      '<div class="row2"><div class="field"><span>Mức quan trọng</span><div class="seg" role="radiogroup" aria-label="Mức quan trọng">' +
-      [1, 2, 3].map(function (n) { return '<label><input type="radio" name="mc-imp" value="' + n + '"' + (imp === n ? ' checked' : '') + '><span>' + ui.importance(n) + '</span></label>'; }).join('') + '</div></div>' +
-      '<label class="field"><span>' + icon('clock', 'ic18') + 'Xong trước</span><input type="time" class="input" id="mc-before" value="' + esc(r.done_before || '') + '"></label></div>' +
+      '<div class="row2"><div class="field"><span>Mức quan trọng</span>' + ui.importancePicker('mc-imp', imp) + '</div>' +
+      '<label class="field"><span>' + icon('clock', 'ic18') + 'Xong trước</span><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input" id="mc-before" value="' + esc(r.done_before || '') + '"></label></div>' +
       '<div class="field"><span>' + icon('refresh', 'ic18') + 'Lặp lại</span><div class="seg" role="radiogroup" aria-label="Kiểu lặp">' +
       '<label><input type="radio" name="mc-repeat" value="weekday"' + (r.repeat !== 'month_range' ? ' checked' : '') + '><span>Theo thứ</span></label>' +
       '<label><input type="radio" name="mc-repeat" value="month_range"' + (r.repeat === 'month_range' ? ' checked' : '') + '><span>Theo khoảng ngày trong tháng</span></label></div></div>' +
@@ -178,7 +177,11 @@ LP.views = LP.views || {};
   function bindForm(root, r, isNew) {
     var form = root.querySelector('#mc-form'), list = form.querySelector('#mc-items');
     bindDocPicker(form, r && r.doc_id, r && r.heading_id);
-    function err(t) { var e = form.querySelector('#mc-err'); e.textContent = t || ''; e.hidden = !t; if (t) e.scrollIntoView({ block: 'nearest' }); }
+    function err(t, el) {
+      var e = form.querySelector('#mc-err');
+      if (!t) { ui.clearFieldErrors(form); e.hidden = true; return; }
+      if (el) { e.hidden = true; ui.fieldError(el, t); } else { e.textContent = t; e.hidden = false; e.scrollIntoView({ block: 'nearest' }); }
+    }
     function countText() { var n = list.children.length; form.querySelector('.mc-items-n').textContent = n ? n + ' mục' : ''; }
     function syncRepeat() {
       var mr = form.querySelector('[name="mc-repeat"]:checked').value === 'month_range';
@@ -250,21 +253,23 @@ LP.views = LP.views || {};
     });
   }
 
+  function list(form) { return form.querySelectorAll('.mc-item'); }
   function save(form, r, isNew, err) {
     var name = form.querySelector('#mc-name').value.trim();
     var repeat = form.querySelector('[name="mc-repeat"]:checked').value;
     var wds = Array.prototype.filter.call(form.querySelectorAll('.mc-wd input:checked'), function () { return true; }).map(function (i) { return i.value; });
     var from = parseInt(form.querySelector('#mc-from').value, 10), to = parseInt(form.querySelector('#mc-to').value, 10);
     var items = readItems(form);
-    if (!name) { err('Nhập tên Daily.'); form.querySelector('#mc-name').focus(); return; }
-    if (repeat === 'weekday' && !wds.length) { err('Chọn ít nhất một thứ.'); return; }
-    if (repeat === 'month_range' && !(from >= 1 && from <= 31 && to >= 1 && to <= 31)) { err('Nhập khoảng ngày từ 1 đến 31.'); return; }
-    if (!items.length) { err('Thêm ít nhất một hạng mục.'); return; }
+    if (!name) { err('Nhập tên Daily.', form.querySelector('#mc-name')); return; }
+    if (repeat === 'weekday' && !wds.length) { err('Chọn ít nhất một thứ.', form.querySelector('.mc-wd input')); return; }
+    if (repeat === 'month_range' && !(from >= 1 && from <= 31 && to >= 1 && to <= 31)) { err('Nhập khoảng ngày từ 1 đến 31.', form.querySelector(!(from >= 1 && from <= 31) ? '#mc-from' : '#mc-to')); return; }
+    if (!items.length) { err('Thêm ít nhất một hạng mục.', form.querySelector('#mc-add-item')); return; }
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
-      if (!it.title) { err('Hạng mục ' + (i + 1) + ' chưa có tên.'); return; }
-      if (it.time && !D.isTime(it.time)) { err('Hạng mục ' + (i + 1) + ': giờ chưa đúng.'); return; }
-      if (it.est_min !== '' && !(num(it.est_min, -1) >= 0)) { err('Hạng mục ' + (i + 1) + ': thời lượng chưa đúng.'); return; }
+      var li = list(form)[i];
+      if (!it.title) { err('Hạng mục ' + (i + 1) + ' chưa có tên.', li.querySelector('[data-f="title"]')); return; }
+      if (it.time && !D.isTime(it.time)) { err('Hạng mục ' + (i + 1) + ': giờ chưa đúng.', li.querySelector('[data-f="time"]')); return; }
+      if (it.est_min !== '' && !(num(it.est_min, -1) >= 0)) { err('Hạng mục ' + (i + 1) + ': thời lượng chưa đúng.', li.querySelector('[data-f="est_min"]')); return; }
     }
     err('');
     var E = form.querySelector('[name="mc-apply"]:checked').value === 'tomorrow' ? D.add(D.today(), 1) : D.today();
@@ -323,7 +328,7 @@ LP.views = LP.views || {};
     var d = date || D.today();
     var s = ui.sheet('Sửa hạng mục',
       '<p class="muted">' + esc(r.name) + '</p>' +
-      '<div class="row2"><label class="field"><span>Giờ</span><input type="time" class="input" id="eq-time" value="' + esc(it.time || '') + '"></label>' +
+      '<div class="row2"><label class="field"><span>Giờ</span><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input" id="eq-time" value="' + esc(it.time || '') + '"></label>' +
       '<label class="field"><span>Tên</span><input class="input" id="eq-title" value="' + esc(it.title) + '" autocomplete="off"></label></div>' +
       '<div class="field"><span>Áp dụng</span><div class="seg" role="radiogroup" aria-label="Phạm vi">' +
       '<label><input type="radio" name="eq-scope" value="today" checked><span>Chỉ hôm nay</span></label>' +

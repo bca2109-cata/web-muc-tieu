@@ -28,7 +28,7 @@ LP.search = (function () {
   register('Ad-hoc / Personal', function (q) {
     return LP.store.get().tasks.filter(function (t) { return has(t.title, q) || has(t.requester, q); }).map(function (t) {
       return { title: t.title, sub: (t.status === 'done' ? 'Đã xong' : t.status === 'cancelled' ? 'Đã hủy' : t.due_date ? 'Hạn ' + LP.date.fmt(t.due_date) : 'Chưa có hạn'), icon: 'list',
-        route: 'agenda', params: { date: t.do_date || t.due_date || LP.date.today() } };
+        route: 'agenda', params: { date: t.do_date || t.due_date || LP.date.today() }, taskId: t.id };
     });
   });
   register('Daily', function (q) {
@@ -78,7 +78,7 @@ LP.search = (function () {
     panel.addEventListener('click', function (e) {
       if (e.target === panel || e.target.closest('[data-close]')) { close(); return; }
       var b = e.target.closest('.sr-row');
-      if (b) { var r = panel.querySelector('.sr-list')._rows[+b.getAttribute('data-i')]; close(); LP.router.go(r.route, r.params); }
+      if (b) { var r = panel.querySelector('.sr-list')._rows[+b.getAttribute('data-i')]; close(); if (r.taskId) openTask(r.taskId); else LP.router.go(r.route, r.params); }
     });
     var input = panel.querySelector('input');
     input.addEventListener('input', function () { renderResults(input.value); });
@@ -87,6 +87,20 @@ LP.search = (function () {
     renderResults('');
     input.focus();
   }
+  // Mở đúng việc: sang ngày làm (hoặc ngày hạn), cuộn tới và tô sáng dòng việc 2 giây, rồi mở form sửa
+  // (việc đã hủy: form có nút Khôi phục việc). Việc không có dòng trên màn thì chỉ mở form sửa.
+  function openTask(id) {
+    var t = LP.store.find('Tasks', id);
+    if (!t) { LP.ui.toast('Không tìm thấy việc này.'); return; }
+    var date = t.do_date || t.due_date || LP.date.today();
+    LP.router.go('agenda', { date: date });
+    setTimeout(function () {
+      var view = document.getElementById('view'), n = view && view.querySelector('[data-task="' + id + '"]');
+      var row = n && (n.closest('.ag-item,.ag-tl-row,li') || n);
+      if (row) { row.scrollIntoView({ block: 'center' }); row.classList.add('is-found'); setTimeout(function () { row.classList.remove('is-found'); }, 2000); }
+      if (LP.quickAdd && LP.quickAdd.edit) LP.quickAdd.edit('task', id);
+    }, 60);
+  }
   function onKey(e) { if (e.key === 'Escape') close(); }
   function close() {
     if (!panel) return;
@@ -94,5 +108,5 @@ LP.search = (function () {
     panel.remove(); panel = null;
   }
 
-  return { register: register, query: query, open: open, close: close };
+  return { register: register, query: query, open: open, close: close, openTask: openTask };
 })();

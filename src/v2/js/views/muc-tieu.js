@@ -49,7 +49,7 @@ LP.mucTieu = (function () {
     return { mode: 'task', done: done, total: ts.length, unit: '', pct: ts.length ? Math.round(done * 100 / ts.length) : 0 };
   }
   function statusLine(p) {
-    if (!p.total) return '<span class="muted">' + icon('sparkle', 'ic14') + (p.mode === 'number' ? 'Đặt target để bắt đầu' : 'Gắn việc để bắt đầu') + '</span>';
+    if (!p.total) return '<span class="muted">' + icon('sparkle', 'ic14') + (p.mode === 'number' ? 'Đặt chỉ tiêu để bắt đầu' : 'Gắn việc để bắt đầu') + '</span>';
     var lv = LP.stats.level(p.pct);
     if (lv === 'ok') return '<span class="mt-lv mt-lv-ok">' + LP.flowers.html('sakura', 16, 1) + 'Đạt rồi, giỏi quá!</span>';
     if (lv === 'pr') return '<span class="mt-lv mt-lv-pr">' + icon('flag', 'ic14') + 'Sắp tới đích</span>';
@@ -98,7 +98,7 @@ LP.mucTieu = (function () {
       segBtns('group', [['', 'Mọi nhóm'], ['cong_viec', 'Công việc'], ['ca_nhan', 'Cá nhân']], filt.group) + '</div>' +
       '<button type="button" class="btn btn-primary" data-add>' + icon('plus') + 'Thêm mục tiêu</button></div>' +
       (list.length ? '<div class="mt-grid">' + list.map(function (g) { return goalCard(g, today); }).join('') + '</div>'
-        : '<section class="card mt-empty">' + LP.flowers.html('daisy', 48, 2) + '<p>Chưa có mục tiêu nào ở bộ lọc này.</p></section>');
+        : '<section class="card mt-empty">' + LP.flowers.html('daisy', 48, 2) + (filt.period || filt.group ? '<p>Chưa có mục tiêu nào ở bộ lọc này.</p>' : '<p>Chưa có mục tiêu nào.</p><button type="button" class="btn btn-primary" data-add>' + icon('plus') + 'Thêm mục tiêu</button>') + '</section>');
   }
 
   /* ---------- Form thêm / sửa ---------- */
@@ -118,14 +118,14 @@ LP.mucTieu = (function () {
       }).join('') + '</ul>' : '<p class="muted">Chưa có việc nào. Chọn mục tiêu này khi thêm Ad-hoc hoặc Personal.</p>') + '</div>';
     }
     var html = '<form class="mt-form" novalidate>' +
-      '<label class="field"><span>Tên mục tiêu</span><input class="input" name="title" maxlength="100" value="' + esc(g.title) + '" required></label>' +
+      '<label class="field is-req"><span>Tên mục tiêu</span><input class="input" name="title" maxlength="100" value="' + esc(g.title) + '" required></label>' +
       '<div class="field"><span>Nhóm</span>' + radios('group', [['cong_viec', 'Công việc'], ['ca_nhan', 'Cá nhân']], g.group) + '</div>' +
       '<div class="field"><span>Loại kỳ</span>' + radios('ptype', [['year', 'Năm'], ['quarter', 'Quý'], ['month', 'Tháng']], g.period_type) + '</div>' +
       '<label class="field"><span>Kỳ</span><select class="select" name="pvalue"></select></label>' +
-      '<div class="field"><span>Quan trọng</span>' + radios('importance', [[1, LP.ui.importance(1)], [2, LP.ui.importance(2)], [3, LP.ui.importance(3)]], g.importance) + '</div>' +
+      '<div class="field"><span>Mức quan trọng</span>' + LP.ui.importancePicker('importance', g.importance) + '</div>' +
       '<div class="field"><span>Cách tính tiến độ</span>' + radios('mode', [['task', 'Theo số việc xong'], ['number', 'Nhập số']], g.progress_mode) + '</div>' +
       '<div class="mt-numbers"><div class="row2"><label class="field"><span>Thực tế</span><input class="input" type="number" step="any" min="0" name="actual" value="' + esc(g.actual) + '"></label>' +
-      '<label class="field"><span>Target</span><input class="input" type="number" step="any" min="0" name="target" value="' + esc(g.target) + '"></label></div>' +
+      '<label class="field is-req"><span>Chỉ tiêu</span><input class="input" type="number" step="any" min="0" name="target" value="' + esc(g.target) + '"></label></div>' +
       '<label class="field"><span>Đơn vị</span><input class="input" name="unit" maxlength="20" value="' + esc(g.unit) + '" placeholder="cuốn, km, dashboard…"></label></div>' +
       linked + '<p class="form-error" role="alert" hidden></p>' +
       '<div class="modal-foot">' + (isNew ? '' : '<button type="button" class="btn btn-danger" data-del>' + icon('trash') + 'Xóa</button>') +
@@ -152,8 +152,8 @@ LP.mucTieu = (function () {
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var err = f.querySelector('.form-error'), title = f.elements['title'].value.trim(), mode = f.mode.value;
-      if (!title) { err.textContent = 'Nhập tên mục tiêu.'; err.hidden = false; return; }
-      if (mode === 'number' && !(num(f.target.value) > 0)) { err.textContent = 'Nhập target lớn hơn 0.'; err.hidden = false; return; }
+      if (!title) { LP.ui.fieldError(f.elements['title'], 'Nhập tên mục tiêu.'); return; }
+      if (mode === 'number' && !(num(f.target.value) > 0)) { LP.ui.fieldError(f.target, 'Nhập chỉ tiêu lớn hơn 0.'); return; }
       var r = periodRange(f.ptype.value, f.pvalue.value);
       LP.store.upsert('Goals', Object.assign({}, g, {
         title: title, group: f.group.value, period_type: f.ptype.value, period_value: f.pvalue.value, start_date: r.from, end_date: r.to,

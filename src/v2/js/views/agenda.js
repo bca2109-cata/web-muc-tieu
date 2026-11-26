@@ -165,7 +165,7 @@ LP.agenda = (function () {
     var pct = total ? Math.round(done * 100 / total) : null, C = 2 * Math.PI * 41, lvl = ST.level(pct);
     var fg = pct ? '<circle class="fg s-' + lvl + '" cx="52" cy="52" r="41" stroke-dasharray="' + (C * pct / 100).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 52 52)"/>' : '';
     return '<svg class="ag-ring" viewBox="0 0 104 104" role="img" aria-label="Hoàn thành ' + done + ' trên ' + total + '"><circle class="tr" cx="52" cy="52" r="41"/>' + fg +
-      '<text class="big" x="52" y="55">' + (total ? done + '/' + total : '–') + '</text><text class="small" x="52" y="72">' + (pct == null ? 'không có lượt' : pct + '%') + '</text></svg>';
+      '<text class="big" x="52" y="55">' + (total ? done + '/' + total : '0') + '</text><text class="small" x="52" y="72">' + (pct == null ? 'việc ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)) : pct + '%') + '</text></svg>';
   }
   function sixDays() {
     var end = D.isWorkday(st.date) ? st.date : D.prevWorkday(st.date), days = [end], today = D.today();
@@ -183,7 +183,7 @@ LP.agenda = (function () {
     cards.forEach(function (c) { done += c.done; total += c.total; });
     tasks.forEach(function (x) { total++; if (x.done) done++; });
     var cap = T.capacity(st.date), ev = cap.evening;
-    var facts = '<div class="ag-fact' + (ev.over ? ' is-over' : '') + '"><b>Quỹ Personal</b><span class="num">' + D.fmtMin(ev.used) + ' / ' + D.fmtMin(ev.quota) + '</span>' + (ev.over ? ' vượt quỹ' : '') + '</div>' +
+    var facts = (total ? '' : '<p class="ag-empty">Chưa có việc nào để hoàn thành.</p>') + '<div class="ag-fact' + (ev.over ? ' is-over' : '') + '"><b>Quỹ Personal</b><span class="num">' + D.fmtMin(ev.used) + ' / ' + D.fmtMin(ev.quota) + '</span>' + (ev.over ? ' vượt quỹ' : '') + '</div>' +
       '<div class="ag-fact"><b>Giờ chen ngang</b><span class="num">' + D.fmtMin(cap.interruptionMin) + '</span></div>';
     var blocks = '';
     function blk(name, d, t) { blocks += '<div class="ag-blk"><span class="ag-blk-name">' + esc(name) + '</span><span class="num">' + d + '/' + t + '</span>' + barHtml(d, t) + '</div>'; }
@@ -192,8 +192,10 @@ LP.agenda = (function () {
     function dn(l) { return l.filter(function (x) { return x.done; }).length; }
     if (ad.length) blk('Ad-hoc hôm nay', dn(ad), ad.length);
     if (cn.length) blk('Personal hôm nay', dn(cn), cn.length);
-    if (!blocks) blocks = '<p class="ag-empty">Hôm nay chưa có khối nào.</p>';
-    var cols = sixDays().map(function (x) {
+    var noBlocks = !blocks;
+    if (noBlocks) blocks = '<p class="ag-empty">Chưa có khối nào ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)) + ' · <a class="ag-inline" href="#/mau?id=new">+ Tạo Daily</a></p>';
+    var six = sixDays(), hasSix = six.some(function (x) { return x.pct != null; });
+    var cols = six.map(function (x) {
       var h = x.pct == null ? 0 : Math.max(4, Math.round(x.pct * 0.8)); // 80px = 100%
       var cls = x.pct == null ? 'is-none' : x.now ? 'is-now' : x.pct >= 100 ? 'b-ok' : x.pct >= 80 ? 'b-pr' : 'b-warn';
       return '<div class="ag-col" aria-label="' + D.fmt(x.d) + ': ' + (x.pct == null ? 'không có số liệu' : x.pct + '%') + '"><span class="ag-col-val num">' + (x.pct == null ? '–' : x.pct + '%') + '</span>' +
@@ -202,8 +204,8 @@ LP.agenda = (function () {
     }).join('');
     return '<div class="ag-charts">' +
       '<section class="card ag-chart" aria-label="Hoàn thành hôm nay"><h2>Hoàn thành ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)) + '</h2><div class="ag-ring-wrap">' + ringHtml(done, total) + '<div class="ag-facts">' + facts + '</div></div></section>' +
-      '<section class="card ag-chart" aria-label="Tiến độ theo khối"><h2>Tiến độ theo khối</h2>' + blocks + '</section>' +
-      '<section class="card ag-chart" aria-label="6 ngày làm việc gần nhất"><h2>6 ngày làm việc gần nhất</h2><div class="ag-cols">' + cols + '</div></section></div>';
+      '<section class="card ag-chart' + (noBlocks ? ' is-slim' : '') + '" aria-label="Tiến độ theo khối"><h2>Tiến độ theo khối</h2>' + blocks + '</section>' +
+      '<section class="card ag-chart" aria-label="6 ngày làm việc gần nhất"><h2>6 ngày làm việc gần nhất</h2>' + (hasSix ? '<div class="ag-cols">' + cols + '</div>' : '<p class="ag-empty">Chưa có số liệu 6 ngày gần nhất.</p>') + '</section></div>';
   }
 
   function switchHtml() {
@@ -351,20 +353,21 @@ LP.agenda = (function () {
   function taskSection(title, list, empty) {
     return '<section class="card ag-tasks" aria-label="' + esc(title) + '"><div class="ag-sec-head"><h2>' + tam_cute('', /Ad-hoc/.test(title) ? 'case' : 'house') + esc(title) + '</h2>' +
       (list.length ? '<span class="num">' + list.filter(function (x) { return x.done; }).length + '/' + list.length + '</span>' : '') + '</div>' +
-      (list.length ? '<ul class="ag-ul">' + list.map(taskRow).join('') + '</ul>' : '<p class="ag-empty">' + empty + '</p>') + '</section>';
+      (list.length ? '<ul class="ag-ul">' + list.map(taskRow).join('') + '</ul>' : '<p class="ag-empty">' + empty + '</p>' + (readOnly() ? '' : '<div class="ag-empty-act"><button type="button" class="btn btn-soft" data-act="add" data-kind="adhoc">' + icon('plus', 'ic18') + 'Thêm Ad-hoc</button><button type="button" class="btn btn-soft" data-act="add" data-kind="canhan">' + icon('plus', 'ic18') + 'Thêm Personal</button></div>')) + '</section>';
   }
 
   function checklistHtml(cards, tasks, habits) {
     var h = '<div class="ag-list">';
     var infos = cards.map(runInfo).sort(function (a, b) { return a.key - b.key || a.idx - b.idx; });
     h += '<div class="ag-runs">' + (infos.length ? infos.map(runCard).join('') :
-      '<section class="card"><h2>Daily</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Hôm nay không có lượt Daily nào.' : 'Ngày nghỉ, không có lượt Daily.') + '</p></section>') + '</div>';
+      '<section class="card"><h2>Daily</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Hôm nay không có lượt Daily nào.' : 'Ngày nghỉ, không có lượt Daily.') + '</p>' + (D.isWorkday(st.date) ? '<div class="ag-empty-act"><a class="btn btn-soft" href="#/mau?id=new">' + icon('plus', 'ic18') + 'Tạo Daily</a></div>' : '') + '</section>') + '</div>';
     var ad = tasks.filter(function (x) { return x.task.kind !== 'canhan'; }), cn = tasks.filter(function (x) { return x.task.kind === 'canhan'; });
+    h += '<div class="ag-cola">';
     if (ad.length) h += taskSection('Ad-hoc hôm nay', ad, '');
     if (cn.length) h += taskSection('Personal hôm nay', cn, '');
-    if (!tasks.length) h += taskSection('Ad-hoc / Personal ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)), [], 'Không có việc nào có ngày làm là hôm nay.');
+    if (!tasks.length) h += taskSection('Ad-hoc / Personal ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)), [], 'Chưa có việc nào có ngày làm ' + (st.date === D.today() ? 'là hôm nay' : 'ngày này') + '.');
     h += '<section class="card ag-habits" aria-label="Thói quen"><div class="ag-sec-head"><h2>' + tam_cute('', 'sprout') + 'Thói quen</h2></div>' +
-      (habits.length ? '<div class="chips">' + habits.map(habitChip).join('') + '</div>' : '<p class="ag-empty">Không có thói quen nào hôm nay.</p>') + '</section>';
+      (habits.length ? '<div class="chips">' + habits.map(habitChip).join('') + '</div>' : '<p class="ag-empty">Không có thói quen nào hôm nay.</p>') + '</section></div>';
     if (st.date === D.today()) h += '<div class="ag-foot"><button type="button" class="btn btn-primary" data-act="soat">' + icon('moon', 'ic18') + 'Soát cuối ngày</button></div>';
     return h + '</div>';
   }
@@ -372,7 +375,7 @@ LP.agenda = (function () {
   /* ---------- Toàn cảnh ---------- */
   function placeBox(forKey, attrs) {
     if (readOnly()) return '';
-    return '<div class="ag-place"><input type="time" class="input" data-for="' + esc(forKey) + '" aria-label="Chọn giờ"><button type="button" class="btn btn-soft" data-act="place" data-for="' + esc(forKey) + '" ' + attrs + '>Đặt giờ</button></div>';
+    return '<div class="ag-place"><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input" data-for="' + esc(forKey) + '" aria-label="Chọn giờ"><button type="button" class="btn btn-soft" data-act="place" data-for="' + esc(forKey) + '" ' + attrs + '>Đặt giờ</button></div>';
   }
   function tlRow(r) {
     var s = r.state || {};
@@ -595,6 +598,7 @@ LP.agenda = (function () {
     unplace: function (b) { clearEntryTime(b.getAttribute('data-key')); },
     'unplace-task': function (b) { clearTaskTime(b.getAttribute('data-task'), b.getAttribute('data-step')); },
     doc: function (b) { LP.ui.docSheet(b.getAttribute('data-doc'), b.getAttribute('data-head')); },
+    add: function (b) { if (LP.quickAdd && LP.quickAdd.open) LP.quickAdd.open(b.getAttribute('data-kind')); },
     more: function (b) { taskMenu(b.getAttribute('data-task'), b.getAttribute('data-step')); }
   };
 

@@ -1,7 +1,6 @@
 /* V2 · Phần 3 · Ghi chú. Chỉ dùng biến trong tokens.css. */
 
-/* Màn Ghi chú cần rộng hơn khung 1120px để đủ 3 cột */
-.main:has(#view[data-route="ghi-chu"]){max-width:1280px}
+/* Màn Ghi chú dùng cùng bề rộng và mép với đầu trang (1120px) */
 
 .gc{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}
 .gc-list{padding:14px}
@@ -37,7 +36,7 @@
 .gc-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:4px 0 8px;font-size:13px}
 .gc-space-sel{width:auto;min-height:36px;padding:2px 12px;font-size:14px;font-weight:700}
 .gc-status{margin-left:auto}
-.gc-tools{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:6px;margin:0 -4px 10px;border-radius:16px;background:var(--surface);border:2px solid var(--line)}
+.gc-tools{position:sticky;top:var(--head-h,0px);z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:6px;margin:0 -4px 10px;border-radius:16px;background:var(--surface);border:2px solid var(--line)}
 .gc-tool{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:36px;height:40px;padding:0 6px;border:0;border-radius:12px;background:transparent;color:var(--ink);font-weight:800;font-size:14px}
 .gc-tool:hover{background:var(--plain-bg)}
 .gc-tool.is-on{background:var(--accent-soft);color:var(--accent-deep)}
@@ -114,7 +113,9 @@
   .gc-body h3{font-size:18px}
 }
 @media (min-width:900px){
-  .gc{grid-template-columns:210px minmax(0,720px) 210px;justify-content:center}
+  .gc{grid-template-columns:210px minmax(0,1fr)}
+  .gc:has(.gc-side:not(:empty)){grid-template-columns:210px minmax(0,1fr) 220px}
+  .gc-side:empty{display:none}
   .gc-back,.gc-tocbtn{display:none}
   .gc-side{display:block;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
   .gc-list{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}

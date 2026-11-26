@@ -298,7 +298,7 @@ LP.ton = (function () {
   function actItemToday(o) {
     var e = o.e;
     var sh = LP.ui.sheet('Đưa vào hôm nay', '<p>' + esc(e.title) + '<br><span class="muted">' + esc(e.label) + '</span></p>' +
-      '<label class="field"><span>Giờ làm hôm nay (có thể bỏ trống)</span><input class="input" type="time" id="tt-time" value="' + nextQuarter() + '"></label>' +
+      '<label class="field"><span>Giờ làm hôm nay (có thể bỏ trống)</span><input class="input" type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time id="tt-time" value="' + nextQuarter() + '"></label>' +
       '<p class="form-error" id="tt-err" hidden>Chọn giờ hợp lệ.</p>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button><button type="button" class="btn btn-primary" id="tt-ok">Đưa vào hôm nay</button></div>');
     sh.el.querySelector('#tt-ok').addEventListener('click', function () {
@@ -359,7 +359,7 @@ LP.ton = (function () {
     var h = '<div class="ag-so ag-tt"><div class="ag-so-top"><button type="button" class="chip" data-act="back">' + icon('back', 'ic18') + 'Agenda</button><h1>Tồn tổng</h1></div>' +
       '<p class="muted">Tất cả mục chưa xử lý từ trước tới nay, cũ nhất trước.</p>' + statsHtml(all);
     // Bộ lọc gọn về một hàng: loại · khối · từ ngày · đến ngày
-    h += '<section class="card ag-tt-filters" aria-label="Bộ lọc"><div class="chips" role="group" aria-label="Loại">' + chip('Tất cả', 'type', '') + chip('Daily', 'type', 'item') + chip('Ad-hoc / Personal', 'type', 'task') + '</div>' +
+    h += '<section class="card ag-tt-filters" aria-label="Bộ lọc"><div class="ag-switch" role="group" aria-label="Loại">' + chip('Tất cả', 'type', '') + chip('Daily', 'type', 'item') + chip('Ad-hoc / Personal', 'type', 'task') + '</div>' +
       '<select class="select" id="tt-block" data-f="block" aria-label="Khối"><option value="">Tất cả khối</option>' +
       Object.keys(blocks).sort().map(function (b) { return '<option value="' + esc(b) + '"' + (st.block === b ? ' selected' : '') + '>' + esc(b) + '</option>'; }).join('') + '</select>' +
       '<label class="ag-tt-date">Từ <input class="input" type="date" data-f="from" value="' + esc(st.from) + '" aria-label="Từ ngày"></label>' +

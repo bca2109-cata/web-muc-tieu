@@ -21,9 +21,7 @@ LP.quickAdd = (function () {
       '</select></label>';
   }
   function importanceHTML(cur) {
-    cur = parseInt(cur, 10) || 1;
-    return '<div class="field"><span>Mức quan trọng</span><div class="seg" role="radiogroup" aria-label="Mức quan trọng">' +
-      [1, 2, 3].map(function (n) { return '<label><input type="radio" name="qa-imp" value="' + n + '"' + (cur === n ? ' checked' : '') + '><span>' + ui.importance(n) + esc(IMPORT[n]) + '</span></label>'; }).join('') + '</div></div>';
+    return '<div class="field"><span>Mức quan trọng</span>' + ui.importancePicker('qa-imp', cur) + '</div>';
   }
   function stepRowHTML(s) {
     s = s || {};
@@ -38,14 +36,14 @@ LP.quickAdd = (function () {
   function taskFormHTML(kind, t, steps, isEdit) {
     var adhoc = kind === 'adhoc';
     var h = '<form class="qa-form" id="qa-form" novalidate>' +
-      '<label class="field"><span>Tên</span><input class="input" data-f="title" id="qa-title" autocomplete="off" autofocus placeholder="' + (adhoc ? 'Ví dụ: Báo cáo nguồn tháng 11' : 'Ví dụ: Đặt lịch khám') + '" value="' + esc(t.title || '') + '"></label>';
+      '<label class="field is-req"><span>Tên</span><input class="input" data-f="title" id="qa-title" autocomplete="off" autofocus placeholder="' + (adhoc ? 'Ví dụ: Báo cáo nguồn tháng 11' : 'Ví dụ: Đặt lịch khám') + '" value="' + esc(t.title || '') + '"></label>';
     if (adhoc) {
       h += '<label class="field"><span>Người đặt</span><input class="input" data-f="requester" autocomplete="off" placeholder="TBP, giám đốc, phòng…" value="' + esc(t.requester || '') + '"></label>' +
         '<div class="row2"><label class="field"><span>' + icon('flag', 'ic18') + 'Hạn chót</span><input type="date" class="input" data-f="due_date" value="' + esc(t.due_date || '') + '"><small class="date-read muted" data-hint="due_date">' + esc(hintFor(t.due_date)) + '</small></label>' +
-        '<label class="field"><span>Giờ hạn</span><input type="time" class="input" data-f="due_time" value="' + esc(t.due_time || '') + '"></label></div>';
+        '<label class="field"><span>Giờ hạn</span><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input" data-f="due_time" value="' + esc(t.due_time || '') + '"></label></div>';
     }
     h += '<div class="row2"><label class="field"><span>' + icon('calendar', 'ic18') + 'Ngày làm</span><input type="date" class="input" data-f="do_date" value="' + esc(t.do_date || '') + '"><small class="date-read muted" data-hint="do_date">' + esc(hintFor(t.do_date)) + '</small></label>' +
-      '<label class="field"><span>Giờ làm</span><input type="time" class="input" data-f="do_time" value="' + esc(t.do_time || '') + '"></label></div>' +
+      '<label class="field"><span>Giờ làm</span><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input" data-f="do_time" value="' + esc(t.do_time || '') + '"></label></div>' +
       '<div class="row2"><label class="field"><span>' + icon('hourglass', 'ic18') + 'Thời lượng (phút)</span><input type="number" class="input" data-f="duration_min" min="0" step="5" placeholder="0" value="' + esc(t.duration_min || '') + '"></label><span></span></div>' +
       importanceHTML(t.importance) + goalSelectHTML(t.goal_id || '') + LP.p5.docPickerHTML(adhoc ? 'Tài liệu gắn kèm' : 'Ghi chú gắn kèm');
     if (adhoc) {
@@ -63,7 +61,11 @@ LP.quickAdd = (function () {
 
   function bindTaskForm(root, kind, t, isEdit, done) {
     var form = $(root, '#qa-form'), adhoc = kind === 'adhoc', steps = $(root, '#qa-steps'), touched = isEdit;   // ngày làm mặc định (hôm nay) chưa phải do người dùng chọn: đổi hạn chót thì gợi ý lại
-    var err = function (m) { var e = $(root, '#qa-err'); e.textContent = m || ''; e.hidden = !m; };
+    var err = function (m, el) {
+      var e = $(root, '#qa-err');
+      if (!m) { ui.clearFieldErrors(form); e.hidden = true; return; }
+      if (el) { e.hidden = true; ui.fieldError(el, m); } else { e.textContent = m; e.hidden = false; }
+    };
     LP.p5.bindDocPicker(form, t.doc_id, t.heading_id);
     function hint(name) { var el = $(form, '[data-hint="' + name + '"]'); if (el) el.textContent = hintFor($(form, '[data-f="' + name + '"]').value); }
     var doDate = $(form, '[data-f="do_date"]'), dueDate = $(form, '[data-f="due_date"]');
@@ -100,25 +102,25 @@ LP.quickAdd = (function () {
 
     function submit() {
       var title = val(form, '[data-f="title"]');
-      if (!title) { err('Nhập tên việc.'); $(form, '[data-f="title"]').focus(); return; }
+      if (!title) { err('Nhập tên việc.', $(form, '[data-f="title"]')); return; }
       var due = val(form, '[data-f="due_date"]'), dueTime = val(form, '[data-f="due_time"]'), dd = val(form, '[data-f="do_date"]'), dt = val(form, '[data-f="do_time"]');
-      if (due && !D.isValid(due)) { err('Hạn chót chưa đúng ngày.'); return; }
-      if (dueTime && !D.isTime(dueTime)) { err('Giờ hạn chưa đúng.'); return; }
-      if (dd && !D.isValid(dd)) { err('Ngày làm chưa đúng.'); return; }
-      if (dt && !D.isTime(dt)) { err('Giờ làm chưa đúng.'); return; }
+      if (due && !D.isValid(due)) { err('Hạn chót chưa đúng ngày.', $(form, '[data-f="due_date"]')); return; }
+      if (dueTime && !D.isTime(dueTime)) { err('Giờ hạn chưa đúng (ví dụ 17:30).', $(form, '[data-f="due_time"]')); return; }
+      if (dd && !D.isValid(dd)) { err('Ngày làm chưa đúng.', $(form, '[data-f="do_date"]')); return; }
+      if (dt && !D.isTime(dt)) { err('Giờ làm chưa đúng (ví dụ 09:30).', $(form, '[data-f="do_time"]')); return; }
       var dur = val(form, '[data-f="duration_min"]');
-      if (dur !== '' && !(num(dur, -1) >= 0)) { err('Thời lượng chưa đúng.'); return; }
+      if (dur !== '' && !(num(dur, -1) >= 0)) { err('Thời lượng chưa đúng.', $(form, '[data-f="duration_min"]')); return; }
       var rows = [];
       if (steps) {
-        var bad = '';
+        var bad = '', badEl = null;
         Array.prototype.forEach.call(steps.querySelectorAll('.qa-step'), function (li) {
           var st = val(li, '[data-f="s_title"]'), sd = val(li, '[data-f="s_date"]'), sm = val(li, '[data-f="s_dur"]');
           if (!st && !sd && !sm && !li.getAttribute('data-src')) return;
-          if (!st) { bad = 'Có bước chưa đặt tên.'; return; }
-          if (sd && !D.isValid(sd)) { bad = 'Bước "' + st + '": ngày chưa đúng.'; return; }
+          if (!st) { if (!bad) { bad = 'Có bước chưa đặt tên.'; badEl = $(li, '[data-f="s_title"]'); } return; }
+          if (sd && !D.isValid(sd)) { if (!bad) { bad = 'Bước "' + st + '": ngày chưa đúng.'; badEl = $(li, '[data-f="s_date"]'); } return; }
           rows.push({ src: li.getAttribute('data-src'), title: st, do_date: sd, duration_min: sm });
         });
-        if (bad) { err(bad); return; }
+        if (bad) { err(bad, badEl); return; }
       }
       err('');
       if (!dur && rows.length) { var sum = rows.reduce(function (a, r) { return a + num(r.duration_min); }, 0); if (sum) dur = String(sum); }
@@ -164,12 +166,12 @@ LP.quickAdd = (function () {
   }
 
   /* ---------- Chen ngang ---------- */
-  var DUR = [[15, '15p'], [30, '30p'], [60, '1h'], [120, '2h']];
+  var DUR = [[15, '15 phút'], [30, '30 phút'], [60, '1 giờ'], [120, '2 giờ']];
   function openInterruption() {
     var today = D.today(), cap = LP.logic.tasks.capacity(today);
     var s = ui.sheet('Chen ngang',
       '<form id="qa-form" novalidate><p class="muted">Thời gian bị kéo đi đột xuất, trừ vào Quỹ Ad-hoc hôm nay (còn ' + esc(D.fmtMin(Math.max(0, cap.work.left))) + ').</p>' +
-      '<label class="field"><span>Tên</span><input class="input" data-f="title" id="qa-title" autocomplete="off" autofocus placeholder="Ví dụ: Hỗ trợ sale lấy data"></label>' +
+      '<label class="field is-req"><span>Tên</span><input class="input" data-f="title" id="qa-title" autocomplete="off" autofocus placeholder="Ví dụ: Hỗ trợ sale lấy data"></label>' +
       '<div class="field"><span>' + icon('hourglass', 'ic18') + 'Thời lượng</span><div class="seg" role="radiogroup" aria-label="Thời lượng">' +
       DUR.map(function (d, i) { return '<label><input type="radio" name="qa-dur" value="' + d[0] + '"' + (i === 1 ? ' checked' : '') + '><span>' + d[1] + '</span></label>'; }).join('') + '</div></div>' +
       '<p class="form-error" id="qa-err" role="alert" hidden></p>' +
@@ -177,7 +179,7 @@ LP.quickAdd = (function () {
     s.el.querySelector('#qa-form').addEventListener('submit', function (e) {
       e.preventDefault();
       var title = val(s.el, '[data-f="title"]');
-      if (!title) { var er = $(s.el, '#qa-err'); er.textContent = 'Nhập tên việc chen ngang.'; er.hidden = false; return; }
+      if (!title) { ui.fieldError($(s.el, '[data-f="title"]'), 'Nhập tên việc chen ngang.'); return; }
       var min = parseInt($(s.el, '[name="qa-dur"]:checked').value, 10);
       LP.store.upsert('Interruptions', { date: today, title: title, duration_min: min });
       s.close();
@@ -213,14 +215,14 @@ LP.quickAdd = (function () {
   function openQuickNote() {
     var s = ui.sheet('Ghi chú nhanh',
       '<form id="qa-form" novalidate><p class="muted">Thêm một đoạn mới vào tài liệu "Ý tưởng" trong Ghi chú.</p>' +
-      '<label class="field"><span>Nội dung</span><textarea class="textarea" data-f="text" id="qa-text" rows="5" autofocus placeholder="Gõ ý tưởng, việc cần nhớ…"></textarea></label>' +
+      '<label class="field is-req"><span>Nội dung</span><textarea class="textarea" data-f="text" id="qa-text" rows="5" autofocus placeholder="Gõ ý tưởng, việc cần nhớ…"></textarea></label>' +
       '<p class="form-error" id="qa-err" role="alert" hidden></p>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button><button type="submit" class="btn btn-primary" id="qa-save">Thêm vào Ý tưởng</button></div></form>');
     var btn = s.el.querySelector('#qa-save');
     s.el.querySelector('#qa-form').addEventListener('submit', function (e) {
       e.preventDefault();
       var text = val(s.el, '[data-f="text"]'), er = $(s.el, '#qa-err');
-      if (!text) { er.textContent = 'Nhập nội dung ghi chú.'; er.hidden = false; return; }
+      if (!text) { ui.fieldError($(s.el, '[data-f="text"]'), 'Nhập nội dung ghi chú.'); return; }
       btn.disabled = true;
       LP.p5.refreshDocs().then(function (list) {
         var doc = findIdeaDoc(list);

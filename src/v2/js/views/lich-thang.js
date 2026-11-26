@@ -30,14 +30,17 @@
       var s = LP.logic.routines.summary(d);
       if (s.total) mark = s.missed ? '<span class="mmark sot" title="' + s.missed + ' hạng mục sót">!</span>' : '<span class="mmark du" title="Đủ">' + UI.icon('check', 'ic18') + '</span>';
     }
-    var dues = LP.lich.dueMarks(d), dots = '';
-    dues.slice(0, 3).forEach(function (t) { dots += '<i class="mdot" title="' + esc(LP.lich.dueText(t)) + '"></i>'; });
-    if (dues.length > 3) dots += '<span class="mmore">+' + (dues.length - 3) + '</span>';
-    var n = LP.logic.tasks.tasksFor(d).length;
+    // Ô ghi tên việc và hạn (tối đa 2 dòng, thừa thì "+N"). Việc đã hủy không có mặt; bộ lọc "Quan trọng trở lên" áp dụng cả ở đây
+    var items = LP.lich.dayItems(d), lines = '', n = items.length, dots = '';
+    items.slice(0, 2).forEach(function (x) {
+      lines += '<span class="mline' + (x.due ? ' due' : '') + (x.done ? ' is-done' : '') + '">' + (x.due ? '<i class="mdot"></i>' : '') + esc(x.title) + '</span>';
+    });
+    if (n > 2) lines += '<span class="mmore">+' + (n - 2) + '</span>';
+    items.filter(function (x) { return x.due; }).slice(0, 3).forEach(function (x) { dots += '<i class="mdot" title="' + esc(x.title) + '"></i>'; });
     return '<button type="button" class="mcell' + (d === today ? ' is-today' : '') + (off || sun ? ' is-off' : '') + (other ? ' is-other' : '') + '" data-cell="' + d + '"' +
       ' aria-label="' + D.weekdayName(d) + ' ' + D.fmt(d) + (n ? ', ' + n + ' mục' : '') + '">' +
       '<span class="mtop"><b class="num">' + parseInt(d.slice(8), 10) + '</b>' + mark + '</span>' +
-      '<span class="mdots">' + dots + '</span><span class="mcount">' + (n ? '<b class="num">' + n + '</b> mục' : '') + '</span>' +
+      '<span class="mlines">' + lines + '</span><span class="mdots">' + dots + '</span><span class="mcount">' + (n ? '<b class="num">' + n + '</b> mục' : '') + '</span>' +
       '<span class="mbars">' + rangeBars(d, ctx.ranges) + '</span></button>';
   }
 
@@ -49,7 +52,7 @@
     };
     var heads = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(function (x) { return '<div class="mhead">' + x + '</div>'; }).join('');
     var lab = 'Tháng ' + parseInt(ms.slice(5, 7), 10) + '/' + ms.slice(0, 4);
-    el.innerHTML = '<div class="lich-bar">' + LP.lich.seg('thang') + LP.lich.nav(lab, 'Tháng trước', 'Tháng sau', 'Tháng này') + '</div>' +
+    el.innerHTML = '<div class="lich-bar">' + LP.lich.seg('thang') + LP.lich.nav(lab, 'Tháng trước', 'Tháng sau', 'Tháng này') + LP.lich.filterHtml() + '</div>' +
       '<div class="lmonth">' + heads + D.range(start, end).map(function (d) { return cell(d, ms, ctx); }).join('') + '</div>' +
       '<p class="muted lmonth-note"><span class="mmark du">' + UI.icon('check', 'ic18') + '</span> đủ · <span class="mmark sot">!</span> có sót · <i class="mdot"></i> hạn chót</p>';
   }

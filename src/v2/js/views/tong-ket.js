@@ -232,7 +232,7 @@ LP.tongKet = (function () {
       (m.missed ? '. Có <b class="num">' + m.missed + '</b> hạng mục Daily bị sót.' : '. Không sót hạng mục Daily nào.') + '</p>';
     var b1 = block('Tổng quan', 'grid', say + '<div class="mt-tiles">' +
       tile('pct', 'Hoàn thành', 'check', m.pct == null ? '–' : m.pct + '%', m.pct == null ? '' : m.pct, m.total ? m.done + '/' + m.total + ' mục' : 'Chưa có số liệu', delta(m.pct, pm.pct, '%', true)) +
-      tile('missed', 'Hạng mục bỏ sót', 'alert', String(m.missed), m.missed, m.missed ? 'trong ' + m.missedDays + ' ngày' : 'Không bỏ sót', delta(m.missed, pm.missed, '', false)) +
+      tile('missed', 'Hạng mục bỏ sót', 'alert', m.total ? String(m.missed) : '–', m.total ? m.missed : '', m.total ? (m.missed ? 'trong ' + m.missedDays + ' ngày' : 'Không bỏ sót') : 'Chưa có số liệu', m.total ? delta(m.missed, pm.missed, '', false) : '') +
       tile('adhoc', 'Ad-hoc đúng hạn', 'flag', m.ad.done + '/' + m.ad.total, m.ad.done + '/' + m.ad.total, 'còn mở ' + m.adOpen, delta(m.ad.total ? Math.round(m.ad.done * 100 / m.ad.total) : null, pm.ad.total ? Math.round(pm.ad.done * 100 / pm.ad.total) : null, '%', true)) +
       tile('int', 'Chen ngang mỗi ngày', 'bolt', m.intAvg == null ? '–' : D.fmtMin(m.intAvg), m.intAvg == null ? '' : m.intAvg, m.intCount + ' lần, ' + D.fmtMin(m.intMin) + ' tổng', delta(m.intAvg, pm.intAvg, '', false, function (v) { return D.fmtMin(v); })) +
       '</div>');
@@ -242,7 +242,7 @@ LP.tongKet = (function () {
     var missRows = top.length ? '<ol class="mt-rank">' + top.map(function (t, i) {
       return '<li><button type="button" data-miss="' + i + '"><span class="mt-rn num">' + (i + 1) + '</span><span class="mt-rt"><span class="mt-rtitle">' + LP.cute.html(t.title) + esc(t.title) + '</span><span class="muted">' + esc(t.routineName) + '</span>' +
         '<span class="bar14 mt-mini"><span class="b-warn" style="width:' + Math.round(t.count * 100 / top[0].count) + '%"></span></span></span><span class="num mt-rc">' + t.count + ' lần</span></button></li>';
-    }).join('') + '</ol>' : '<p class="mt-good">' + LP.flowers.html('sakura', 22, 1) + 'Không bỏ sót hạng mục nào trong kỳ này.</p>';
+    }).join('') + '</ol>' : (m.total ? '<p class="mt-good">' + LP.flowers.html('sakura', 22, 1) + 'Không bỏ sót hạng mục nào trong kỳ này.</p>' : '<p class="muted">Chưa có số liệu.</p>');
     var b3 = block('Daily và Ad-hoc', 'list', '<div class="mt-two">' + cell('Hạng mục hay bị sót', missRows) +
       cell('Ad-hoc có hạn trong kỳ', adTotal ? donut(a, adTotal) : empty('Chưa có việc Ad-hoc nào có hạn trong kỳ này.')) + '</div>');
 

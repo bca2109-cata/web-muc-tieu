@@ -71,8 +71,8 @@ LP.date = (function () {
   function minToTime(m) { return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
   function fmtMin(m) {
     m = Math.round(m || 0);
-    if (m < 60) return m + 'p';
-    return Math.floor(m / 60) + 'h' + (m % 60 ? pad(m % 60) : '');
+    if (m < 60) return m + ' phút';
+    return Math.floor(m / 60) + ' giờ' + (m % 60 ? ' ' + (m % 60) : '');
   }
 
   return {
