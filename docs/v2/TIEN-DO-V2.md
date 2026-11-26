@@ -43,3 +43,8 @@
 - Agenda: dải biểu đồ một trang 2 cột không đều, băng dính washi trên khối Daily, góc gấp ở Ad-hoc/Personal, tab Checklist/Toàn cảnh gạch chân.
 - `js/core/cute.js` (`LP.cute.html(tên, hình mặc định)`): 18 icon dễ thương tự chọn theo tên việc; dùng ở Agenda, Lịch tuần, Ghi chú, Mục tiêu, Thói quen, Tổng kết, Mẫu Daily.
 - Test `core` cập nhật: màu nền sáng mới; `cute.js` được phép có mã màu như `flowers.js`. Test `all` 125/125. Ảnh: `docs/v2/anh/so-tay-*.png`.
+
+## Tổng kết: biểu đồ dễ đọc (nhánh v2/tong-ket-bieu-do, người dùng duyệt 26/11/2026)
+- "Tỷ lệ hoàn thành công việc" đổi từ cột sang đường xu hướng mượt (đường cong monotone, không vọt quá 100%). Vùng xanh ≥ 80%, ngày dưới 80% có chấm và số, vạch trung bình "TB X%" (bằng ô Hoàn thành). Trục dọc bắt đầu từ mức thấp nhất làm tròn 20. Vẫn bấm từng điểm (`.mt-col`) để mở chi tiết.
+- Tổng quan có câu tóm tắt `.mt-say`; Mức quan trọng ghi tên mức và chi tiết khẩn bằng chữ.
+- Test `all` 125/125. Ảnh: `docs/v2/anh/tk-duong-*.png`.
