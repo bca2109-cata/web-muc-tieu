@@ -23,10 +23,10 @@ LP.lich = (function () {
     return LP.logic.tasks.stepsOf(task.id).some(function (s) { return s.do_date; });
   }
   function unscheduled() {
-    return LP.store.get().tasks.filter(function (t) { return t.kind === 'canhan' && t.status !== 'done' && !hasDate(t); });
+    return LP.store.get().tasks.filter(function (t) { return t.kind === 'canhan' && t.status !== 'done' && t.status !== 'cancelled' && !t.deleted && !hasDate(t); });
   }
   function dueMarks(d) {
-    return LP.store.get().tasks.filter(function (t) { return t.due_date === d && t.status !== 'done'; });
+    return LP.store.get().tasks.filter(function (t) { return t.due_date === d && t.status !== 'done' && t.status !== 'cancelled'; });
   }
   function dueText(t) { return 'Hạn ' + (t.due_time ? t.due_time + ' · ' : '· ') + t.title; }
 
