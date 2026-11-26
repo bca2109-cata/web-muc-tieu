@@ -86,19 +86,19 @@
 .chips{gap:8px}
 
 
-/* ---------- 4. Nút tròn + : nhãn dán tròn mép lượn sóng, có mẩu băng dính ---------- */
-.fab-main,.fab-main:active{width:60px;height:60px;position:relative;isolation:isolate;background:none!important;border:0!important;box-shadow:none!important;color:#7a1c43!important;
-  filter:drop-shadow(0 4px 3px var(--paper-shadow)) drop-shadow(0 10px 14px rgba(90,50,20,.12));transition:transform .25s var(--np-spring),filter .2s}
-.fab-main::before{content:"";position:absolute;inset:0;z-index:-1;clip-path:polygon(100.0% 50.0%,98.9% 52.6%,96.5% 54.9%,94.6% 57.1%,94.5% 59.5%,95.9% 62.3%,97.1% 65.3%,96.6% 67.9%,94.1% 69.6%,91.0% 70.9%,89.0% 72.5%,88.6% 75.1%,89.1% 78.4%,88.8% 81.4%,86.8% 83.1%,83.6% 83.6%,80.4% 83.8%,78.4% 85.1%,77.5% 87.8%,76.7% 91.1%,75.0% 93.3%,72.2% 93.6%,69.0% 92.7%,66.2% 92.1%,64.1% 93.3%,62.3% 95.9%,60.3% 98.4%,57.8% 99.3%,55.0% 98.0%,52.4% 96.0%,50.0% 95.0%,47.6% 96.0%,45.0% 98.0%,42.2% 99.3%,39.7% 98.4%,37.7% 95.9%,35.9% 93.3%,33.8% 92.1%,31.0% 92.7%,27.8% 93.6%,25.0% 93.3%,23.3% 91.1%,22.5% 87.8%,21.6% 85.1%,19.6% 83.8%,16.4% 83.6%,13.2% 83.1%,11.2% 81.4%,10.9% 78.4%,11.4% 75.1%,11.0% 72.5%,9.0% 70.9%,5.9% 69.6%,3.4% 67.9%,2.9% 65.3%,4.1% 62.3%,5.5% 59.5%,5.4% 57.1%,3.5% 54.9%,1.1% 52.6%,0.0% 50.0%,1.1% 47.4%,3.5% 45.1%,5.4% 42.9%,5.5% 40.5%,4.1% 37.7%,2.9% 34.7%,3.4% 32.1%,5.9% 30.4%,9.0% 29.1%,11.0% 27.5%,11.4% 24.9%,10.9% 21.6%,11.2% 18.6%,13.2% 16.9%,16.4% 16.4%,19.6% 16.2%,21.6% 14.9%,22.5% 12.2%,23.3% 8.9%,25.0% 6.7%,27.8% 6.4%,31.0% 7.3%,33.8% 7.9%,35.9% 6.7%,37.7% 4.1%,39.7% 1.6%,42.2% 0.7%,45.0% 2.0%,47.6% 4.0%,50.0% 5.0%,52.4% 4.0%,55.0% 2.0%,57.8% 0.7%,60.3% 1.6%,62.3% 4.1%,64.1% 6.7%,66.2% 7.9%,69.0% 7.3%,72.2% 6.4%,75.0% 6.7%,76.7% 8.9%,77.5% 12.2%,78.4% 14.9%,80.4% 16.2%,83.6% 16.4%,86.8% 16.9%,88.8% 18.6%,89.1% 21.6%,88.6% 24.9%,89.0% 27.5%,91.0% 29.1%,94.1% 30.4%,96.6% 32.1%,97.1% 34.7%,95.9% 37.7%,94.5% 40.5%,94.6% 42.9%,96.5% 45.1%,98.9% 47.4%);
-  background:radial-gradient(circle at 50% 50%,transparent 58%,rgba(122,28,67,.08) 59% 60%,transparent 61%),linear-gradient(#ffe3ec,#ffe3ec),var(--grain);background-blend-mode:normal,multiply,multiply;transition:background-color .15s}
-.fab-main::after{content:"";position:absolute;left:-6px;top:4px;width:30px;height:12px;transform:rotate(-38deg);background:var(--tape-y);box-shadow:0 1px 1px rgba(0,0,0,.06);pointer-events:none}
-.fab-main:hover{transform:translateY(-3px) rotate(-6deg)!important;filter:drop-shadow(0 7px 5px var(--paper-shadow)) drop-shadow(0 14px 18px rgba(90,50,20,.14))}
-.fab-main:hover::before{background:radial-gradient(circle at 50% 50%,transparent 58%,rgba(122,28,67,.08) 59% 60%,transparent 61%),linear-gradient(#ffd6e4,#ffd6e4),var(--grain)}
-.fab-main:active{transform:translateY(1px) scale(.96)!important;filter:drop-shadow(0 1px 1px var(--paper-shadow))}
-.fab-main[aria-expanded="true"]::before{background:radial-gradient(circle at 50% 50%,transparent 58%,rgba(122,28,67,.08) 59% 60%,transparent 61%),linear-gradient(#fff1b8,#fff1b8),var(--grain)}
-.fab-main[aria-expanded="true"]::after{background:var(--tape-p)}
-.fab-main .icon{width:26px;height:26px;stroke-width:2.6}
-.fab-main:focus-visible{outline:3px dashed var(--accent);outline-offset:4px}
+/* ---------- 4. Nút tròn + : bông tulip giống hoa nền, có nút + nhỏ ---------- */
+.fab-main,.fab-main:active{width:64px;height:64px;position:relative;isolation:isolate;background:none!important;border:0!important;box-shadow:none!important;color:#7a1c43!important;
+  filter:drop-shadow(0 5px 4px rgba(122,28,67,.18));transition:transform .3s var(--np-spring),filter .2s}
+.fab-main::before{content:"";position:absolute;inset:-2px;z-index:-1;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 12.5v9.5' stroke='%233fae7a' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M12 20c-3.2 0-5.3-2.1-5.8-4.3 2.7 0 4.8 1.6 5.8 4.3zM12 19c2.7-.3 4.6-2.1 5.1-3.9-2.4 0-4.5 1.4-5.1 3.9z' fill='%237fd1a8'/%3E%3Cpath d='M6.6 3.6l2.7 3.2 2.7-4.3 2.7 4.3 2.7-3.2V9a5.4 5.4 0 0 1-10.8 0z' fill='%23ffb3cf'/%3E%3Cpath d='M12 2.5l-2.7 4.3L12 12.6 14.7 6.8z' fill='%23fff' opacity='.22'/%3E%3C/svg%3E") center/100% 100% no-repeat;transform-origin:50% 92%;transition:transform .35s var(--np-spring)}
+.fab-main::after{content:none}
+.fab-main .icon{position:absolute;right:-2px;bottom:6px;width:24px!important;height:24px!important;padding:4px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px #ffd6e4,0 2px 4px rgba(122,28,67,.15);stroke-width:3.2!important;color:#7a1c43}
+.fab-main:hover{transform:translateY(-3px)!important;filter:drop-shadow(0 9px 6px rgba(122,28,67,.2))}
+.fab-main:hover::before{animation:tulip-sway .9s var(--np-spring)}
+@keyframes tulip-sway{0%{transform:rotate(0)}30%{transform:rotate(-9deg)}60%{transform:rotate(6deg)}100%{transform:rotate(0)}}
+.fab-main:active{transform:translateY(1px) scale(.95)!important}
+.fab-main[aria-expanded="true"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 12.5v9.5' stroke='%233fae7a' stroke-width='1.7' stroke-linecap='round'/%3E%3Cpath d='M12 20c-3.2 0-5.3-2.1-5.8-4.3 2.7 0 4.8 1.6 5.8 4.3zM12 19c2.7-.3 4.6-2.1 5.1-3.9-2.4 0-4.5 1.4-5.1 3.9z' fill='%237fd1a8'/%3E%3Cpath d='M6.6 3.6l2.7 3.2 2.7-4.3 2.7 4.3 2.7-3.2V9a5.4 5.4 0 0 1-10.8 0z' fill='%23ffe36b'/%3E%3Cpath d='M12 2.5l-2.7 4.3L12 12.6 14.7 6.8z' fill='%23fff' opacity='.22'/%3E%3C/svg%3E")}
+.fab-main[aria-expanded="true"] .icon{background:#fff1b8;box-shadow:0 0 0 2px #ffe08a,0 2px 4px rgba(122,28,67,.15)}
+.fab-main:focus-visible{outline:3px dashed var(--accent);outline-offset:4px;border-radius:50%}
 
 /* Bộ lọc Tồn tổng: thẻ giấy gọn hơn để nằm một hàng */
 .ag-tt-filters .chip,.ag-tt-filters .chips label{padding-left:19px!important;padding-right:9px!important;min-height:36px;font-size:13px}
