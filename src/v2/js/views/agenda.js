@@ -141,20 +141,21 @@ LP.agenda = (function () {
   /* ---------- Đầu trang ---------- */
   function headHtml() {
     var d = st.date, t = D.today(), pills = '';
-    pills += d === t ? pill('Hôm nay', 'ok') : d < t ? pill('Đã qua · chỉ xem', 'plain') : pill('Sắp tới', 'note');
+    if (d < t) pills += pill('Đã qua · chỉ xem', 'plain'); else if (d > t) pills += pill('Sắp tới', 'note');
     if (D.isDayOff(d)) pills += pill('Ngày nghỉ', 'missed'); else if (D.dow(d) === 7) pills += pill('Chủ nhật', 'plain');
     var tools = '';
     if (d !== t) tools += '<button type="button" class="chip" data-act="today">Về hôm nay</button>';
     if (!readOnly()) tools += '<button type="button" class="btn btn-soft" data-act="off">' + icon('calendar', 'ic18') + (D.isDayOff(d) ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ') + '</button>';
     var h = parseInt(D.now().slice(0, 2), 10);
     var hello = d !== t ? 'Agenda' : h < 11 ? 'Chào buổi sáng!' : h < 13 ? 'Chào buổi trưa!' : h < 18 ? 'Chào buổi chiều!' : 'Chào buổi tối!';
+    var rel = d === t ? 'Hôm nay' : d === D.add(t, -1) ? 'Hôm qua' : d === D.add(t, 1) ? 'Ngày mai' : d < t ? 'Ngày đã qua' : 'Ngày sắp tới';
     var fl = LP.flowers.html;
     return '<div class="ag-head"><section class="ag-hello" aria-label="Chào">' + helloArt(d === t ? h : 8) + fl('daisy', 44, 2, 'ag-hello-f1') + fl('sakura', 26, 8, 'ag-hello-f2') +
-      '<h1>' + hello + '</h1><div class="ag-hrow"><div class="ag-date">' +
-      '<button type="button" class="icon-btn" data-act="prev" aria-label="Ngày trước">' + icon('back') + '</button>' +
-      '<span class="ag-daylabel">' + esc(dateLabel(d)) + '</span>' +
-      '<button type="button" class="icon-btn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ag-flip') + '</button></div>' +
-      '<div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div></section></div>';
+      '<h1>' + hello + '</h1><div class="ag-date" role="group" aria-label="Chọn ngày xem">' +
+      '<button type="button" class="ag-daybtn" data-act="prev" aria-label="Ngày trước">' + icon('back', 'ic18') + '</button>' +
+      '<span class="ag-daypick"><span class="ag-dayrel">' + rel + '</span><span class="ag-daylabel">' + esc(dateLabel(d)) + '</span></span>' +
+      '<button type="button" class="ag-daybtn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ic18 ag-flip') + '</button></div></section>' +
+      (pills || tools ? '<div class="ag-sub"><div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>' : '') + '</div>';
   }
 
   /* ---------- Dải 3 biểu đồ ---------- */
