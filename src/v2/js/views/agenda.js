@@ -139,7 +139,7 @@ LP.agenda = (function () {
   }
 
   /* ---------- Đầu trang ---------- */
-  function headHtml() {
+  function headHtml(extra) {
     var d = st.date, t = D.today(), pills = '';
     if (d < t) pills += pill('Đã qua · chỉ xem', 'plain'); else if (d > t) pills += pill('Sắp tới', 'note');
     if (D.isDayOff(d)) pills += pill('Ngày nghỉ', 'missed'); else if (D.dow(d) === 7) pills += pill('Chủ nhật', 'plain');
@@ -460,7 +460,7 @@ LP.agenda = (function () {
     var y = window.scrollY, ae = document.activeElement, fk = ae && ae.getAttribute ? ae.getAttribute('data-fk') : null;
     var cards = buildCards(R.runsFor(st.date), leftEntries()), tasks = T.tasksFor(st.date), habits = habitsDue();
     st.lastNow = D.now();
-    st.el.innerHTML = '<div class="ag">' + headHtml() + pendingLine() + chartsHtml(cards, tasks) + switchHtml() +
+    st.el.innerHTML = '<div class="ag">' + headHtml(pendingLine()) + chartsHtml(cards, tasks) + switchHtml() +
       (st.mode === 'overview' ? overviewHtml(cards, tasks, habits) : checklistHtml(cards, tasks, habits)) + '</div>';
     if (fk) {
       var cand = st.el.querySelectorAll('[data-fk]');

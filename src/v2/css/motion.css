@@ -1,0 +1,93 @@
+/* V2 · Chuyển động và cảm giác bấm (Đợt 4). Nạp sau cùng. Tắt hết khi người dùng chọn giảm chuyển động. */
+:root{--spring:cubic-bezier(.34,1.56,.64,1);--ease:cubic-bezier(.22,1,.36,1);--edge:color-mix(in srgb,var(--accent) 22%,var(--line))}
+
+/* ---- Nút: kiểu "nút kẹo" có gờ dưới, nhấc lên khi rê, lún xuống khi bấm ---- */
+.btn,.chip,.round,.ag-daybtn,.icon-btn,.seg label,.chips label,.chip-toggle,.tab{
+  transition:transform .18s var(--spring),box-shadow .18s var(--ease),background-color .2s,border-color .2s,color .2s;
+  will-change:transform}
+.btn{border-radius:14px;border:1.5px solid var(--edge);box-shadow:0 3px 0 var(--edge)}
+.btn-soft{border-color:var(--edge);color:var(--accent-deep);background:var(--surface)}
+.btn-primary{border-color:transparent}
+.btn:hover:not(:disabled),.chip:hover,.round:hover,.ag-daybtn:hover,.seg label:hover,.chips label:hover,.chip-toggle:hover{transform:translateY(-2px)}
+.btn:hover:not(:disabled){box-shadow:0 5px 0 var(--edge)}
+.btn-primary:hover:not(:disabled){box-shadow:0 6px 0 var(--accent-deep),0 10px 18px color-mix(in srgb,var(--accent) 22%,transparent)}
+.btn:active:not(:disabled),.chip:active,.round:active,.ag-daybtn:active,.icon-btn:active,.seg label:active,.chips label:active,.chip-toggle:active,.tab:active{transform:translateY(2px) scale(.97);transition-duration:.06s}
+.btn:active:not(:disabled){box-shadow:0 1px 0 var(--edge)}
+.btn-primary:active:not(:disabled){box-shadow:0 1px 0 var(--accent-deep)}
+.chip,.ag-daybtn,.round{box-shadow:0 2px 0 var(--edge)}
+.chip:hover,.ag-daybtn:hover,.round:hover{box-shadow:0 4px 0 var(--edge)}
+.chip:active,.ag-daybtn:active,.round:active{box-shadow:0 0 0 var(--edge)}
+.icon-btn:hover{background:var(--accent-soft);color:var(--accent-deep)}
+.ag-daybtn:hover .icon{animation:nudge .5s var(--spring)}
+.ag-daybtn[data-act="prev"]:hover .icon{animation-name:nudge-l}
+@keyframes nudge{0%{transform:translateX(0)}40%{transform:translateX(3px)}100%{transform:translateX(0)}}
+@keyframes nudge-l{0%{transform:translateX(0)}40%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+
+/* Tab: chữ và icon nảy nhẹ khi được chọn */
+.tab:hover:not(.is-active){transform:translateY(-2px);border-color:var(--edge)}
+.tab.is-active>.icon{animation:tab-in .45s var(--spring)}
+@keyframes tab-in{0%{transform:scale(.6) rotate(-12deg)}100%{transform:none}}
+
+/* Nút chọn nhiều (seg, chips): đổi trạng thái có nảy */
+.seg label:has(input:checked),.chips label:has(input:checked),.chip-toggle:has(input:checked){animation:pick .3s var(--spring)}
+@keyframes pick{0%{transform:scale(.92)}100%{transform:none}}
+
+/* Nút tròn + : xoay khi mở menu, phồng khi rê */
+.fab-main{transition:transform .25s var(--spring),box-shadow .2s}
+.fab-main:hover{transform:translateY(-2px) scale(1.06)}
+.fab-main[aria-expanded="true"] .icon{transform:rotate(135deg)}
+.fab-main .icon{transition:transform .3s var(--spring)}
+.fab-menu:not([hidden]){animation:menu-in .26s var(--spring);transform-origin:bottom right}
+.fab-menu:not([hidden]) .fab-item{animation:item-in .3s var(--ease) both}
+.fab-menu .fab-item:nth-child(2){animation-delay:.03s}.fab-menu .fab-item:nth-child(3){animation-delay:.06s}.fab-menu .fab-item:nth-child(4){animation-delay:.09s}
+.fab-item{transition:background-color .15s,transform .18s var(--spring)}
+.fab-item:hover{transform:translateX(-4px)}
+@keyframes menu-in{0%{opacity:0;transform:scale(.85) translateY(10px)}100%{opacity:1;transform:none}}
+@keyframes item-in{0%{opacity:0;transform:translateX(10px)}100%{opacity:1;transform:none}}
+
+/* ---- Tick tròn: lún khi bấm, dấu tick tự vẽ ---- */
+.tick .dot{transition:background .2s,border-color .2s,transform .2s var(--spring)}
+.tick:hover:not(:disabled) .dot{transform:scale(1.08);border-color:var(--accent)}
+.tick:active:not(:disabled) .dot{transform:scale(.86);transition-duration:.06s}
+.tick[aria-pressed="true"] .dot .icon path,.is-done>.tick .dot .icon path{stroke-dasharray:24;stroke-dashoffset:0;animation:draw .35s var(--ease) both}
+@keyframes draw{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+.lp-burst{position:fixed;z-index:80;pointer-events:none;width:0;height:0}
+.lp-burst i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50% 0 50% 50%;background:var(--c);animation:burst .7s var(--ease) forwards}
+@keyframes burst{0%{transform:translate(0,0) rotate(0) scale(.6);opacity:1}100%{transform:translate(var(--x),var(--y)) rotate(var(--r)) scale(1);opacity:0}}
+
+/* ---- Màn hiện ra: các khối trồi lên lần lượt ---- */
+.lp-enter>*,.lp-enter .ag>*{animation:rise .5s var(--ease) both}
+.lp-enter .ag>:nth-child(2){animation-delay:.05s}.lp-enter .ag>:nth-child(3){animation-delay:.1s}.lp-enter .ag>:nth-child(4){animation-delay:.15s}.lp-enter .ag>:nth-child(n+5){animation-delay:.2s}
+@keyframes rise{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+
+
+/* ---- Biểu đồ tự chạy khi hiện ---- */
+.lp-enter .ag-ring .fg{animation:ring-in 1s var(--ease) .15s both}
+@keyframes ring-in{from{stroke-dasharray:0 999}}
+.lp-enter .bar14>span{animation:grow-x .8s var(--ease) .2s both;transform-origin:left}
+@keyframes grow-x{from{transform:scaleX(0)}}
+.lp-enter .ag-col-bar{animation:grow-y .7s var(--spring) both;transform-origin:bottom}
+.lp-enter .ag-col:nth-child(2) .ag-col-bar{animation-delay:.05s}.lp-enter .ag-col:nth-child(3) .ag-col-bar{animation-delay:.1s}.lp-enter .ag-col:nth-child(4) .ag-col-bar{animation-delay:.15s}.lp-enter .ag-col:nth-child(5) .ag-col-bar{animation-delay:.2s}.lp-enter .ag-col:nth-child(6) .ag-col-bar{animation-delay:.25s}
+@keyframes grow-y{from{transform:scaleY(0)}}
+
+/* ---- Khung chào: mặt trời / mặt trăng thở nhẹ, lắc khi rê ---- */
+.ag-hello .ag-sun{animation:bob 4.5s ease-in-out infinite}
+.ag-hello:hover .ag-sun{animation:bob 4.5s ease-in-out infinite,wiggle .6s var(--spring)}
+.ag-hello .ag-hello-f1,.ag-hello .ag-hello-f2{animation:spin-slow 14s linear infinite}
+@keyframes bob{0%,100%{translate:0 -50%}50%{translate:0 calc(-50% - 5px)}}
+@keyframes wiggle{0%{rotate:0deg}30%{rotate:-10deg}60%{rotate:8deg}100%{rotate:0deg}}
+@keyframes spin-slow{to{rotate:360deg}}
+.ag-hello .ag-sun{transform:none;translate:0 -50%}
+
+/* Hộp thoại: bật ra có độ nảy */
+.modal{animation:modal-in .32s var(--spring)}
+@keyframes modal-in{0%{opacity:0;transform:translateY(16px) scale(.96)}100%{opacity:1;transform:none}}
+
+/* Trái tim đập nhẹ khi rê dòng việc */
+.ag-item:hover .hearts{animation:beat .6s var(--spring)}
+@keyframes beat{0%,100%{transform:scale(1)}40%{transform:scale(1.2)}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .btn:hover,.chip:hover,.round:hover,.tab:hover,.fab-main:hover{transform:none!important}
+}
