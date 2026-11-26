@@ -114,3 +114,4 @@
 @media (prefers-reduced-motion:reduce){
   .btn-primary,.btn-soft,.btn,.chip,.chips label,.chip-toggle,.tab,.fab-main,.seg label,.ag-switch>.chip,.lich-seg>button,.mt-switch>button{transition:none!important}
 }
+@media (max-width:899px){.fab-main,.fab-main:active{width:52px;height:68px}.fab-main .icon{width:17px!important;height:17px!important;margin:-8.5px 0 0 -8.5px}}
