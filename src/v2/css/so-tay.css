@@ -72,14 +72,11 @@ main h1,main h2,.card h2,.page-head h1,.lich-title{font-family:var(--hand);font-
 .pill-undone{border-color:var(--dash)}
 .ag-pill-due{border:1.5px dashed var(--accent)}
 
-/* Nút "+": tờ giấy note màu bơ, nghiêng nhẹ, có mẩu băng dính hồng. Mở menu thì giấy thẳng lại. */
-.fab-main,.fab-main:active{position:relative;width:60px;height:60px;border-radius:14px;background:var(--butter);border:2px solid var(--pr-bar);color:var(--ink);
-  transform:rotate(-6deg);box-shadow:0 5px 12px color-mix(in srgb,var(--ink) 14%,transparent)}
-.fab-main::before{content:"";position:absolute;top:-10px;left:50%;width:32px;height:14px;margin-left:-16px;border-radius:2px;
-  background:color-mix(in srgb,var(--petal-1) 60%,transparent);transform:rotate(5deg)}
-.fab-main:hover{transform:rotate(-2deg) translateY(-2px) scale(1.05)}
-.fab-main[aria-expanded="true"]{transform:rotate(0)}
-.fab-main .icon{width:28px;height:28px;stroke-width:2.8}
-@media (prefers-reduced-motion:reduce){.fab-main:hover{transform:rotate(-6deg)!important}}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fab-main{color:var(--ink)}}
-:root[data-theme="dark"] .fab-main{color:var(--ink)}
+/* Nút "+": bông hoa 5 cánh, nhụy vàng có dấu +. Mở menu thì hoa xoay. */
+.fab-main,.fab-main:active,.fab-main:hover{width:64px;height:64px;padding:0;border:0;background:transparent;box-shadow:none}
+.fab-flower{width:64px;height:64px;display:block;filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--ink) 18%,transparent));transition:transform .4s var(--spring)}
+.fab-main:hover .fab-flower{transform:rotate(18deg) scale(1.06)}
+.fab-main[aria-expanded="true"] .fab-flower{transform:rotate(72deg)}
+.fab-main[aria-expanded="true"] .fab-plus{transform:rotate(-27deg);transform-origin:40px 40px}
+.fab-main:focus-visible{border-radius:99px}
+@media (prefers-reduced-motion:reduce){.fab-flower,.fab-main:hover .fab-flower,.fab-main[aria-expanded="true"] .fab-flower{transition:none;transform:none}}
