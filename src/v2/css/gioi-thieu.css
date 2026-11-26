@@ -12,7 +12,7 @@ a:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offse
 /* 1. Đầu trang */
 .gt-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:32px;align-items:center}
 .gt-kicker{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--accent-deep);letter-spacing:.3px}
-.gt-hero h1{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(34px,6vw,60px);line-height:1.08;letter-spacing:-.5px;text-wrap:balance}
+.gt-hero h1{margin:0;font-family:var(--hand,var(--display));font-weight:700;font-size:clamp(34px,6vw,60px);line-height:1.08;letter-spacing:-.5px;text-wrap:balance}
 .gt-lead{margin:16px 0 0;max-width:34em;font-size:clamp(17px,2vw,19px);font-weight:500;color:var(--muted)}
 .gt-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
 .gt-big{min-height:52px;padding:10px 24px;font-size:17px}
@@ -20,7 +20,7 @@ a:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offse
 .gt-hello{position:relative;border-radius:28px;padding:28px 24px;min-height:220px;display:flex;flex-direction:column;justify-content:flex-end;
   background:linear-gradient(135deg,var(--hello-1) 0%,var(--hello-2) 60%,var(--hello-3) 100%);box-shadow:var(--shadow);transform:rotate(1.2deg)}
 .gt-sun{position:absolute;right:20px;top:20px}
-.gt-hello-h{margin:0;font-family:var(--display);font-weight:700;font-size:28px}
+.gt-hello-h{margin:0;font-family:var(--hand,var(--display));font-weight:700;font-size:28px}
 .gt-hello-s{margin:4px 0 0;display:inline-flex;align-self:flex-start;padding:4px 12px;border-radius:14px;font-size:14px;font-weight:700;color:var(--accent-deep);background:color-mix(in srgb,var(--surface) 70%,transparent)}
 
 /* 2. Ảnh app */
@@ -30,7 +30,7 @@ a:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offse
 .gt-shot .gt-frame{padding:10px;border-radius:28px}
 
 /* Khối nội dung */
-.gt-sec h2,.gt-end h2{margin:0 0 20px;font-family:var(--display);font-weight:700;font-size:clamp(24px,3.4vw,34px);line-height:1.2}
+.gt-sec h2,.gt-end h2{margin:0 0 20px;font-family:var(--hand,var(--display));font-weight:700;font-size:clamp(24px,3.4vw,34px);line-height:1.2}
 .gt-sec h3{margin:0 0 6px;font-family:var(--display);font-weight:700;font-size:18px}
 .gt-sec p{margin:0;font-weight:500;color:var(--muted)}
 .gt-tabs,.gt-steps,.gt-facts{list-style:none;margin:0;padding:0;display:grid;gap:16px}
