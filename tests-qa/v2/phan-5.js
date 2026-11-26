@@ -294,6 +294,8 @@ module.exports = async function (h) {
     A.ok((await page.locator('#cd-ping-res').innerText()).length > 5);
     // Lưu rồi tải lại vẫn giữ
     await page.evaluate(() => LP.store.flush());
+    await page.waitForFunction(() => LP.store.syncState().pending === 0);
+    await page.waitForTimeout(150);
     await page.reload(); await page.waitForFunction(() => LP.ready === true);
     A.strictEqual(await page.evaluate(() => LP.store.setting('quota_work')), '240');
     h.noErrors(page);
