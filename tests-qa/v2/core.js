@@ -233,7 +233,8 @@ module.exports = async function (h) {
     const p = await h.open({ w: 390, scheme: 'dark' });
     A.strictEqual(await p.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(34, 21, 31)');
     const p2 = await h.open({ w: 390, scheme: 'light' });
-    A.strictEqual(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(255, 250, 252)');
+    // 26/11: người dùng muốn nền sáng nhạt hơn web cũ, ghi đè ở css/so-tay.css (--bg:#fffdfe)
+    A.strictEqual(await p2.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(255, 253, 254)');
   });
 
   await h.test('Khung ở 390px và 1280px, sáng và tối: không cuộn ngang, không lỗi JS', async () => {

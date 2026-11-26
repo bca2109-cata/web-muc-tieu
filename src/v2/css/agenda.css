@@ -252,3 +252,12 @@
 /* Ad-hoc, Personal: góc trang gấp */
 .ag-tasks::after{content:"";position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:0 0 20px 0;
   background:linear-gradient(135deg,var(--line) 50%,var(--bg) 50%);pointer-events:none}
+
+/* Icon dễ thương trước tên việc và tên khối */
+.ag-cute{display:inline-flex;vertical-align:-7px;margin-right:8px;flex:none}
+.ag-cute svg{display:block;width:28px;height:28px}
+.ag h2 .ag-cute svg{width:32px;height:32px}
+.ag h2 .ag-cute{vertical-align:-8px}
+.ag-item.is-done .ag-cute,.ag-tl-row.is-done .ag-cute{opacity:.55}
+.ag-habits .chip .ag-cute{margin-right:2px;vertical-align:middle}
+.ag-habits .chip .ag-cute svg{width:24px;height:24px}
