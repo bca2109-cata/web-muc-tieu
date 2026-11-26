@@ -20,3 +20,10 @@
 - (Phần 4) Tỷ lệ hoàn thành ở Tổng kết hiện chỉ tính Daily vì `LP.stats.completion` chưa gồm Ad-hoc/Personal. Spec ghi "tính cả công việc cố định và việc": cần quyết định có gộp việc vào tỷ lệ không (xem YEU-CAU-CHUNG P4-1).
 - Hiện ô "Quỹ giờ" ở Agenda theo cả hai quỹ (ad-hoc và buổi tối). Cần Phần 1 xác nhận cách hiện.
 - Thông báo nhắc việc (`LP.notify`) mới có khung. Nối lịch nhắc cụ thể nếu người dùng muốn.
+
+## Ghép Đợt 2 (nhánh v2/ghep-dot-2)
+- Xử lý YEU-CAU-CHUNG P3-1, P3-2, P3-4, P4-1 (xong). P3-3 và P4-2 để Phần 5.
+- P4-1 (người dùng chọn gộp 26/11): tỷ lệ hoàn thành = Daily + Ad-hoc + Personal, mỗi mục tính một, cùng cách với vòng "Hoàn thành hôm nay" ở Agenda. `LP.stats.completion` thêm `rDone/rTotal`, `tDone/tTotal`; thêm `LP.stats.taskCounts(d)`. Agenda (cột 6 ngày) và Tổng kết dùng cùng số. Tổng kết: ô "Hoàn thành", chú thích biểu đồ và chi tiết ngày đã cập nhật; "bỏ sót" vẫn chỉ của Daily.
+- P3-1/2/4: mock trả cả tài liệu đã xóa, `LP.api.docDelete`, `docSave` kiểm `base_updated_at`/`force`; `LP.ui.docSheet` mở bản có định dạng (`LP.views.openDoc`); bỏ các hàm `tam_` trong ghi-chu.js.
+- Test `all`: 106/106 đạt ở lượt agent `v2-kiem-thu` (một lần, không lỗi Cao/Trung bình). Lưu ý: chạy `all` đôi khi 1-2 test hết thời gian chờ ngẫu nhiên do trình duyệt sập; chạy riêng từng phần thì đạt. Test phan-1 sửa theo tài liệu hiện đủ có định dạng.
+- Còn lại mức Thấp: hàm `tam_overdueStep` trong agenda.js (Phần 1) chưa chuyển vào core.

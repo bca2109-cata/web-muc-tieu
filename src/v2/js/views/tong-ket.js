@@ -181,13 +181,13 @@ LP.tongKet = (function () {
       '<button type="button" class="icon-btn mt-next" data-nav="1" aria-label="Kỳ sau"' + (canNext ? '' : ' disabled') + '>' + icon('back') + '</button></div>';
 
     var b1 = block('Tổng quan', 'grid', '<div class="mt-tiles">' +
-      tile('pct', 'Hoàn thành Daily', 'check', m.pct == null ? '–' : m.pct + '%', m.pct == null ? '' : m.pct, m.total ? m.done + '/' + m.total + ' hạng mục' : 'Chưa có số liệu', delta(m.pct, pm.pct, '%', true)) +
+      tile('pct', 'Hoàn thành', 'check', m.pct == null ? '–' : m.pct + '%', m.pct == null ? '' : m.pct, m.total ? m.done + '/' + m.total + ' mục' : 'Chưa có số liệu', delta(m.pct, pm.pct, '%', true)) +
       tile('missed', 'Hạng mục bỏ sót', 'alert', String(m.missed), m.missed, m.missed ? 'trong ' + m.missedDays + ' ngày' : 'Không bỏ sót', delta(m.missed, pm.missed, '', false)) +
       tile('adhoc', 'Ad-hoc đúng hạn', 'flag', m.ad.done + '/' + m.ad.total, m.ad.done + '/' + m.ad.total, 'còn mở ' + m.adOpen, delta(m.ad.total ? Math.round(m.ad.done * 100 / m.ad.total) : null, pm.ad.total ? Math.round(pm.ad.done * 100 / pm.ad.total) : null, '%', true)) +
       tile('int', 'Chen ngang mỗi ngày', 'bolt', m.intAvg == null ? '–' : D.fmtMin(m.intAvg), m.intAvg == null ? '' : m.intAvg, m.intCount + ' lần, ' + D.fmtMin(m.intMin) + ' tổng', delta(m.intAvg, pm.intAvg, '', false, function (v) { return D.fmtMin(v); })) +
       '</div>');
 
-    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Tính trên Daily, theo ' + (cols[0] && cols[0].day ? 'từng ngày' : 'từng tháng') + '. Ngày chưa tới và ngày nghỉ không có cột.</p>' + barChart(cols, r));
+    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Tính trên Daily, Ad-hoc và Personal (mỗi việc hoặc bước có ngày làm tính một mục, cùng cách với vòng Hoàn thành hôm nay ở Agenda), theo ' + (cols[0] && cols[0].day ? 'từng ngày' : 'từng tháng') + '. Ngày chưa tới và ngày nghỉ không có cột.</p>' + barChart(cols, r));
 
     var missRows = top.length ? '<ol class="mt-rank">' + top.map(function (t, i) {
       return '<li><button type="button" data-miss="' + i + '"><span class="mt-rn num">' + (i + 1) + '</span><span class="mt-rt"><span class="mt-rtitle">' + esc(t.title) + '</span><span class="muted">' + esc(t.routineName) + '</span>' +
@@ -235,13 +235,14 @@ LP.tongKet = (function () {
     });
   }
   function openCol(c) {
-    var html = '<p class="mt-dsum"><span class="num">' + c.done + '</span> xong, <span class="num">' + c.missed + '</span> bỏ sót trên <span class="num">' + c.total + '</span> hạng mục' + (c.pct == null ? '' : ' (<span class="num">' + c.pct + '%</span>)') + '.</p>';
+    var html = '<p class="mt-dsum"><span class="num">' + c.done + '</span> xong, <span class="num">' + c.missed + '</span> bỏ sót trên <span class="num">' + c.total + '</span> mục' + (c.pct == null ? '' : ' (<span class="num">' + c.pct + '%</span>)') + '.</p>';
     if (c.day) {
       var rows = [];
       LP.logic.routines.runsFor(c.from).forEach(function (run) {
         run.items.forEach(function (m) { rows.push([m.item.title, m.routine.name, STATUS[m.status] || ['Bỏ sót', 'missed']]); });
       });
-      html += listHtml(rows, 'Không có hạng mục Daily nào trong ngày này.');
+      LP.logic.tasks.tasksFor(c.from).forEach(function (x) { rows.push([x.title, x.task.kind === 'canhan' ? 'Personal' : 'Ad-hoc', x.done ? ['Xong', 'ok'] : ['Chưa xong', 'plain']]); });
+      html += listHtml(rows, 'Không có mục nào trong ngày này.');
     } else {
       var t = LP.stats.missedTop(c.from, c.to, 8);
       html += '<h3 class="mt-h3">Hay bị sót trong tháng</h3>' + listHtml(t.map(function (x) { return [x.title, x.routineName, [x.count + ' lần', 'missed']]; }), 'Không bỏ sót hạng mục nào.');

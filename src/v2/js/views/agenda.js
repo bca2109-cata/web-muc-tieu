@@ -145,7 +145,7 @@ LP.agenda = (function () {
     return days.map(function (d) {
       var pct = null;
       if (d < today) pct = ST.completion(d, d, 'day')[0].pct;
-      else if (d === today) { var s = R.summary(d), den = s.total - s.skipped; pct = den ? Math.round(s.done * 100 / den) : null; }
+      else if (d === today) { var s = R.summary(d), t = ST.taskCounts(d), den = s.total - s.skipped + t.total; pct = den ? Math.round((s.done + t.done) * 100 / den) : null; }
       return { d: d, pct: pct, now: d >= today };
     });
   }
@@ -680,5 +680,5 @@ LP.agenda = (function () {
   LP.router.on('route', function () { checkNotify(); });
 
   LP.router.register('agenda', { title: 'Agenda', mount: mount, unmount: unmount });
-  return { checkNotify: checkNotify, docSection: LP.ui.docSection };
+  return { checkNotify: checkNotify };
 })();

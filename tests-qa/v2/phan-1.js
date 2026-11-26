@@ -653,7 +653,8 @@ module.exports = async function (h) {
     await page.locator('[data-act="doc"]').first().click();
     await wait(page);
     const sheet = await tx(page, '.modal');
-    A.ok(sheet.includes('Hướng dẫn chia số AI Class') && sheet.includes('Lấy số liệu từ LMS lúc 8h') && !sheet.includes('Chia đều theo tổ'), sheet.slice(0, 120));
+    A.ok(sheet.includes('Hướng dẫn chia số AI Class') && sheet.includes('Lấy số liệu từ LMS lúc 8h'), sheet.slice(0, 120)); // tài liệu hiện đủ có định dạng (P3-2), mục được cuộn tới và tô sáng
+    A.ok((await page.locator('.modal .is-hit').count()) >= 1, 'mục gắn không được tô sáng');
     const p2 = await h.open({ query: q('2026-12-02', '09:00'), hash: '#/agenda' });
     A.ok((await tx(p2, '.ag-runs')).includes('còn 2 ngày'), (await tx(p2, '.ag-runs')).slice(0, 200));
   });

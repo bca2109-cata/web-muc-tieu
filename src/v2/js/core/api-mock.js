@@ -55,7 +55,8 @@ LP.createMockApi = function (opts) {
       return Promise.resolve({ id: id });
     },
     docsIndex: function () {
-      return Promise.resolve(LP.util.clone(open().docs.filter(function (r) { return !LP.util.truthy(r.deleted); })));
+      // Trả cả tài liệu đã xóa (deleted: TRUE) như Docs.gs, để Thùng rác có danh sách sau khi tải lại
+      return Promise.resolve(LP.util.clone(open().docs));
     },
     docGet: function (id) {
       var d = open(), r = d.docs.filter(function (x) { return x.id === id; })[0];
@@ -69,10 +70,23 @@ LP.createMockApi = function (opts) {
       var now = LP.date.stamp();
       row.updated_at = now; if (!row.created_at) row.created_at = now;
       var i = d.docs.findIndex(function (r) { return r.id === row.id; });
+      // Chống ghi đè: bản đang lưu mới hơn bản người soạn thấy, trừ khi force
+      if (i >= 0 && !row.force && row.base_updated_at && String(d.docs[i].updated_at) > String(row.base_updated_at)) {
+        return Promise.resolve({ conflict: true, server: Object.assign(LP.util.clone(d.docs[i]), { content: (d.docContents || {})[row.id] || '' }) });
+      }
+      delete row.base_updated_at; delete row.force;
+      row.updated_at = now;
       if (i >= 0) d.docs[i] = row; else d.docs.push(row);
       (d.docContents || (d.docContents = {}))[row.id] = content;
       persist();
       return Promise.resolve(Object.assign({}, row, { content: content }));
+    },
+    // Xóa mềm tài liệu (vào Thùng rác). Khôi phục bằng docSave với deleted rỗng
+    docDelete: function (id) {
+      var d = open(), r = d.docs.filter(function (x) { return x.id === id; })[0];
+      if (!r) return Promise.reject(new Error('Không thấy tài liệu'));
+      r.deleted = 'TRUE'; r.updated_at = LP.date.stamp(); persist();
+      return Promise.resolve({ id: id });
     },
     ping: function () { return Promise.resolve({}); },
     // Chỉ dùng khi thử: đặt lại dữ liệu mẫu
