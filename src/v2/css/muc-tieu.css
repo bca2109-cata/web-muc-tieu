@@ -168,3 +168,29 @@
   .mt-sbar{max-width:calc(100% - 130px)}
   .mt-plabel{font-size:18px}
 }
+
+/* ---------- Tổng kết: biểu đồ dễ đọc hơn (26/11) ---------- */
+.mt-say{margin:0 0 14px;font-size:16px;font-weight:600;line-height:1.5}
+.mt-say b{font-weight:700}
+.mt-say .mt-up{color:var(--ok)}.mt-say .mt-down{color:var(--warn)}
+.mt-area{height:180px;border-bottom-color:var(--track)}
+.mt-yax{height:180px}
+.mt-l100{border-top:1px solid var(--track);opacity:1}
+.mt-l80{border-top:2px dashed var(--dash);opacity:1}
+.mt-lavg{position:absolute;left:0;right:0;border-top:2px solid var(--ink);opacity:.55;pointer-events:none;z-index:1}
+.mt-lavg span{position:absolute;right:0;top:-20px;padding:0 6px;border-radius:6px;background:var(--surface);font-size:11px;font-weight:700;color:var(--ink);opacity:1}
+.mt-sw-avg{height:2px;border-radius:0;background:var(--ink);opacity:.55}
+.mt-bar-c{left:16%;right:16%;border-radius:4px 4px 0 0}
+.mt-col:hover .mt-bar-c{filter:brightness(.95)}
+.mt-cl{font-weight:700}
+/* Mức quan trọng: tên mức, thanh, chi tiết khẩn bằng chữ */
+.mt-slab{display:flex;flex-direction:column;gap:0;width:108px}
+.mt-sname{font-size:12px;font-weight:700;color:var(--muted)}
+.mt-sbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.mt-sbar{max-width:100%;height:16px}
+.mt-sbar>span{min-width:10px}
+.mt-sparts{font-size:12px;font-weight:600;color:var(--muted)}
+.mt-stack .is-zero .mt-slab .heart,.mt-stack .is-zero .mt-stot{opacity:.5}
+/* Vòng Ad-hoc: chú giải gọn, số cạnh chữ */
+.mt-dleg{flex:0 1 220px}
+@media (max-width:620px){.mt-slab{width:84px}}

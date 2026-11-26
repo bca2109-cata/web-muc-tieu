@@ -126,15 +126,21 @@ LP.tongKet = (function () {
         (has && showNum ? '<span class="mt-cv num" style="bottom:calc(' + Math.min(100, c.pct) + '% + 2px)">' + c.pct + '</span>' : '') + '</button>';
     }).join('');
     var labs = cols.map(function (c, i) {
-      var show = n <= 12 || i % every === 0;
+      var show = n <= 12 || (c.day ? c.wd === 'T2' : i % every === 0);
       return '<span class="mt-cl' + (c.now ? ' is-now' : '') + '">' + (show ? (c.day && n <= 12 ? '<span class="mt-wd">' + c.wd + '</span>' : '') + '<span class="num">' + c.label + '</span>' : '') + '</span>';
     }).join('');
     var withPct = cols.filter(function (c) { return c.pct != null; }), hi = null, lo = null;
     withPct.forEach(function (c) { if (!hi || c.pct > hi.pct) hi = c; if (!lo || c.pct < lo.pct) lo = c; });
+    // Trung bình cả kỳ = tổng mục xong / tổng mục (khớp ô Hoàn thành ở Tổng quan)
+    var sumD = withPct.reduce(function (t, c) { return t + (c.done || 0); }, 0), sumT = withPct.reduce(function (t, c) { return t + (c.total || 0); }, 0);
+    var avg = sumT ? Math.round(sumD * 100 / sumT) : null;
+    var under = withPct.filter(function (c) { return c.pct < 80; }).length, unitW = cols[0] && cols[0].day ? 'ngày' : 'tháng';
+    var avgLine = avg == null ? '' : '<i class="mt-lavg" style="bottom:' + avg + '%"><span class="num">TB ' + avg + '%</span></i>';
     return '<div class="mt-chart" data-n="' + n + '" data-axis="' + (cols[0] && cols[0].day ? 'ngay' : 'thang') + '"><div class="mt-yax"><span>100%</span><span>80%</span><span>0</span></div>' +
-      '<div class="mt-plot"><div class="mt-area"><i class="mt-l100"></i><i class="mt-l80"></i>' + area + '</div><div class="mt-labs">' + labs + '</div></div></div>' +
-      '<div class="mt-legend"><span><i class="mt-sw b-ok"></i>100%</span><span><i class="mt-sw b-pr"></i>80–99%</span><span><i class="mt-sw b-warn"></i>Dưới 80%</span><span><i class="mt-sw b-now"></i>Kỳ đang diễn ra</span></div>' +
-      (hi ? '<p class="muted mt-sum">Cao nhất <span class="num">' + hi.pct + '%</span> (' + esc(hi.label) + '), thấp nhất <span class="num">' + lo.pct + '%</span> (' + esc(lo.label) + '). Bấm một cột để xem chi tiết.</p>' : '');
+      '<div class="mt-plot"><div class="mt-area"><i class="mt-l100"></i><i class="mt-l80"></i>' + avgLine + area + '</div><div class="mt-labs">' + labs + '</div></div></div>' +
+      '<div class="mt-legend"><span><i class="mt-sw b-ok"></i>100%</span><span><i class="mt-sw b-pr"></i>80–99%</span><span><i class="mt-sw b-warn"></i>Dưới 80%</span><span><i class="mt-sw b-now"></i>Kỳ đang diễn ra</span><span><i class="mt-sw mt-sw-avg"></i>Trung bình</span></div>' +
+      (hi ? '<p class="muted mt-sum">Tốt nhất <span class="num">' + esc(hi.label) + '</span> (<span class="num">' + hi.pct + '%</span>), thấp nhất <span class="num">' + esc(lo.label) + '</span> (<span class="num">' + lo.pct + '%</span>). ' +
+        (under ? '<span class="num">' + under + '</span> ' + unitW + ' dưới mốc 80%.' : 'Không ' + unitW + ' nào dưới mốc 80%.') + ' Bấm một cột để xem chi tiết.</p>' : '');
   }
 
   function donut(a, total) {
@@ -180,14 +186,18 @@ LP.tongKet = (function () {
       '<div class="mt-period" aria-live="polite"><span class="mt-plabel">' + esc(r.label) + '</span>' + (isNow ? ' ' + LP.ui.pill('Đang diễn ra', 'note') : '') + '</div>' +
       '<button type="button" class="icon-btn mt-next" data-nav="1" aria-label="Kỳ sau"' + (canNext ? '' : ' disabled') + '>' + icon('back') + '</button></div>';
 
-    var b1 = block('Tổng quan', 'grid', '<div class="mt-tiles">' +
+    var per = { week: 'Tuần', month: 'Tháng', quarter: 'Quý', year: 'Năm' }[st.unit] || 'Kỳ';
+    var say = m.pct == null ? '' : '<p class="mt-say">' + per + ' này bạn xong <b class="num">' + m.pct + '%</b> việc' +
+      (pm.pct == null ? '' : m.pct > pm.pct ? ', <b class="mt-up">tốt hơn</b> kỳ trước' : m.pct < pm.pct ? ', <b class="mt-down">thấp hơn</b> kỳ trước' : ', bằng kỳ trước') +
+      (m.missed ? '. Có <b class="num">' + m.missed + '</b> hạng mục Daily bị sót.' : '. Không sót hạng mục Daily nào.') + '</p>';
+    var b1 = block('Tổng quan', 'grid', say + '<div class="mt-tiles">' +
       tile('pct', 'Hoàn thành', 'check', m.pct == null ? '–' : m.pct + '%', m.pct == null ? '' : m.pct, m.total ? m.done + '/' + m.total + ' mục' : 'Chưa có số liệu', delta(m.pct, pm.pct, '%', true)) +
       tile('missed', 'Hạng mục bỏ sót', 'alert', String(m.missed), m.missed, m.missed ? 'trong ' + m.missedDays + ' ngày' : 'Không bỏ sót', delta(m.missed, pm.missed, '', false)) +
       tile('adhoc', 'Ad-hoc đúng hạn', 'flag', m.ad.done + '/' + m.ad.total, m.ad.done + '/' + m.ad.total, 'còn mở ' + m.adOpen, delta(m.ad.total ? Math.round(m.ad.done * 100 / m.ad.total) : null, pm.ad.total ? Math.round(pm.ad.done * 100 / pm.ad.total) : null, '%', true)) +
       tile('int', 'Chen ngang mỗi ngày', 'bolt', m.intAvg == null ? '–' : D.fmtMin(m.intAvg), m.intAvg == null ? '' : m.intAvg, m.intCount + ' lần, ' + D.fmtMin(m.intMin) + ' tổng', delta(m.intAvg, pm.intAvg, '', false, function (v) { return D.fmtMin(v); })) +
       '</div>');
 
-    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Tính trên Daily, Ad-hoc và Personal (mỗi việc hoặc bước có ngày làm tính một mục, cùng cách với vòng Hoàn thành hôm nay ở Agenda), theo ' + (cols[0] && cols[0].day ? 'từng ngày' : 'từng tháng') + '. Ngày chưa tới và ngày nghỉ không có cột.</p>' + barChart(cols, r));
+    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Mỗi cột là một ' + (cols[0] && cols[0].day ? 'ngày' : 'tháng') + ': phần trăm việc đã xong (Daily, Ad-hoc, Personal). Cột càng cao càng tốt; vạch đứt là mốc 80%.</p>' + barChart(cols, r));
 
     var missRows = top.length ? '<ol class="mt-rank">' + top.map(function (t, i) {
       return '<li><button type="button" data-miss="' + i + '"><span class="mt-rn num">' + (i + 1) + '</span><span class="mt-rt"><span class="mt-rtitle">' + LP.cute.html(t.title) + esc(t.title) + '</span><span class="muted">' + esc(t.routineName) + '</span>' +
@@ -198,12 +208,14 @@ LP.tongKet = (function () {
 
     var maxL = Math.max.apply(null, lv.map(function (x) { return x.total; }).concat([1]));
     var stack = lv.some(function (x) { return x.total; }) ? '<ul class="mt-stack">' + lv.map(function (x) {
-      return '<li><button type="button" data-lvl="' + x.level + '"><span class="mt-slab">' + LP.ui.importance(x.level) + '</span>' +
+      var parts = [['rat-khan', 'rất khẩn'], ['khan', 'khẩn'], ['binh-thuong', 'bình thường']].filter(function (k) { return x[k[0]]; }).map(function (k) { return x[k[0]] + ' ' + k[1]; }).join(' · ');
+      return '<li><button type="button" data-lvl="' + x.level + '"' + (x.total ? '' : ' class="is-zero"') + '><span class="mt-slab">' + LP.ui.importance(x.level) + '<span class="mt-sname">' + ['Bình thường', 'Quan trọng', 'Rất quan trọng'][x.level - 1] + '</span></span>' +
+        '<span class="mt-sbody">' +
         '<span class="bar14 mt-sbar" style="width:' + (x.total ? Math.max(14, Math.round(x.total * 100 / maxL)) : 0) + '%">' +
-        ['rat-khan', 'khan', 'binh-thuong'].map(function (k) { return x[k] ? '<span class="mt-u-' + k + '" style="flex:' + x[k] + '" title="' + x[k] + '">' + (x[k] >= 1 ? '<span class="num">' + x[k] + '</span>' : '') + '</span>' : ''; }).join('') +
-        '</span><span class="num mt-stot">' + x.total + ' việc</span></button></li>';
+        ['rat-khan', 'khan', 'binh-thuong'].map(function (k) { return x[k] ? '<span class="mt-u-' + k + '" style="flex:' + x[k] + '" title="' + x[k] + '"></span>' : ''; }).join('') +
+        '</span><span class="mt-sparts">' + (parts || 'Chưa có việc') + '</span></span><span class="num mt-stot">' + x.total + ' việc</span></button></li>';
     }).join('') + '</ul><div class="mt-legend"><span><i class="mt-sw mt-u-rat-khan"></i>Rất khẩn</span><span><i class="mt-sw mt-u-khan"></i>Khẩn</span><span><i class="mt-sw mt-u-binh-thuong"></i>Bình thường</span></div>' +
-      '<p class="muted mt-sum">Gồm Ad-hoc và Personal. Mức khẩn tính tại ngày làm.</p>' : empty('Chưa có việc nào trong kỳ này.');
+      '<p class="muted mt-sum">Ad-hoc và Personal trong kỳ, xếp theo số trái tim. Màu cho biết độ gấp so với hạn chót.</p>' : empty('Chưa có việc nào trong kỳ này.');
     var maxI = Math.max.apply(null, ib.map(function (x) { return x.minutes; }).concat([1]));
     var intRows = ib.some(function (x) { return x.count; }) ? '<ul class="mt-hbars">' + ib.map(function (x, i) {
       var lab = st.unit === 'week' ? D.weekdayShort(x.from) + ' ' + D.fmt(x.from) : st.unit === 'month' ? D.fmt(x.from) + (x.to !== x.from ? '–' + D.fmt(x.to) : '') : x.label;
