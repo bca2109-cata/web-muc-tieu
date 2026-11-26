@@ -51,3 +51,32 @@ main h1,main h2,.card h2,.page-head h1,.lich-title{font-family:var(--hand);font-
 .lblk.lstrip .lp-cute{display:none}
 .mt-sticker .lp-cute{margin:0}
 .mt-sticker .lp-cute svg{width:30px;height:30px}
+
+/* Nhãn viền nét đứt nhiều màu (26/11): nút phụ, nút nhắc, nhãn trạng thái.
+   Mỗi nhãn có nền pastel + viền đứt cùng tông; chữ luôn màu mực hoặc màu đậm để đọc rõ. */
+.btn-soft,.ag-pending .chip,.chip[data-act="doc"]{--tag-bg:var(--accent-soft);--tag-bd:var(--petal-2);--tag-ink:var(--accent-deep)}
+.btn-soft:nth-of-type(3n+2){--tag-bg:var(--mint);--tag-bd:var(--ok-bar);--tag-ink:var(--ok)}
+.btn-soft:nth-of-type(3n+3){--tag-bg:var(--sky);--tag-bd:var(--petal-13);--tag-ink:var(--ink)}
+.btn-soft[data-act="off"]{--tag-bg:var(--sky);--tag-bd:var(--petal-13);--tag-ink:var(--ink)}
+.ag-pending .chip{--tag-bg:var(--butter);--tag-bd:var(--pr-bar);--tag-ink:var(--ink)}
+.chip[data-act="doc"]{--tag-bg:var(--mint);--tag-bd:var(--ok-bar);--tag-ink:var(--ok)}
+.btn-soft,.ag-pending .chip,.chip[data-act="doc"]{background:var(--tag-bg);border:2px dashed var(--tag-bd);color:var(--tag-ink)}
+.btn-soft:hover:not(:disabled),.ag-pending .chip:hover,.chip[data-act="doc"]:hover{background:var(--tag-bg);border-style:solid;filter:saturate(1.15)}
+.btn-soft .icon,.chip[data-act="doc"] .icon{color:currentColor}
+.ag-pending{border:2px dashed var(--pr-bar);background:var(--butter)}
+
+.pill{border:1.5px dashed var(--dash);font-weight:700}
+.pill-late{border-color:var(--warn-bar)}
+.pill-missed{border-color:var(--pr-bar)}
+.pill-ok{border-color:var(--ok-bar)}
+.pill-undone{border-color:var(--dash)}
+.ag-pill-due{border:1.5px dashed var(--accent)}
+
+/* Nút "+": bông hoa 5 cánh, nhụy vàng có dấu +. Mở menu thì hoa xoay. */
+.fab-main,.fab-main:active,.fab-main:hover{width:64px;height:64px;padding:0;border:0;background:transparent;box-shadow:none}
+.fab-flower{width:64px;height:64px;display:block;filter:drop-shadow(0 4px 8px color-mix(in srgb,var(--ink) 18%,transparent));transition:transform .4s var(--spring)}
+.fab-main:hover .fab-flower{transform:rotate(18deg) scale(1.06)}
+.fab-main[aria-expanded="true"] .fab-flower{transform:rotate(72deg)}
+.fab-main[aria-expanded="true"] .fab-plus{transform:rotate(-27deg);transform-origin:40px 40px}
+.fab-main:focus-visible{border-radius:99px}
+@media (prefers-reduced-motion:reduce){.fab-flower,.fab-main:hover .fab-flower,.fab-main[aria-expanded="true"] .fab-flower{transition:none;transform:none}}
