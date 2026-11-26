@@ -155,7 +155,7 @@ LP.agenda = (function () {
       '<button type="button" class="ag-daybtn" data-act="prev" aria-label="Ngày trước">' + icon('back', 'ic18') + '</button>' +
       '<span class="ag-daypick"><span class="ag-dayrel">' + rel + '</span><span class="ag-daylabel">' + esc(dateLabel(d)) + '</span></span>' +
       '<button type="button" class="ag-daybtn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ic18 ag-flip') + '</button></div></section>' +
-      (pills || tools ? '<div class="ag-sub"><div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>' : '') + '</div>';
+      '<div class="ag-side">' + (pills || tools ? '<div class="ag-sub"><div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>' : '') + (extra || '') + '</div></div>';
   }
 
   /* ---------- Dải 3 biểu đồ ---------- */

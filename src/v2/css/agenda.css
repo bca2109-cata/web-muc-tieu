@@ -3,10 +3,13 @@
 .ag>*{min-width:0}
 
 /* Đầu trang: ngày, ‹ ›, nhãn, công cụ */
-.ag-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
-.ag-sub{flex:0 1 auto;margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.ag-head{display:grid;grid-template-columns:minmax(0,1fr);gap:12px 20px;align-items:center}
+@media (min-width:900px){.ag-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.ag-side{display:flex;flex-direction:column;gap:10px;min-width:0;align-self:center}
+.ag-side:empty{display:none}
+.ag-sub{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px 12px}
 .ag-date{position:relative;z-index:1;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}
-.ag-hello{flex:1 1 420px;position:relative;overflow:hidden;border-radius:24px;padding:14px 96px 14px 18px;background:linear-gradient(135deg,var(--hello-1) 0%,var(--hello-2) 60%,var(--hello-3) 100%);box-shadow:var(--shadow)}
+.ag-hello{position:relative;min-height:112px;overflow:hidden;border-radius:24px;padding:14px 96px 14px 18px;background:linear-gradient(135deg,var(--hello-1) 0%,var(--hello-2) 60%,var(--hello-3) 100%);box-shadow:var(--shadow)}
 .ag-hello h1{margin:0 0 6px;font-size:22px;font-weight:700}
 .ag-daybtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:99px;border:2px solid var(--accent-soft);background:var(--surface);color:var(--accent)}
 .ag-daypick{display:flex;flex-direction:column;min-height:44px;justify-content:center;padding:2px 12px;border-radius:16px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
