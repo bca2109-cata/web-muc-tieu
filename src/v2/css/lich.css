@@ -6,7 +6,7 @@
 .lich-seg button{min-height:40px;padding:4px 18px;border:0;border-radius:99px;background:transparent;font-weight:800;color:var(--muted)}
 .lich-seg button.on{background:var(--surface);color:var(--accent-deep);box-shadow:var(--shadow)}
 .lich-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.lich-title{font-family:'Baloo 2',sans-serif;font-size:20px;margin:0 0 0 4px}
+.lich-title{font-family:var(--display);font-size:20px;margin:0 0 0 4px}
 .lich-filter{margin-left:auto}
 .lich-field{display:flex;flex-direction:column;gap:6px;font-weight:700}
 .lich-field input{min-height:44px;border:2px solid var(--line);border-radius:14px;padding:6px 12px;background:var(--surface);color:var(--text)}
@@ -21,7 +21,7 @@
 .lday.drop-ok{border-color:var(--ok-bar);background:var(--accent-soft)}
 .lday.drop-no{border-color:var(--warn-bar);cursor:not-allowed}
 .lday-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
-.lday-dow{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px}
+.lday-dow{font-family:var(--display);font-weight:800;font-size:16px}
 .lday-fixed{border:0;background:var(--plain-bg);border-radius:12px;padding:6px 10px;min-height:36px;text-align:left;font-size:13px;font-weight:700;color:var(--muted)}
 .lday.is-off .lday-fixed{background:var(--surface)}
 .lday-fixed .miss{color:var(--warn);font-weight:800}

@@ -25,8 +25,8 @@
   --petal-6:#ffb08a; --petal-7:#f7a1e0; --petal-8:#ffb3cf; --petal-9:#b8a4ff;
   --petal-10:#8fe3c0; --petal-11:#ff8a8a; --petal-12:#ffe36b; --petal-13:#8fb8ff;
   --shadow:0 4px 0 var(--line),0 10px 24px color-mix(in srgb,var(--accent) 7%,transparent);
-  --font:'Nunito',system-ui,sans-serif;
-  --display:'Baloo 2','Nunito',system-ui,sans-serif;
+  --font:'Quicksand',system-ui,sans-serif;
+  --display:'Quicksand',system-ui,sans-serif;
 }
 
 /* Chế độ tối (DESIGN.md): theo cài đặt máy, hoặc chọn tay trong Cài đặt (lưu trên từng thiết bị) */

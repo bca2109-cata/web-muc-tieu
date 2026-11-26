@@ -5,7 +5,14 @@
 /* Đầu trang: ngày, ‹ ›, nhãn, công cụ */
 .ag-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .ag-date{display:flex;align-items:center;gap:4px;min-width:0}
-.ag-date h1{margin:0;min-width:0;font-size:clamp(20px,5.6vw,28px);font-weight:800;overflow-wrap:anywhere}
+.ag-daylabel{min-width:0;font-weight:700;font-size:15px;padding:0 6px;overflow-wrap:anywhere}
+.ag-hello{position:relative;flex:1 1 100%;overflow:hidden;border-radius:24px;padding:10px 96px 10px 18px;background:linear-gradient(135deg,var(--hello-1) 0%,var(--hello-2) 60%,var(--hello-3) 100%);box-shadow:var(--shadow)}
+.ag-hello h1{margin:0 0 2px;font-size:22px;font-weight:700}
+.ag-hrow{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.ag-hrow .ag-tools{margin-left:0}
+.ag-hello .ag-sun{position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+.ag-hello .ag-hello-f1{position:absolute;right:68px;bottom:-16px;opacity:.9}
+.ag-hello .ag-hello-f2{position:absolute;right:56px;top:4px;opacity:.9}
 .ag-flip{transform:scaleX(-1)}
 .ag-pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ag-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:auto}
