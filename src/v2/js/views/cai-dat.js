@@ -206,7 +206,7 @@ LP.views = LP.views || {};
     box.innerHTML = '<p class="muted cd-none">Đang tải…</p>';
     var cancelled = LP.store.get().tasks.filter(function (t) { return t.status === 'cancelled'; });
     Promise.all([
-      LP.api.load({ from: '', to: '' }).then(function (d) { return d; }, function () { return { tasks: [], taskSteps: [] }; }),
+      LP.api.load({ from: '', to: '', deleted: true }).then(function (d) { return d; }, function () { return { tasks: [], taskSteps: [] }; }),
       LP.api.docsIndex().then(function (r) { return r || []; }, function () { return []; })
     ]).then(function (res) {
       if (!S) return;
