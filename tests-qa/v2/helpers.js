@@ -31,7 +31,7 @@ function create() {
 
     async open(opts) {
       opts = opts || {};
-      const ctx = await browser.newContext({ viewport: { width: opts.w || 1280, height: opts.h || 900 }, colorScheme: opts.scheme || 'light', deviceScaleFactor: 1 });
+      const ctx = await browser.newContext({ viewport: { width: opts.w || 1280, height: opts.h || 900 }, colorScheme: opts.scheme || 'light', deviceScaleFactor: 1, reducedMotion: opts.motion ? 'no-preference' : 'reduce' });
       contexts.push(ctx);
       const page = await ctx.newPage();
       page.errors = [];

@@ -263,7 +263,7 @@ module.exports = async function (h) {
     A.ok(line.includes(n + ' mục tồn chưa xử lý') && line.includes('Xử lý'), line);
     A.strictEqual(await page.evaluate(() => LP.logic.routines.leftovers('2026-11-25', { all: true, pending: true }).some(e => (e.since || e.fromDate) < '2026-11-01')), true, 'phải gồm cả mục cũ hơn một tháng');
     A.strictEqual(await page.locator('.ag-old, .ag-left').count(), 0);
-    A.ok(await page.evaluate(() => { const a = document.querySelector('.ag-head'), p = document.querySelector('.ag-pending'), c = document.querySelector('.ag-charts'); return a.nextElementSibling === p && p.nextElementSibling === c; }), 'thứ tự đầu trang');
+    A.ok(await page.evaluate(() => { const a = document.querySelector('.ag-head'), p = document.querySelector('.ag-pending'), c = document.querySelector('.ag-charts'); return a.contains(p) && !!p.closest('.ag-side') && a.nextElementSibling === c; }), 'thứ tự đầu trang (dòng mảnh nằm trong cột phải cạnh khung chào)');
     await page.click('.ag-pending [data-act="ton"]');
     await wait(page);
     A.strictEqual(await page.locator('.ag-tt').count(), 1);

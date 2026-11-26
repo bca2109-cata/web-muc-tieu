@@ -117,19 +117,45 @@ LP.agenda = (function () {
     return parts.join(' · ');
   }
 
+  /* Hình khung chào theo buổi (nét như App.views.sun của web cũ, màu cố định) */
+  function helloArt(h) {
+    var sun = '<g stroke="#f2a33a" stroke-width="6" stroke-linecap="round"><path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l8 8M89 89l8 8M23 97l8-8M89 31l8-8"/></g>' +
+      '<circle cx="60" cy="60" r="28" fill="#ffd56b" stroke="#f2a33a" stroke-width="4"/>' +
+      '<circle cx="51" cy="57" r="3.4" fill="#3b2235"/><circle cx="69" cy="57" r="3.4" fill="#3b2235"/>' +
+      '<path d="M52 67q8 7 16 0" stroke="#3b2235" stroke-width="3.4" fill="none" stroke-linecap="round"/>' +
+      '<circle cx="45" cy="66" r="4" fill="#ff9fb8" opacity=".8"/><circle cx="75" cy="66" r="4" fill="#ff9fb8" opacity=".8"/>';
+    var body;
+    if (h >= 18) {
+      body = '<path d="M72 22a38 38 0 1 0 28 62 32 32 0 0 1-28-62z" fill="#ffe9a6" stroke="#f2c14e" stroke-width="4" stroke-linejoin="round"/>' +
+        '<circle cx="62" cy="60" r="2.8" fill="#3b2235"/><path d="M52 70q7 6 14 0" stroke="#3b2235" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+        '<circle cx="50" cy="68" r="3.6" fill="#ff9fb8" opacity=".8"/>' +
+        '<g fill="#ffd56b" stroke="#f2a33a" stroke-width="2" stroke-linejoin="round"><path d="M100 22l2.6 5.6 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6-4.4-4.2 6-.8z"/>' +
+        '<path d="M22 30l1.8 3.8 4.2.6-3 2.9.7 4.1-3.7-2-3.7 2 .7-4.1-3-2.9 4.2-.6z"/><path d="M96 92l1.6 3.4 3.8.5-2.7 2.6.6 3.7-3.3-1.8-3.3 1.8.6-3.7-2.7-2.6 3.8-.5z"/></g>';
+    } else {
+      body = sun;
+      if (h >= 13) body += '<g fill="#fff" stroke="#bfe3f5" stroke-width="3" stroke-linejoin="round"><path d="M70 100a12 12 0 0 1 2-23 16 16 0 0 1 30 4 10 10 0 0 1-2 19z"/></g>';
+    }
+    return '<svg class="ag-sun" width="76" height="76" viewBox="0 0 120 120" aria-hidden="true" focusable="false">' + body + '</svg>';
+  }
+
   /* ---------- Đầu trang ---------- */
-  function headHtml() {
+  function headHtml(extra) {
     var d = st.date, t = D.today(), pills = '';
-    pills += d === t ? pill('Hôm nay', 'ok') : d < t ? pill('Đã qua · chỉ xem', 'plain') : pill('Sắp tới', 'note');
+    if (d < t) pills += pill('Đã qua · chỉ xem', 'plain'); else if (d > t) pills += pill('Sắp tới', 'note');
     if (D.isDayOff(d)) pills += pill('Ngày nghỉ', 'missed'); else if (D.dow(d) === 7) pills += pill('Chủ nhật', 'plain');
     var tools = '';
     if (d !== t) tools += '<button type="button" class="chip" data-act="today">Về hôm nay</button>';
     if (!readOnly()) tools += '<button type="button" class="btn btn-soft" data-act="off">' + icon('calendar', 'ic18') + (D.isDayOff(d) ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ') + '</button>';
-    return '<div class="ag-head"><div class="ag-date">' +
-      '<button type="button" class="icon-btn" data-act="prev" aria-label="Ngày trước">' + icon('back') + '</button>' +
-      '<h1>' + esc(dateLabel(d)) + '</h1>' +
-      '<button type="button" class="icon-btn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ag-flip') + '</button></div>' +
-      '<div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>';
+    var h = parseInt(D.now().slice(0, 2), 10);
+    var hello = d !== t ? 'Agenda' : h < 11 ? 'Chào buổi sáng!' : h < 13 ? 'Chào buổi trưa!' : h < 18 ? 'Chào buổi chiều!' : 'Chào buổi tối!';
+    var rel = d === t ? 'Hôm nay' : d === D.add(t, -1) ? 'Hôm qua' : d === D.add(t, 1) ? 'Ngày mai' : d < t ? 'Ngày đã qua' : 'Ngày sắp tới';
+    var fl = LP.flowers.html;
+    return '<div class="ag-head"><section class="ag-hello" aria-label="Chào">' + helloArt(d === t ? h : 8) + fl('daisy', 44, 2, 'ag-hello-f1') + fl('sakura', 26, 8, 'ag-hello-f2') +
+      '<h1>' + hello + '</h1><div class="ag-date" role="group" aria-label="Chọn ngày xem">' +
+      '<button type="button" class="ag-daybtn" data-act="prev" aria-label="Ngày trước">' + icon('back', 'ic18') + '</button>' +
+      '<span class="ag-daypick"><span class="ag-dayrel">' + rel + '</span><span class="ag-daylabel">' + esc(dateLabel(d)) + '</span></span>' +
+      '<button type="button" class="ag-daybtn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ic18 ag-flip') + '</button></div></section>' +
+      '<div class="ag-side">' + (pills || tools ? '<div class="ag-sub"><div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>' : '') + (extra || '') + '</div></div>';
   }
 
   /* ---------- Dải 3 biểu đồ ---------- */
@@ -434,7 +460,7 @@ LP.agenda = (function () {
     var y = window.scrollY, ae = document.activeElement, fk = ae && ae.getAttribute ? ae.getAttribute('data-fk') : null;
     var cards = buildCards(R.runsFor(st.date), leftEntries()), tasks = T.tasksFor(st.date), habits = habitsDue();
     st.lastNow = D.now();
-    st.el.innerHTML = '<div class="ag">' + headHtml() + pendingLine() + chartsHtml(cards, tasks) + switchHtml() +
+    st.el.innerHTML = '<div class="ag">' + headHtml(pendingLine()) + chartsHtml(cards, tasks) + switchHtml() +
       (st.mode === 'overview' ? overviewHtml(cards, tasks, habits) : checklistHtml(cards, tasks, habits)) + '</div>';
     if (fk) {
       var cand = st.el.querySelectorAll('[data-fk]');

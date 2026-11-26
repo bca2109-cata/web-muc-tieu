@@ -82,7 +82,7 @@ LP.flowers = (function () {
   }
   /* ---------- Hoa rơi (GĐ7) ----------
      Cài đặt "Hoa rơi" (lưu trên thiết bị): on = luôn rơi (mặc định), system = theo "giảm chuyển động" của máy, off = tắt.
-     Khoảng 90 bông trên màn rộng, 45 bông khi rộng dưới 620px. Lớp xa nhỏ, mờ, chậm; lớp gần to, rõ, nhanh.
+     Khoảng 180 bông trên màn rộng, 90 bông khi rộng dưới 620px (gấp đôi, Phần 6). Lớp xa nhỏ, mờ, chậm; lớp gần to, rõ, nhanh.
      Khoảng 30% là cánh hoa rời xoay lật 3D. Chỉ dùng transform và opacity. */
   var FALL_KEY = 'lp_fall';
   function getFall() {
@@ -98,7 +98,7 @@ LP.flowers = (function () {
 
   var builtCount = 0;
   function buildFall(layer) {
-    var count = window.innerWidth < 620 ? 45 : 90;
+    var count = window.innerWidth < 620 ? 90 : 180;
     if (layer.childNodes.length && builtCount === count) return;
     builtCount = count;
     var seed = 7, rnd = function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }, out = '';

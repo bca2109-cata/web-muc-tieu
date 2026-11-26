@@ -3,9 +3,21 @@
 .ag>*{min-width:0}
 
 /* Đầu trang: ngày, ‹ ›, nhãn, công cụ */
-.ag-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-.ag-date{display:flex;align-items:center;gap:4px;min-width:0}
-.ag-date h1{margin:0;min-width:0;font-size:clamp(20px,5.6vw,28px);font-weight:800;overflow-wrap:anywhere}
+.ag-head{display:grid;grid-template-columns:minmax(0,1fr);gap:12px 20px;align-items:center}
+@media (min-width:900px){.ag-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.ag-side{display:flex;flex-direction:column;gap:10px;min-width:0;align-self:center}
+.ag-side:empty{display:none}
+.ag-sub{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px 12px}
+.ag-date{position:relative;z-index:1;display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0}
+.ag-hello{position:relative;min-height:112px;overflow:hidden;border-radius:24px;padding:14px 96px 14px 18px;background:linear-gradient(135deg,var(--hello-1) 0%,var(--hello-2) 60%,var(--hello-3) 100%);box-shadow:var(--shadow)}
+.ag-hello h1{margin:0 0 6px;font-size:22px;font-weight:700}
+.ag-daybtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:99px;border:2px solid var(--accent-soft);background:var(--surface);color:var(--accent)}
+.ag-daypick{display:flex;flex-direction:column;min-height:44px;justify-content:center;padding:2px 12px;border-radius:16px;background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.ag-dayrel{font-size:12px;font-weight:700;color:var(--accent-deep)}
+.ag-daylabel{font-size:14px;font-weight:700}
+.ag-hello .ag-sun{position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+.ag-hello .ag-hello-f1{position:absolute;right:68px;bottom:-16px;opacity:.9}
+.ag-hello .ag-hello-f2{position:absolute;right:56px;top:4px;opacity:.9}
 .ag-flip{transform:scaleX(-1)}
 .ag-pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ag-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:auto}
@@ -189,3 +201,5 @@
 .ag-tt-line .ag-sub{font-size:13px}
 .ag-tt-btns{display:flex;gap:4px;flex:none;flex-wrap:wrap;margin-left:auto;padding-bottom:4px}
 .ag-tt-b{min-height:36px;padding:2px 10px;font-size:13px;border-width:1.5px}
+.ag-daylabel{white-space:nowrap}
+@media (max-width:430px){.ag-hello{padding-right:76px}.ag-hello .ag-sun{width:60px;height:60px;right:8px}.ag-daypick{padding:2px 8px}}

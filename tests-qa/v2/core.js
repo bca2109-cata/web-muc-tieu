@@ -9,8 +9,10 @@ module.exports = async function (h) {
 
   /* ---------- Tĩnh: tệp ---------- */
   await h.test('tokens.css chép nguyên 3 khối :root từ web cũ', async () => {
-    const old = read('src/css/style.css').split('\n').slice(1, 76).join('\n').trim();
-    const nw = read('src/v2/css/tokens.css').split('\n').slice(1).join('\n').trim();
+    // Phần 6: V2 đổi phông sang Quicksand, nên chỉ hai dòng --font và --display được khác web cũ
+    const skip = l => !/^\s*--(font|display):/.test(l);
+    const old = read('src/css/style.css').split('\n').slice(1, 76).filter(skip).join('\n').trim();
+    const nw = read('src/v2/css/tokens.css').split('\n').slice(1).filter(skip).join('\n').trim();
     A.strictEqual(nw, old);
   });
   await h.test('Code.gs V2 có đủ 14 sheet, action load/save/remove và mã bí mật', async () => {
