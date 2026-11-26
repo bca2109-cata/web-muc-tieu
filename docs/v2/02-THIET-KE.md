@@ -1,6 +1,6 @@
 # V2 · Thiết kế: giữ phong cách web cũ
 
-> **Kiểu dáng lấy từ web cũ** (`DESIGN.md` ở gốc repo và `src/css/style.css`): sổ kế hoạch dễ thương, hồng pastel, nhiều hoa, giấy note, font **Baloo 2 + Nunito**.
+> **Kiểu dáng lấy từ web cũ** (`DESIGN.md` ở gốc repo và `src/css/style.css`): sổ kế hoạch dễ thương, hồng pastel, nhiều hoa, giấy note. **Phông: Quicksand** (đổi từ Baloo 2 + Nunito theo quyết định 26/11, xem `phan-6-tinh-chinh-giao-dien.md`).
 >
 > **Bố cục lấy từ canvas phác thảo "Life Planner V2 — phác thảo"** (https://claude.ai/artifact/KzpiFeTbNRVVjE5a2JZZJS): canvas chỉ để tham khảo **vị trí các khối**. Màu và font trên canvas **không** dùng.
 >
@@ -10,7 +10,7 @@
 | Thứ | Lấy từ | Cách làm |
 |---|---|---|
 | Bộ màu sáng/tối và biến | `src/css/style.css` khối `:root` | Chép **nguyên văn** vào `src/v2/css/tokens.css`. Không đổi tên biến |
-| Font | `src/index.html` | Baloo 2 (600/700/800) cho tiêu đề và logo, Nunito (400–800) cho chữ thường. Số dùng `tabular-nums`, đậm 800 |
+| Font | `src/v2/index.html` | **Quicksand** 500/600/700 cho mọi chữ. Số dùng `tabular-nums`, đậm 700 |
 | Logo "LIFE PLANNER" | `.logo-text` có gạch lượn sóng hồng | Giữ |
 | Hoa rơi nền, hoa bung khi xong | `src/js/flowers.js` | Giữ, kèm cài đặt Hoa rơi (Luôn bật / Theo máy / Tắt) |
 | Icon | `src/js/ui.js` | Giữ nét tròn, stroke 2, lưới 24. Không emoji |
@@ -30,12 +30,12 @@
 
 ## 3. Thành phần V2 dựng theo kiểu cũ
 - **Khối "Từ hôm qua" / "Việc tồn":** giấy note màu `--butter`, xoay rất nhẹ, có bông hoa ghim, như tờ note Top 3 cũ. Mỗi dòng có pill nguồn (Trễ = `--q1`, Bỏ sót = `--pr`, Chưa xong = `--plain-bg`). Nhãn "Tồn từ dd/mm" trên dòng thời gian dùng nền `--butter`, viền `--dash`.
-- **Khối công việc cố định:** thẻ bo 22px. Đầu thẻ có tên (Baloo 2, 19px), x/y, link "Ghi chú". Hạng mục dùng nút tick tròn 30px của web cũ, giờ bên trái (Nunito 800, tabular). Hạng mục **đến giờ** có nền `--accent-soft`. **Trễ** có chữ `--q1` và pill "Trễ N phút". Khối xong thì thu gọn, kèm 2 bông hoa nhỏ.
+- **Khối công việc cố định:** thẻ bo 22px. Đầu thẻ có tên (Quicksand 700, 17px), x/y, link "Ghi chú". Hạng mục dùng nút tick tròn 30px của web cũ, giờ bên trái (Quicksand 700, tabular). Hạng mục **đến giờ** có nền `--accent-soft`. **Trễ** có chữ `--q1` và pill "Trễ N phút". Khối xong thì thu gọn, kèm 2 bông hoa nhỏ.
 - **Dòng thời gian (Toàn cảnh):** nhãn đoạn SÁNG/CHIỀU/TỐI theo kiểu tiêu đề khối. Vạch "Bây giờ" là đường 2px `--accent`. Giờ dự kiến "~8:15" dùng màu `--muted` nhạt.
 - **Lịch tuần:** cột ngày là thẻ, đầu cột có thanh quỹ theo kiểu "Quỹ giờ" của GĐ6 (cao 14px, sọc chéo cho đột xuất, vạch mốc quỹ). Thẻ việc có vạch màu trái theo nhóm (`--work`, `--study`, `--health`).
 - **Lịch tháng:** ô ngày bo 14px. Ngày đủ có tick `--ok`, ngày có sót có dấu "!" `--warn`, chấm hạn chót `--q1-bar`.
-- **Ghi chú:** khung soạn trên nền `--surface`, tiêu đề tài liệu Baloo 2. Khung chú ý dùng `--butter`. Mục lục là các dòng có gạch trái `--line`, mục đang đọc có gạch `--accent`.
-- **Tổng kết:** 5 khối có tiêu đề Baloo 2. Biểu đồ cột, vòng, thanh chồng vẽ SVG theo kiểu "Biểu đồ tổng quan" của GĐ5 (thanh 14px, khe 2px, bo 4px, chú thích dưới thanh).
+- **Ghi chú:** khung soạn trên nền `--surface`, tiêu đề tài liệu Quicksand 700. Khung chú ý dùng `--butter`. Mục lục là các dòng có gạch trái `--line`, mục đang đọc có gạch `--accent`.
+- **Tổng kết:** 5 khối có tiêu đề Quicksand 700. Biểu đồ cột, vòng, thanh chồng vẽ SVG theo kiểu "Biểu đồ tổng quan" của GĐ5 (thanh 14px, khe 2px, bo 4px, chú thích dưới thanh).
 - **Nút "+":** viên thuốc nổi 52px góc phải dưới, nằm trên thanh tab ở điện thoại. Menu gồm Thêm Ad-hoc / Thêm Personal / Ghi chú nhanh / Chen ngang (xem tên gọi ở mục 6b của hợp đồng).
 
 ## 4. Bố cục và cỡ
