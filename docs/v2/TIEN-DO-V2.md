@@ -27,3 +27,13 @@
 - P3-1/2/4: mock trả cả tài liệu đã xóa, `LP.api.docDelete`, `docSave` kiểm `base_updated_at`/`force`; `LP.ui.docSheet` mở bản có định dạng (`LP.views.openDoc`); bỏ các hàm `tam_` trong ghi-chu.js.
 - Test `all`: 106/106 đạt ở lượt agent `v2-kiem-thu` (một lần, không lỗi Cao/Trung bình). Lưu ý: chạy `all` đôi khi 1-2 test hết thời gian chờ ngẫu nhiên do trình duyệt sập; chạy riêng từng phần thì đạt. Test phan-1 sửa theo tài liệu hiện đủ có định dạng.
 - Còn lại mức Thấp: hàm `tam_overdueStep` trong agenda.js (Phần 1) chưa chuyển vào core.
+
+## Phần 6 · Tinh chỉnh giao diện (nhánh v2/phan-6, đã merge 26/11/2026)
+- Phông Quicksand 500/600/700 cho toàn V2, bỏ Baloo 2 và Nunito. Test `core` (tokens) bỏ qua 2 dòng `--font`, `--display`.
+- Khung chào `.ag-hello` ở Agenda gọn như web cũ: lời chào theo buổi (sáng, trưa: mặt trời; chiều: thêm mây; tối: trăng và 3 sao), nút ‹ › tròn, ô "Hôm nay / ngày". Nhãn và nút ngày nghỉ nằm ngoài khung.
+- Hoa rơi gấp đôi: 180 bông (90 khi rộng dưới 620px).
+- Test `all` 106/106. Ảnh: `docs/v2/anh/dot4-sau-*.png`.
+
+## Trang giới thiệu (nhánh v2/gioi-thieu, đã merge 26/11/2026)
+- `src/v2/gioi-thieu.html` + `css/gioi-thieu.css` (tiền tố `.gt-`), ảnh trong `src/v2/img/gioi-thieu/`. Trang riêng, chỉ người dùng xem, nút "Mở Life Planner" vào Agenda.
+- Đã kiểm 390 / 820 / 1280px, sáng và tối, bàn phím. Ảnh: `docs/v2/anh/gioi-thieu-*.png`.
