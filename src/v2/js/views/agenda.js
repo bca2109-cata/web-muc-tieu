@@ -168,7 +168,8 @@ LP.agenda = (function () {
     if (d !== t) tools += '<button type="button" class="chip" data-act="today">Về hôm nay</button>';
     if (!readOnly()) tools += '<button type="button" class="chip" data-act="off">' + icon('calendar', 'ic18') + (D.isDayOff(d) ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ') + '</button>';
     var h = parseInt(D.now().slice(0, 2), 10);
-    var hello = h < 11 ? 'Chào buổi sáng!' : h < 13 ? 'Chào buổi trưa!' : h < 18 ? 'Chào buổi chiều!' : 'Chào buổi tối!';
+    var left = st.left || 0, tot = st.tot || 0;
+    var hello = !tot ? 'Hôm nay chưa có việc nào.' : left ? 'Hôm nay còn ' + left + ' việc cần làm.' : 'Xong hết việc hôm nay.';
     var rel = d === t ? 'Hôm nay' : d === D.add(t, -1) ? 'Hôm qua' : d === D.add(t, 1) ? 'Ngày mai' : d < t ? 'Ngày đã qua' : 'Ngày sắp tới';
     var fl = LP.flowers.html;
     return '<div class="ag-head"><section class="ag-hello" aria-label="Chào">' + helloArt(d === t ? h : 8) + fl('daisy', 44, 2, 'ag-hello-f1') + fl('sakura', 26, 8, 'ag-hello-f2') +
@@ -490,6 +491,12 @@ LP.agenda = (function () {
     var y = window.scrollY, ae = document.activeElement, fk = ae && ae.getAttribute ? ae.getAttribute('data-fk') : null;
     var cards = buildCards(R.runsFor(st.date), leftEntries()), tasks = T.tasksFor(st.date), habits = habitsDue();
     st.lastNow = D.now();
+    (function () {   // số liệu cho lời chào (cùng cách đếm với vòng Hoàn thành)
+      var dn = 0, tt = 0;
+      cards.forEach(function (c) { dn += c.done; tt += c.total - c.own.filter(function (m) { return m.status === 'skipped'; }).length; });
+      tasks.forEach(function (x) { tt++; if (x.done) dn++; });
+      st.tot = tt; st.left = tt - dn;
+    })();
     st.el.innerHTML = '<div class="ag">' + headHtml(pendingLine()) + chartsHtml(cards, tasks) + switchHtml() +
       (st.mode === 'overview' ? overviewHtml(cards, tasks, habits) : checklistHtml(cards, tasks, habits)) + '</div>';
     if (fk) {

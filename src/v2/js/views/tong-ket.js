@@ -107,11 +107,11 @@ LP.tongKet = (function () {
     return '<span class="mt-cmp ' + (good ? 'is-good' : 'is-bad') + '">' + icon(d > 0 ? 'up' : 'down', 'ic14') + '<span>' + (d > 0 ? 'Tăng ' : 'Giảm ') + '<span class="num">' + fmt(Math.abs(d)) + '</span>' + unitTxt + ' so với kỳ trước (' + fmt(prevV) + unitTxt + ')</span></span>';
   }
   function tile(k, label, ic, val, raw, sub, cmp) {
-    return '<div class="mt-tile" data-k="' + k + '" data-val="' + esc(raw) + '"><div class="mt-tl">' + icon(ic, 'ic14') + esc(label) + '</div>' +
+    return '<div class="mt-tile' + (k === 'pct' ? ' mt-tile-hero' : '') + '" data-k="' + k + '" data-val="' + esc(raw) + '"><div class="mt-tl">' + esc(label) + '</div>' +
       '<div class="mt-tv num">' + val + '</div><div class="mt-ts">' + sub + '</div>' + cmp + '</div>';
   }
   function block(title, ic, inner, cls) {
-    return '<section class="card mt-block ' + (cls || '') + '"><h2 class="mt-h">' + LP.cute.html('', { grid: 'chart', barchart: 'chart', list: 'clipboard', hourglass: 'calendar', leaf: 'sprout' }[ic] || 'sprout') + esc(title) + '</h2>' + inner + '</section>';
+    return '<section class="card mt-block ' + (cls || '') + '"><h2 class="mt-h">' + esc(title) + '</h2>' + inner + '</section>';
   }
   function cell(title, inner) { return '<div class="mt-cell"><h3 class="mt-h3">' + esc(title) + '</h3>' + inner + '</div>'; }
   function empty(txt) { return '<p class="muted mt-none">' + esc(txt) + '</p>'; }

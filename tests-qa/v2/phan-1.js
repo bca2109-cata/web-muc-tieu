@@ -744,8 +744,8 @@ module.exports = async function (h) {
     for (const [now, art] of [['08:30', 'sun'], ['15:00', 'cloud'], ['21:31', 'moon']]) {
       const page = await h.open({ query: q('2026-11-25', now), hash: '#/agenda' });
       A.strictEqual((await tx(page, '.ag-hello h1')).trim(), 'Thứ Tư, 25/11');
-      const greet = now === '08:30' ? 'Chào buổi sáng!' : now === '15:00' ? 'Chào buổi chiều!' : 'Chào buổi tối!';
-      A.strictEqual((await tx(page, '.ag-greet')).trim(), greet);
+      // 27/11: lời chào nói số việc thật thay cho "Chào buổi …"
+      A.ok(/^(Hôm nay còn \d+ việc cần làm\.|Xong hết việc hôm nay\.|Hôm nay chưa có việc nào\.)$/.test((await tx(page, '.ag-greet')).trim()), 'lời chào');
       A.strictEqual((await tx(page, '.ag-dayrel')).trim(), 'Hôm nay');
       A.strictEqual(await page.locator('.ag-daylabel').count(), 0);
       A.strictEqual(await page.locator('.ag-sun circle[fill="#3b2235"]').count(), 0, 'không còn mặt cười');

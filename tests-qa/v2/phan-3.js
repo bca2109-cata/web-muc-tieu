@@ -284,7 +284,7 @@ module.exports = async function (h) {
     A.strictEqual(await page.locator('.gc-add').first().getAttribute('title'), 'Tạo tài liệu mới trong Công việc');
     A.strictEqual(await page.locator('.gc-add').first().getAttribute('aria-label'), 'Tạo tài liệu mới trong Công việc');
     const e = await page.locator('.gc-empty').innerText();
-    A.ok(/Chưa mở tài liệu nào/.test(e) && /\+ Tài liệu mới/.test(e) && !/Chọn một tài liệu/.test(e) && await page.locator('.gc-empty .ph-flower').count() === 1);
+    A.ok(/Chọn một trang để viết/.test(e) && /\+ Tài liệu mới/.test(e) && !/Chọn một tài liệu/.test(e) && await page.locator('.gc-empty .ph-draw svg').count() === 1);
     await page.evaluate(() => LP.router.go('ghi-chu', { doc: 'd-chiaso' })); await page.waitForSelector('.gc-title');
     await page.evaluate(() => LP.router.go('ghi-chu')); await page.waitForTimeout(150);
     const pv = await page.locator('.gc-docrow[data-doc="d-chiaso"] .gc-docrow-p').innerText();

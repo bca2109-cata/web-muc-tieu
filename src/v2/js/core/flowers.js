@@ -16,36 +16,88 @@ LP.flowers = (function () {
     return out;
   }
 
-  var DEFS =
-    '<symbol id="f-daisy" viewBox="0 0 24 24"><g fill="currentColor">' + ring('<ellipse cx="12" cy="5.5" rx="3" ry="4"/>', 6, 60) + '</g>' +
-    '<circle cx="12" cy="12" r="3.4" fill="' + CORE + '" stroke="#f2a33a"/></symbol>' +
-    '<symbol id="f-sakura" viewBox="0 0 24 24"><g fill="currentColor">' + ring('<path d="M12 12C9 9.5 8.6 4.5 10.6 3.2L12 4.8l1.4-1.6C15.4 4.5 15 9.5 12 12z"/>', 5, 72) + '</g>' +
-    '<circle cx="12" cy="12" r="1.8" fill="#fff" opacity=".9"/></symbol>' +
-    '<symbol id="f-tulip" viewBox="0 0 24 24"><path d="M12 13v9" stroke="' + LEAF + '" stroke-width="2" stroke-linecap="round"/>' +
-    '<path d="M12 19c-3 0-5-2-5.5-4 2.5 0 4.5 1.5 5.5 4zM12 18c2.5-.3 4.3-2 4.8-3.6-2.3 0-4.2 1.3-4.8 3.6z" fill="' + LEAF2 + '"/>' +
-    '<path d="M7 4.5l2.5 3 2.5-4 2.5 4 2.5-3V9a5 5 0 0 1-10 0z" fill="currentColor"/></symbol>' +
-    '<symbol id="f-rose" viewBox="0 0 24 24"><path d="M6 18c1-2.5 3-3 5-2.6M18 18c-1-2.5-3-3-5-2.6" stroke="' + LEAF + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
-    '<ellipse cx="7.5" cy="18.5" rx="3" ry="1.5" fill="' + LEAF2 + '" transform="rotate(-25 7.5 18.5)"/><ellipse cx="16.5" cy="18.5" rx="3" ry="1.5" fill="' + LEAF2 + '" transform="rotate(25 16.5 18.5)"/>' +
-    '<circle cx="12" cy="10.5" r="7.5" fill="currentColor"/>' +
-    '<path d="M12 10.5c1.4-.9 2.8 0 2.3 1.5s-3.3 2.4-4.6.7.4-5 3.3-4.8 4.4 3 3.2 5.6" stroke="#3b2235" stroke-opacity=".28" stroke-width="1.3" fill="none" stroke-linecap="round"/></symbol>' +
-    '<symbol id="f-sunflower" viewBox="0 0 24 24"><g fill="currentColor">' + ring('<ellipse cx="12" cy="4.6" rx="2" ry="3.8"/>', 12, 30) + '</g>' +
-    '<circle cx="12" cy="12" r="4.4" fill="#8a5a2b"/><g fill="#5e3a17"><circle cx="10.6" cy="11" r=".7"/><circle cx="13.2" cy="10.8" r=".7"/><circle cx="12" cy="13.2" r=".7"/></g></symbol>' +
+
+  /* ---------- Hoa vẽ lại (27/11): cánh chồng lớp, đổ bóng nhẹ, gân cánh, nhụy có chi tiết ----------
+     Màu cánh vẫn theo `color`. Đổ bóng bằng lớp phủ đen/trắng trong suốt nên màu nào cũng đẹp. */
+  var SH = 'url(#fl-sh)', HI = 'url(#fl-hi)';
+  function layer(shape, n, step, off) {   // một vòng cánh: màu + bóng + vệt sáng
+    var a = '';
+    for (var i = 0; i < n; i++) a += shape.replace('/>', ' transform="rotate(' + ((off || 0) + i * step) + ' 12 12)"/>');
+    return '<g fill="currentColor">' + a + '</g><g fill="' + SH + '">' + a + '</g><g fill="' + HI + '">' + a + '</g>';
+  }
+  function veins(d, n, step, off) {
+    var o = '';
+    for (var i = 0; i < n; i++) o += '<path d="' + d + '" transform="rotate(' + ((off || 0) + i * step) + ' 12 12)"/>';
+    return '<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".5" stroke-linecap="round">' + o + '</g>';
+  }
+  function seeds() {   // hạt hướng dương xếp xoắn ốc (góc vàng)
+    var o = '';
+    for (var i = 1; i < 34; i++) {
+      var r = 0.62 * Math.sqrt(i), a = i * 2.39996;
+      o += '<circle cx="' + (12 + r * Math.cos(a)).toFixed(2) + '" cy="' + (12 + r * Math.sin(a)).toFixed(2) + '" r=".5"/>';
+    }
+    return '<g fill="#4a2c10" opacity=".7">' + o + '</g>';
+  }
+  function stamens(n, r, color, dot) {
+    var l = '', d = '';
+    for (var i = 0; i < n; i++) {
+      var a = i * 2 * Math.PI / n, x = (12 + r * Math.sin(a)).toFixed(2), y = (12 - r * Math.cos(a)).toFixed(2);
+      l += '<path d="M12 12L' + x + ' ' + y + '"/>'; d += '<circle cx="' + x + '" cy="' + y + '" r=".55"/>';
+    }
+    return '<g stroke="' + color + '" stroke-width=".55" stroke-linecap="round">' + l + '</g><g fill="' + dot + '">' + d + '</g>';
+  }
+  function ringC(r, rad, n, cy) {
+    var o = '';
+    for (var i = 0; i < n; i++) { var a = i * 2 * Math.PI / n; o += '<circle cx="' + (12 + rad * Math.sin(a)).toFixed(2) + '" cy="' + (cy - rad * Math.cos(a)).toFixed(2) + '" r="' + r + '"/>'; }
+    return o;
+  }
+  var GRAD =
+    '<radialGradient id="fl-sh" cx=".5" cy=".62" r=".62"><stop offset=".35" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#3b0f25" stop-opacity=".2"/></radialGradient>' +
+    '<linearGradient id="fl-hi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+    '<radialGradient id="fl-core" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#fff3a8"/><stop offset=".55" stop-color="#ffc83d"/><stop offset="1" stop-color="#e8890f"/></radialGradient>' +
+    '<radialGradient id="fl-seed" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#b07a3c"/><stop offset="1" stop-color="#5a3512"/></radialGradient>' +
+    '<radialGradient id="fl-glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe98a" stop-opacity=".95"/><stop offset="1" stop-color="#ffe98a" stop-opacity="0"/></radialGradient>';
+  var TP = ['M6.3 4.6C5.4 8.8 6.2 13 9.7 14.2 9.4 10.6 9.8 7.2 11.4 4.4 9.6 3.9 7.7 3.9 6.3 4.6z', 'M17.7 4.6c.9 4.2.1 8.4-3.4 9.6.3-3.6-.1-7 1.5-9.8 1.8-.5 3.7-.5 1.9.2z', 'M12 2.6c-3 3-3.6 7.2-2.6 10.8 1.1 1.6 4.1 1.6 5.2 0 1-3.6.4-7.8-2.6-10.8z'];
+  var NEWF =
+    '<symbol id="f-daisy" viewBox="0 0 24 24"><g opacity=".8">' + layer('<ellipse cx="12" cy="4.6" rx="1.7" ry="4.4"/>', 12, 30, 15) + '</g>' +
+    layer('<ellipse cx="12" cy="4.9" rx="1.9" ry="4.4"/>', 12, 30, 0) + veins('M12 8.5V3.6', 12, 30, 0) +
+    '<circle cx="12" cy="12" r="3.5" fill="url(#fl-core)"/><circle cx="12" cy="12" r="3.5" fill="none" stroke="#c9740a" stroke-opacity=".55" stroke-width=".5"/>' +
+    '<g fill="#b8620a" opacity=".6"><circle cx="11" cy="11" r=".35"/><circle cx="13" cy="11.4" r=".35"/><circle cx="12" cy="13" r=".35"/><circle cx="10.6" cy="12.6" r=".3"/><circle cx="13.3" cy="13" r=".3"/></g></symbol>' +
+    '<symbol id="f-sakura" viewBox="0 0 24 24">' + layer('<path d="M12 12C8.6 9.6 7.8 4.6 9.9 2.9L12 4.7l2.1-1.8c2.1 1.7 1.3 6.7-2.1 9.1z"/>', 5, 72, 0) +
+    veins('M12 11V5.6', 5, 72, 0) + '<circle cx="12" cy="12" r="2.2" fill="url(#fl-glow)"/>' + stamens(7, 3.3, '#e2527f', '#ffd25a') + '</symbol>' +
+    '<symbol id="f-tulip" viewBox="0 0 24 24"><path d="M12 13.5v8.5" stroke="' + LEAF + '" stroke-width="1.9" stroke-linecap="round"/>' +
+    '<path d="M12 21c-4.4.4-6.4-2.6-6.6-6.4 3.6.4 5.8 2.8 6.6 6.4z" fill="' + LEAF2 + '"/><path d="M12 20c3.6-.1 5.6-2.4 6-5.6-3.2.1-5.3 2.2-6 5.6z" fill="' + LEAF + '"/>' +
+    '<g fill="currentColor"><path d="' + TP[0] + '"/><path d="' + TP[1] + '"/></g><g fill="' + SH + '"><path d="' + TP[0] + '"/><path d="' + TP[1] + '"/></g>' +
+    '<path d="' + TP[2] + '" fill="currentColor"/><path d="' + TP[2] + '" fill="' + HI + '"/>' +
+    '<path d="M12 4.5c-.9 2.6-1 5.3-.6 8" stroke="#fff" stroke-opacity=".5" stroke-width=".6" fill="none" stroke-linecap="round"/></symbol>' +
+    '<symbol id="f-rose" viewBox="0 0 24 24"><path d="M5.2 19c1.2-2.6 3.4-3.3 5.8-2.8M18.8 19c-1.2-2.6-3.4-3.3-5.8-2.8" stroke="' + LEAF + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
+    '<ellipse cx="7" cy="19" rx="3.3" ry="1.6" fill="' + LEAF2 + '" transform="rotate(-24 7 19)"/><ellipse cx="17" cy="19" rx="3.3" ry="1.6" fill="' + LEAF2 + '" transform="rotate(24 17 19)"/>' +
+    '<g fill="currentColor">' + ringC(3.4, 5.1, 6, 10.5) + '<circle cx="12" cy="10.5" r="5.6"/></g><g fill="' + SH + '">' + ringC(3.4, 5.1, 6, 10.5) + '</g>' +
+    '<g fill="none" stroke="#3b0f25" stroke-opacity=".32" stroke-width=".8" stroke-linecap="round"><path d="M12 10.5c1.2-.8 2.4 0 2 1.3s-2.8 2-3.9.6.3-4.2 2.8-4 3.7 2.6 2.6 4.8"/><path d="M7.2 8.2c1-2 3-3.1 5-3.1M16.9 8c-.4-1.6-1.4-2.5-2.6-3"/></g>' +
+    '<path d="M8.4 6.2c1.4-1.3 3.2-1.8 4.6-1.5" stroke="#fff" stroke-opacity=".6" stroke-width=".9" fill="none" stroke-linecap="round"/></symbol>' +
+    '<symbol id="f-sunflower" viewBox="0 0 24 24"><g opacity=".85">' + layer('<ellipse cx="12" cy="4.2" rx="1.7" ry="4"/>', 14, 25.7, 12.8) + '</g>' +
+    layer('<ellipse cx="12" cy="4.6" rx="1.8" ry="4"/>', 14, 25.7, 0) + veins('M12 8V3', 14, 25.7, 0) +
+    '<circle cx="12" cy="12" r="4.6" fill="url(#fl-seed)"/><circle cx="12" cy="12" r="4.6" fill="none" stroke="#3a210a" stroke-opacity=".5" stroke-width=".6"/>' + seeds() + '</symbol>' +
+    '<symbol id="f-forget" viewBox="0 0 24 24">' + layer('<circle cx="12" cy="6.8" r="3.9"/>', 5, 72, 0) +
+    '<circle cx="12" cy="12" r="2.6" fill="#fff"/><circle cx="12" cy="12" r="2.6" fill="url(#fl-glow)"/><circle cx="12" cy="12" r="1.25" fill="#ffc83d"/><circle cx="11.6" cy="11.6" r=".4" fill="#fff" opacity=".8"/></symbol>' +
+    '<symbol id="f-plumeria" viewBox="0 0 24 24">' + layer('<path d="M12 12C10.2 8.2 10.8 3.2 14.6 2.5c2.6 1.7 1 6.6-2.6 9.5z"/>', 5, 72, 0) +
+    veins('M12 11C12.3 8.6 13 5.6 14 3.6', 5, 72, 0) + '<circle cx="12" cy="12" r="4.2" fill="url(#fl-glow)"/><circle cx="12" cy="12" r="1.3" fill="#ffd25a"/></symbol>' +
+    '<symbol id="f-cosmos" viewBox="0 0 24 24">' + layer('<path d="M12 12C9 9.3 8.6 4.8 9.4 2.4q.9 1 1.3.1l1.3 1.4 1.3-1.4q.4.9 1.3-.1c.8 2.4.4 6.9-2.6 9.6z"/>', 8, 45, 0) +
+    veins('M12 10.5V4.2', 8, 45, 0) + '<circle cx="12" cy="12" r="2.5" fill="url(#fl-core)"/><circle cx="12" cy="12" r="2.5" fill="none" stroke="#c9740a" stroke-opacity=".5" stroke-width=".5"/></symbol>' +
+    '<symbol id="f-hydrangea" viewBox="0 0 24 24">' + [[12, 5.2], [7.2, 8.2], [16.8, 8.2], [12, 11.2], [6.6, 13.8], [17.4, 13.8], [9.4, 17.2], [14.6, 17.2], [12, 20]].map(function (c, k) {
+      var fl = [0, 1, 2, 3].map(function (i) { return '<ellipse cx="' + c[0] + '" cy="' + (c[1] - 1.5) + '" rx="1.35" ry="1.7" transform="rotate(' + (i * 90 + k * 17) + ' ' + c[0] + ' ' + c[1] + ')"/>'; }).join('');
+      return '<g fill="currentColor" opacity="' + (k % 3 === 1 ? '.88' : '1') + '">' + fl + '</g><g fill="' + SH + '">' + fl + '</g><circle cx="' + c[0] + '" cy="' + c[1] + '" r=".75" fill="#fff6c9"/>';
+    }).join('') + '</symbol>';
+
+  var DEFS = GRAD + NEWF +
     '<symbol id="f-lavender" viewBox="0 0 24 24"><path d="M12 22V7" stroke="' + LEAF + '" stroke-width="1.6" stroke-linecap="round"/>' +
     '<path d="M12 19c-2.5-.5-4-2-4.4-3.6 2.2.2 3.8 1.5 4.4 3.6z" fill="' + LEAF2 + '"/><g fill="currentColor"><ellipse cx="12" cy="3" rx="1.4" ry="2"/>' +
     '<ellipse cx="10.3" cy="6" rx="1.5" ry="2" transform="rotate(-20 10.3 6)"/><ellipse cx="13.7" cy="6" rx="1.5" ry="2" transform="rotate(20 13.7 6)"/>' +
     '<ellipse cx="10.1" cy="9.4" rx="1.6" ry="2.1" transform="rotate(-20 10.1 9.4)"/><ellipse cx="13.9" cy="9.4" rx="1.6" ry="2.1" transform="rotate(20 13.9 9.4)"/>' +
     '<ellipse cx="10.3" cy="12.8" rx="1.5" ry="2" transform="rotate(-20 10.3 12.8)"/><ellipse cx="13.7" cy="12.8" rx="1.5" ry="2" transform="rotate(20 13.7 12.8)"/></g></symbol>' +
-    '<symbol id="f-forget" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="7" r="4"/><circle cx="16.8" cy="10.5" r="4"/><circle cx="14.9" cy="16.1" r="4"/><circle cx="9.1" cy="16.1" r="4"/><circle cx="7.2" cy="10.5" r="4"/></g>' +
-    '<circle cx="12" cy="12" r="2.4" fill="#fff"/><circle cx="12" cy="12" r="1.3" fill="#ffcf3a"/></symbol>' +
-    '<symbol id="f-plumeria" viewBox="0 0 24 24"><g fill="currentColor">' + ring('<path d="M12 12C10.5 8 11 3 14.5 2.6c2.4 1.6 1 6.3-2.5 9.4z"/>', 5, 72) + '</g>' +
-    '<circle cx="12" cy="12" r="3" fill="' + CORE + '"/></symbol>' +
-    '<symbol id="f-cosmos" viewBox="0 0 24 24"><g fill="currentColor">' + ring('<path d="M12 12C10 9 10 4 10.8 2.8L12 4l1.2-1.2C14 4 14 9 12 12z"/>', 8, 45) + '</g>' +
-    '<circle cx="12" cy="12" r="2.4" fill="#ffcf3a" stroke="#e8a317" stroke-width=".8"/></symbol>' +
     '<symbol id="f-bell" viewBox="0 0 24 24"><path d="M4 4c5 0 9 3 10 9M10 6.5c3 1 4.5 4 4 8M14 13c3-1 5 0 6 2" stroke="' + LEAF + '" stroke-width="1.6" fill="none" stroke-linecap="round"/>' +
     '<g fill="currentColor"><path d="M7 7.5c-2 0-3 1.8-3 4.3l1-.6.9 1 1-.9 1 .9.9-1 1 .6c0-2.5-1-4.3-2.8-4.3z"/><path d="M14 14.4c-1.8 0-2.8 1.6-2.8 3.8l.9-.5.9.9.9-.8.9.8.9-.9.9.5c0-2.2-1-3.8-2.6-3.8z"/>' +
     '<path d="M20 15.2c-1.4 0-2.2 1.3-2.2 3l.7-.4.75.7.75-.7.7.4c0-1.7-.8-3-2-3z" opacity=".9"/></g></symbol>' +
-    '<symbol id="f-hydrangea" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="6" r="3.6"/><circle cx="7" cy="9.5" r="3.6"/><circle cx="17" cy="9.5" r="3.6"/><circle cx="12" cy="12" r="3.6"/><circle cx="8" cy="15.5" r="3.6"/><circle cx="16" cy="15.5" r="3.6"/><circle cx="12" cy="18.5" r="3.3"/></g>' +
-    '<g fill="#fff" opacity=".75"><circle cx="12" cy="6" r=".9"/><circle cx="7" cy="9.5" r=".9"/><circle cx="17" cy="9.5" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="8" cy="15.5" r=".9"/><circle cx="16" cy="15.5" r=".9"/><circle cx="12" cy="18.5" r=".9"/></g></symbol>' +
     '<symbol id="f-petal" viewBox="0 0 24 24"><path d="M12 1.5C17.5 7 19 13 12 22.5 5 13 6.5 7 12 1.5z" fill="currentColor"/><path d="M12 5v13" stroke="#fff" stroke-opacity=".45" stroke-width="1" stroke-linecap="round"/></symbol>' +
     '<symbol id="f-sprig" viewBox="0 0 24 24"><path d="M4 20C9 15 14 10 20 4" stroke="' + LEAF + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
     '<g fill="#a6e3c4"><ellipse cx="9" cy="13" rx="3.2" ry="1.6" transform="rotate(-60 9 13)"/><ellipse cx="13" cy="9.5" rx="3.2" ry="1.6" transform="rotate(30 13 9.5)"/>' +

@@ -12,6 +12,17 @@ LP.views = LP.views || {};
   var indexPromise = null, trashRows = [];
   var S = null;                   // trạng thái màn đang mở
 
+  // Nét vẽ tay cho màn trống: trang sổ mở, vài dòng viết dở và cây bút chì (màu theo màn)
+  var EMPTY_DRAW = '<svg viewBox="0 0 160 110" width="150" height="103" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M12 28c14-5 44-6 66 6 22-12 52-11 70-6l-2 62c-18-5-47-5-68 5-21-10-50-10-68-5z" fill="var(--surface)" stroke="var(--ink)" stroke-width="3"/>' +
+    '<path d="M78 34v62" stroke="var(--ink)" stroke-width="2.6"/>' +
+    '<path d="M24 46c10-3 22-3 41 2M24 60c11-2 24-2 41 2M24 74c8-2 16-2 26 0" stroke="var(--line)" stroke-width="3"/>' +
+    '<path d="M92 48c9-2 20-2 40-1M92 62c8-2 18-2 32 0" stroke="var(--accent)" stroke-width="3.2"/>' +
+    '<path d="M92 76c4-5 7 3 11-1s6 3 10-1" stroke="var(--accent-deep)" stroke-width="3"/>' +
+    '<g transform="rotate(32 128 22)"><path d="M120 4h16v34l-8 11-8-11z" fill="var(--butter)" stroke="var(--ink)" stroke-width="2.8"/>' +
+    '<path d="M120 12h16" stroke="var(--ink)" stroke-width="2.4"/><path d="M124.5 41l3.5 6 3.5-6z" fill="var(--ink)" stroke="none"/></g>' +
+    '<path d="M18 14l2.2 5 5 2.2-5 2.2L18 28.4l-2.2-5-5-2.2 5-2.2z" fill="var(--accent-soft)" stroke="var(--accent-deep)" stroke-width="2"/></svg>';
+
   /* ---------- Dữ liệu ---------- */
   function heads(doc) { try { var h = JSON.parse(doc.headings || '[]'); return Array.isArray(h) ? h : []; } catch (e) { return []; } }
   function docs() { return LP.store.get().docs; }
@@ -192,7 +203,7 @@ LP.views = LP.views || {};
   }
 
   function emptyMain() {
-    S.mainEl.innerHTML = '<div class="card gc-empty"><div class="ph-flower">' + LP.flowers.html('daisy', 56, 2) + '</div><h1>Ghi chú</h1><p class="muted">Chưa mở tài liệu nào</p><button type="button" class="btn btn-soft" data-new-empty>+ Tài liệu mới</button></div>';
+    S.mainEl.innerHTML = '<div class="card gc-empty"><div class="ph-draw" aria-hidden="true">' + EMPTY_DRAW + '</div><h1>Chọn một trang để viết</h1><p class="muted">Bấm tên tài liệu ở cột bên trái, hoặc mở một trang trắng mới.</p><button type="button" class="btn btn-soft" data-new-empty>+ Tài liệu mới</button></div>';
     S.mainEl.querySelector('[data-new-empty]').addEventListener('click', function () { newDoc(SPACES[0]); });
     S.sideEl.innerHTML = '';
   }
