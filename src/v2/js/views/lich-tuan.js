@@ -239,7 +239,10 @@ LP.lich = (function () {
   function fitGrid() {
     var g = st.el && st.el.querySelector('.lgrid'); if (!g) return;
     var top = g.getBoundingClientRect().top + (window.pageYOffset || 0);
-    g.style.maxHeight = Math.max(320, Math.round(window.innerHeight - top - 12)) + 'px';
+    // Chừa chỗ cho khu "Chưa có ngày" bên dưới và phần đệm cuối trang, để cả trang vừa một màn hình
+    var un = st.el.querySelector('.lgrid + .lday-un'), main = g.closest('.main');
+    var below = (un ? un.getBoundingClientRect().height + 12 : 0) + (main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0);
+    g.style.maxHeight = Math.max(320, Math.round(window.innerHeight - top - below)) + 'px';
   }
   // Mở tuần: cuộn trong khung lưới tới giờ hiện tại (vạch Bây giờ ở khoảng 1/3 khung); tuần khác thì tới mục sớm nhất
   function scrollGrid(per, days, nowMin) {

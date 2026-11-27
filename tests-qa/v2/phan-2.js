@@ -279,6 +279,8 @@ module.exports = async function (h) {
     A.ok(/Không có việc chờ xếp lịch/.test(await page.locator('.lday-un').innerText()) || (await page.locator('.lday-un .lcard').count()) > 0);
     const o = await page.evaluate(() => { const g = document.querySelector('.lgrid'); return { oy: getComputedStyle(g).overflowY, sh: g.scrollHeight, ch: g.clientHeight, bar: document.querySelector('.lich-bar').getBoundingClientRect().bottom, all: document.querySelector('.lallday').getBoundingClientRect().bottom }; });
     A.ok(o.oy === 'auto' && o.sh > o.ch && o.bar < 860 && o.all < 860, JSON.stringify(o));
+    const ph = await page.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: window.innerHeight }));
+    A.ok(ph.sh <= ph.ih + 1, 'trang không được cuộn khi mở Lịch tuần: ' + JSON.stringify(ph));
     const t = await (await h.open({ w: 1280, hash: '#/lich?view=thang&date=2026-11-25' })).locator('[data-imp]').innerText();
     A.strictEqual(t.trim(), 'Chỉ việc ♥♥ trở lên');
   });
