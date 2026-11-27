@@ -4,8 +4,8 @@
    - CSS, JS, ảnh (có ?v= theo phiên bản): dùng bản đã lưu, chưa có thì tải rồi lưu.
    - Dữ liệu Google Sheet (Apps Script) không đi qua đây: luôn gọi thẳng mạng.
    Đổi VERSION mỗi lần đưa bản mới lên để xóa bộ nhớ cũ. */
-var VERSION = 'lpv2-v2j';
-var CORE = ['./', 'index.html', 'manifest.json'];
+var VERSION = 'lpv2-v2k';
+var CORE = ['./', 'index.html', 'manifest.json', 'img/hom-nay.svg'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(CORE); }).then(function () { return self.skipWaiting(); }));
