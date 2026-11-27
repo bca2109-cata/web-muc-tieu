@@ -17,7 +17,6 @@ LP.agenda = (function () {
   function S() { return LP.store.get(); }
   function readOnly() { return st.date < D.today(); }
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
-  function dateLabel(d) { return D.weekdayName(d) + ', ' + D.fmtFull(d); }
   function pill(t, k) { return LP.ui.pill(t, k); }
 
   /* ---------- Trạng thái theo giờ (chỉ hôm nay) ---------- */
@@ -119,25 +118,45 @@ LP.agenda = (function () {
 
   var tam_cute = LP.cute.html;
 
-  /* Hình khung chào theo buổi (nét như App.views.sun của web cũ, màu cố định) */
+  /* Hình khung chào theo buổi: bút chì màu + màu nước (sáng, trưa: mặt trời · chiều: mặt trời có mây · tối: mặt trăng có sao).
+     Trả về nội dung <svg viewBox 0 0 120 120>. Id filter/clipPath có tiền tố lp; trang chỉ có một khung chào. */
+  var CRES = 'M70 16 C44 18 22 40 24 64 C26 88 48 106 78 104 C90 103 98 98 104 92 C84 94 62 82 56 62 C50 42 58 26 70 16 Z';
+  var SUN = 'M60 30 C77 29 91 43 90 61 C89 78 76 91 59 90 C42 89 30 76 31 59 C32 43 44 31 60 30 Z';
+  var CLOUD = 'M66 104 C56 104 52 96 57 90 C55 82 63 76 71 79 C74 71 86 69 92 76 C99 74 106 80 104 87 C110 89 110 99 103 103 C95 105 76 105 66 104 Z';
+  function hatch(step, col, w) {
+    var h = '';
+    for (var x = -40; x < 160; x += step) h += '<line x1="' + x + '" y1="0" x2="' + (x + 60) + '" y2="120"/>';
+    return '<g stroke="' + col + '" stroke-width="' + w + '" opacity=".75" filter="url(#lpw2)">' + h + '</g>';
+  }
+  var ART_DEFS = '<defs>' +
+    '<filter id="lpwc" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="3" seed="2" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="6" result="d"/><feGaussianBlur in="d" stdDeviation="1"/></filter>' +
+    '<filter id="lpw1" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="turbulence" baseFrequency=".05" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="3.5"/></filter>' +
+    '<filter id="lpw2"><feTurbulence type="turbulence" baseFrequency=".06" numOctaves="2" seed="9"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter>' +
+    '<filter id="lpw3" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="turbulence" baseFrequency=".04" numOctaves="1" seed="5"/><feDisplacementMap in="SourceGraphic" scale="2"/></filter>' +
+    '<clipPath id="lpcm"><path d="' + CRES + '"/></clipPath><clipPath id="lpcs"><path d="' + SUN + '"/></clipPath><clipPath id="lpcc"><path d="' + CLOUD + '"/></clipPath></defs>';
+  function artShape(d, clip, wash, hcol, line) {
+    return '<path d="' + d + '" fill="' + wash + '" opacity=".9" filter="url(#lpwc)"/>' +
+      '<g clip-path="url(#' + clip + ')">' + hatch(6, hcol, 2) + '</g>' +
+      '<path d="' + d + '" fill="none" stroke="' + line + '" stroke-width="2.6" stroke-linejoin="round" filter="url(#lpw1)"/>' +
+      '<path d="' + d + '" fill="none" stroke="' + line + '" stroke-width="1.1" opacity=".5" transform="translate(1.5 -1)" filter="url(#lpw2)"/>';
+  }
+  function artMoon() {
+    return ART_DEFS + artShape(CRES, 'lpcm', '#ffe08f', '#f3c95b', '#c98a2a') +
+      '<g stroke="#e29a2f" stroke-width="2.4" stroke-linecap="round" filter="url(#lpw1)"><path d="M98 18v16M90 26h16"/><path d="M102 66v10M97 71h10"/><path d="M22 22v9M17.5 26.5h9"/></g>' +
+      '<g fill="#f6c95a" filter="url(#lpwc)"><circle cx="86" cy="46" r="2.6"/><circle cx="30" cy="44" r="2"/><circle cx="88" cy="98" r="2.4"/></g>';
+  }
+  function artSun(cloud) {
+    var rays = [[60, 8, 60, 22], [60, 99, 60, 111], [9, 60, 22, 60], [98, 60, 112, 60], [24, 24, 33, 33], [88, 88, 96, 96], [24, 96, 33, 87], [88, 32, 97, 23]]
+      .map(function (r, i) { var k = i % 2 ? 0.85 : 1; return '<path d="M' + r[0] + ' ' + r[1] + 'L' + (r[0] + (r[2] - r[0]) * k).toFixed(1) + ' ' + (r[1] + (r[3] - r[1]) * k).toFixed(1) + '"/>'; }).join('');
+    var s = ART_DEFS + '<g stroke="#e8902c" stroke-width="3.4" stroke-linecap="round" filter="url(#lpw3)">' + rays + '</g>' + artShape(SUN, 'lpcs', '#ffd36e', '#f2b544', '#cf7f1f');
+    if (cloud) s += '<path d="' + CLOUD + '" fill="#fff" filter="url(#lpwc)"/>' + '<path d="' + CLOUD + '" fill="#dcefff" opacity=".55" filter="url(#lpwc)"/>' +
+      '<g clip-path="url(#lpcc)">' + hatch(7, '#b9d8ec', 1.6) + '</g>' +
+      '<path d="' + CLOUD + '" fill="none" stroke="#7fa9c6" stroke-width="2.4" stroke-linejoin="round" filter="url(#lpw1)"/>';
+    return s;
+  }
   function helloArt(h) {
-    var sun = '<g stroke="#f2a33a" stroke-width="6" stroke-linecap="round"><path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l8 8M89 89l8 8M23 97l8-8M89 31l8-8"/></g>' +
-      '<circle cx="60" cy="60" r="28" fill="#ffd56b" stroke="#f2a33a" stroke-width="4"/>' +
-      '<circle cx="51" cy="57" r="3.4" fill="#3b2235"/><circle cx="69" cy="57" r="3.4" fill="#3b2235"/>' +
-      '<path d="M52 67q8 7 16 0" stroke="#3b2235" stroke-width="3.4" fill="none" stroke-linecap="round"/>' +
-      '<circle cx="45" cy="66" r="4" fill="#ff9fb8" opacity=".8"/><circle cx="75" cy="66" r="4" fill="#ff9fb8" opacity=".8"/>';
-    var body;
-    if (h >= 18) {
-      body = '<path d="M72 22a38 38 0 1 0 28 62 32 32 0 0 1-28-62z" fill="#ffe9a6" stroke="#f2c14e" stroke-width="4" stroke-linejoin="round"/>' +
-        '<circle cx="62" cy="60" r="2.8" fill="#3b2235"/><path d="M52 70q7 6 14 0" stroke="#3b2235" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-        '<circle cx="50" cy="68" r="3.6" fill="#ff9fb8" opacity=".8"/>' +
-        '<g fill="#ffd56b" stroke="#f2a33a" stroke-width="2" stroke-linejoin="round"><path d="M100 22l2.6 5.6 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6-4.4-4.2 6-.8z"/>' +
-        '<path d="M22 30l1.8 3.8 4.2.6-3 2.9.7 4.1-3.7-2-3.7 2 .7-4.1-3-2.9 4.2-.6z"/><path d="M96 92l1.6 3.4 3.8.5-2.7 2.6.6 3.7-3.3-1.8-3.3 1.8.6-3.7-2.7-2.6 3.8-.5z"/></g>';
-    } else {
-      body = sun;
-      if (h >= 13) body += '<g fill="#fff" stroke="#bfe3f5" stroke-width="3" stroke-linejoin="round"><path d="M70 100a12 12 0 0 1 2-23 16 16 0 0 1 30 4 10 10 0 0 1-2 19z"/></g>';
-    }
-    return '<svg class="ag-sun" width="76" height="76" viewBox="0 0 120 120" aria-hidden="true" focusable="false">' + body + '</svg>';
+    var body = h >= 18 ? artMoon() : artSun(h >= 13);
+    return '<svg class="ag-sun" width="84" height="84" viewBox="0 0 120 120" aria-hidden="true" focusable="false">' + body + '</svg>';
   }
 
   /* ---------- Đầu trang ---------- */
@@ -147,15 +166,15 @@ LP.agenda = (function () {
     if (D.isDayOff(d)) pills += pill('Ngày nghỉ', 'missed'); else if (D.dow(d) === 7) pills += pill('Chủ nhật', 'plain');
     var tools = '';
     if (d !== t) tools += '<button type="button" class="chip" data-act="today">Về hôm nay</button>';
-    if (!readOnly()) tools += '<button type="button" class="btn btn-soft" data-act="off">' + icon('calendar', 'ic18') + (D.isDayOff(d) ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ') + '</button>';
+    if (!readOnly()) tools += '<button type="button" class="chip" data-act="off">' + icon('calendar', 'ic18') + (D.isDayOff(d) ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ') + '</button>';
     var h = parseInt(D.now().slice(0, 2), 10);
-    var hello = d !== t ? 'Agenda' : h < 11 ? 'Chào buổi sáng!' : h < 13 ? 'Chào buổi trưa!' : h < 18 ? 'Chào buổi chiều!' : 'Chào buổi tối!';
+    var hello = h < 11 ? 'Chào buổi sáng!' : h < 13 ? 'Chào buổi trưa!' : h < 18 ? 'Chào buổi chiều!' : 'Chào buổi tối!';
     var rel = d === t ? 'Hôm nay' : d === D.add(t, -1) ? 'Hôm qua' : d === D.add(t, 1) ? 'Ngày mai' : d < t ? 'Ngày đã qua' : 'Ngày sắp tới';
     var fl = LP.flowers.html;
     return '<div class="ag-head"><section class="ag-hello" aria-label="Chào">' + helloArt(d === t ? h : 8) + fl('daisy', 44, 2, 'ag-hello-f1') + fl('sakura', 26, 8, 'ag-hello-f2') +
-      '<h1>' + hello + '</h1><div class="ag-date" role="group" aria-label="Chọn ngày xem">' +
+      '<h1>' + esc(D.weekdayName(d) + ', ' + D.fmt(d)) + '</h1>' + (d === t ? '<p class="ag-greet">' + hello + '</p>' : '') + '<div class="ag-date" role="group" aria-label="Chọn ngày xem">' +
       '<button type="button" class="ag-daybtn" data-act="prev" aria-label="Ngày trước">' + icon('back', 'ic18') + '</button>' +
-      '<span class="ag-daypick"><span class="ag-dayrel">' + rel + '</span><span class="ag-daylabel">' + esc(dateLabel(d)) + '</span></span>' +
+      '<span class="ag-daypick"><span class="ag-dayrel">' + rel + '</span></span>' +
       '<button type="button" class="ag-daybtn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ic18 ag-flip') + '</button></div></section>' +
       '<div class="ag-side">' + (pills || tools ? '<div class="ag-sub"><div class="ag-pills">' + pills + '</div><div class="ag-tools">' + tools + '</div></div>' : '') + (extra || '') + '</div></div>';
   }
@@ -183,8 +202,15 @@ LP.agenda = (function () {
     cards.forEach(function (c) { done += c.done; total += c.total; });
     tasks.forEach(function (x) { total++; if (x.done) done++; });
     var cap = T.capacity(st.date), ev = cap.evening;
-    var facts = (total ? '' : '<p class="ag-empty">Chưa có việc nào để hoàn thành.</p>') + '<div class="ag-fact' + (ev.over ? ' is-over' : '') + '"><b>Quỹ Personal</b><span class="num">' + D.fmtMin(ev.used) + ' / ' + D.fmtMin(ev.quota) + '</span>' + (ev.over ? ' vượt quỹ' : '') + '</div>' +
-      '<div class="ag-fact"><b>Giờ chen ngang</b><span class="num">' + D.fmtMin(cap.interruptionMin) + '</span></div>';
+    var facts = (total ? '' : '<p class="ag-empty">Chưa có việc nào để hoàn thành.</p>');
+    function quota(name, q, note) {
+      var pct = q.quota > 0 ? Math.min(100, Math.round(q.used * 100 / q.quota)) : (q.used > 0 ? 100 : 0);
+      return '<div class="ag-fact' + (q.over ? ' is-over' : '') + '"><div class="ag-fact-head"><b>' + name + '</b><span class="num">' + D.fmtMin(q.used) + ' / ' + D.fmtMin(q.quota) + '</span>' + (q.over ? '<span class="ag-over"> · vượt quỹ</span>' : '') + '</div>' +
+        '<div class="ag-mini" role="img" aria-label="' + name + ': đã dùng ' + D.fmtMin(q.used) + ' trên quỹ ' + D.fmtMin(q.quota) + (q.over ? ', vượt quỹ' : '') + '">' + (pct ? '<span style="width:' + pct + '%"></span>' : '') + '</div>' +
+        (note ? '<small>' + note + '</small>' : '') + '</div>';
+    }
+    if (cap.work.quota > 0) facts += quota('Ad-hoc', cap.work, cap.interruptionMin > 0 ? 'gồm ' + D.fmtMin(cap.interruptionMin) + ' chen ngang' : 'chưa có chen ngang');
+    facts += quota('Personal', ev, '');
     var blocks = '';
     function blk(name, d, t) { blocks += '<div class="ag-blk"><span class="ag-blk-name">' + esc(name) + '</span><span class="num">' + d + '/' + t + '</span>' + barHtml(d, t) + '</div>'; }
     cards.forEach(function (c) { blk(c.routine.name, c.done, c.total); });
@@ -214,9 +240,7 @@ LP.agenda = (function () {
       '<button type="button" class="chip' + (m === 'checklist' ? ' is-on' : '') + '" data-act="mode" data-mode="checklist" aria-pressed="' + (m === 'checklist') + '">' + icon('list', 'ic18') + 'Checklist</button>' +
       '<button type="button" class="chip' + (m === 'overview' ? ' is-on' : '') + '" data-act="mode" data-mode="overview" aria-pressed="' + (m === 'overview') + '">' + icon('clock', 'ic18') + 'Toàn cảnh</button></div>';
     if (m === 'overview') {
-      h += '<div class="ag-switch" role="group" aria-label="Thứ tự">' +
-        '<button type="button" class="chip' + (st.order === 'asc' ? ' is-on' : '') + '" data-act="order" data-order="asc" aria-pressed="' + (st.order === 'asc') + '">Sớm → muộn</button>' +
-        '<button type="button" class="chip' + (st.order === 'desc' ? ' is-on' : '') + '" data-act="order" data-order="desc" aria-pressed="' + (st.order === 'desc') + '">Muộn → sớm</button></div>';
+      h += '<button type="button" class="chip ag-order" data-act="order" data-order="' + (st.order === 'asc' ? 'desc' : 'asc') + '" title="Bấm để đảo thứ tự">' + (st.order === 'asc' ? 'Sớm → muộn' : 'Muộn → sớm') + ' ⇅</button>';
     }
     return h + '</div>';
   }
@@ -360,7 +384,7 @@ LP.agenda = (function () {
     var h = '<div class="ag-list">';
     var infos = cards.map(runInfo).sort(function (a, b) { return a.key - b.key || a.idx - b.idx; });
     h += '<div class="ag-runs">' + (infos.length ? infos.map(runCard).join('') :
-      '<section class="card"><h2>Daily</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Hôm nay không có lượt Daily nào.' : 'Ngày nghỉ, không có lượt Daily.') + '</p>' + (D.isWorkday(st.date) ? '<div class="ag-empty-act"><a class="btn btn-soft" href="#/mau?id=new">' + icon('plus', 'ic18') + 'Tạo Daily</a></div>' : '') + '</section>') + '</div>';
+      '<section class="card"><h2>Daily</h2><p class="ag-empty">' + (D.isWorkday(st.date) ? 'Chưa có Daily nào ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)) + '.' : 'Ngày nghỉ, chưa có Daily.') + '</p>' + (D.isWorkday(st.date) ? '<div class="ag-empty-act"><a class="btn btn-soft" href="#/mau?id=new">' + icon('plus', 'ic18') + 'Tạo Daily</a></div>' : '') + '</section>') + '</div>';
     var ad = tasks.filter(function (x) { return x.task.kind !== 'canhan'; }), cn = tasks.filter(function (x) { return x.task.kind === 'canhan'; });
     h += '<div class="ag-cola">';
     if (ad.length) h += taskSection('Ad-hoc hôm nay', ad, '');
