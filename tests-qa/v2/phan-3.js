@@ -257,7 +257,7 @@ module.exports = async function (h) {
   await h.test('Máy tính 1280px: đủ 3 cột, mục lục cột phải', async () => {
     const page = await openNotes({ w: 1280 }, 'doc=d-chiaso');
     const g = await page.evaluate(() => ['.gc-list', '.gc-doc', '.gc-side'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return [Math.round(r.left), Math.round(r.width)]; }));
-    A.ok(g[0][0] < g[1][0] && g[1][0] < g[2][0] && g[1][1] > 600 && g[1][1] <= 722, JSON.stringify(g));
+    A.ok(g[0][0] < g[1][0] && g[1][0] < g[2][0] && g[1][1] > 560 && g[1][1] <= 722, JSON.stringify(g));
     A.ok(await page.isVisible('.gc-side .gc-toc-i'));
   });
 

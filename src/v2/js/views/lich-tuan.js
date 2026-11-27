@@ -256,7 +256,9 @@ LP.lich = (function () {
     requestAnimationFrame(function () {
       var g = st.el && st.el.querySelector('.lgrid'), col = g && g.querySelector('.lcol'); if (!col) return;
       var base = col.getBoundingClientRect().top - g.getBoundingClientRect().top + g.scrollTop;
-      g.scrollTop = Math.max(0, base + y - g.clientHeight / 3);
+      var top = g.querySelector('.lg-top'), H = top ? top.offsetHeight : 0;
+      // Đặt mốc ở 1/3 phần lưới còn thấy được, trừ hàng ngày + dải Cả ngày đang dính trên đầu
+      g.scrollTop = Math.max(0, base + y - H - (g.clientHeight - H) / 3);
     });
   }
   function renderGrid() {

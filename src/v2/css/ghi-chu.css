@@ -116,8 +116,8 @@
   .gc-body h3{font-size:18px}
 }
 @media (min-width:900px){
-  .gc{grid-template-columns:210px minmax(0,1fr)}
-  .gc:has(.gc-side:not(:empty)){grid-template-columns:210px minmax(0,1fr) 220px}
+  .gc{grid-template-columns:240px minmax(0,1fr)}
+  .gc:has(.gc-side:not(:empty)){grid-template-columns:240px minmax(0,1fr) 220px}
   .gc-side:empty{display:none}
   .gc-back,.gc-tocbtn{display:none}
   .gc-side{display:block;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}

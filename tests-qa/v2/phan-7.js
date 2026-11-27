@@ -215,7 +215,7 @@ module.exports = async function (h) {
     const page = await h.open({ w: 1280, h: 860, hash: WEEK });
     await page.waitForTimeout(250);
     // Đợt 2: chỉ cuộn bên trong khung lưới, trang không tự cuộn
-    const y = await page.evaluate(() => { const g = document.querySelector('.lgrid').getBoundingClientRect(), n = document.querySelector('.lnow').getBoundingClientRect(); return { s: window.pageYOffset, gs: document.querySelector('.lgrid').scrollTop, f: (n.top - g.top) / g.height }; });
+    const y = await page.evaluate(() => { const g = document.querySelector('.lgrid').getBoundingClientRect(), n = document.querySelector('.lnow').getBoundingClientRect(); return { s: window.pageYOffset, gs: document.querySelector('.lgrid').scrollTop, f: (n.top - g.top - document.querySelector('.lg-top').offsetHeight) / (g.height - document.querySelector('.lg-top').offsetHeight) }; });
     A.ok(y.s === 0 && y.gs > 0 && y.f > 0.2 && y.f < 0.46, JSON.stringify(y));
     const hd = await page.evaluate(() => { const g = document.querySelector('.lgrid').getBoundingClientRect(); document.querySelector('.lgrid').scrollTop += 200; return Math.round(document.querySelector('.lhead').getBoundingClientRect().top - g.top); });
     A.ok(hd >= 0 && hd <= 20, 'hàng thứ/ngày phải dính trên đầu khung lưới: ' + hd);
