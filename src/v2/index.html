@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fffdf8">
   <script>try{var lpT=localStorage.getItem('lp_theme');if(lpT==='light'||lpT==='dark')document.documentElement.setAttribute('data-theme',lpT)}catch(e){}</script>
-  <title>Life Planner V2</title>
+  <title>Plan With Love, Life With Joy</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Life Planner V2">
+  <meta name="apple-mobile-web-app-title" content="Plan With Love, Life With Joy">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,20 +25,26 @@
   <link rel="stylesheet" href="css/motion.css?v=v2d">
   <link rel="stylesheet" href="css/so-tay.css?v=v2d">
   <link rel="stylesheet" href="css/nut-giay.css?v=v2g">
-  <link rel="stylesheet" href="css/lam-moi.css?v=v2m">
+  <link rel="stylesheet" href="css/lam-moi.css?v=v2n">
 </head>
 <body>
   <div class="bg-flowers" id="bg-flowers" aria-hidden="true"></div>
   <header class="site-head">
     <div class="topbar">
-      <a class="logo" href="#/agenda" aria-label="Life Planner, về Agenda">
-        <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
-          <rect x="6" y="5" width="28" height="32" rx="7" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.4"/>
-          <path d="M12 5V2.5M18 5V2.5M24 5V2.5M30 5V2.5" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>
-          <use href="#f-daisy" x="10" y="12" width="20" height="20" style="color:var(--petal-2)"/>
-          <use href="#f-sprig" x="22" y="24" width="14" height="14"/>
+      <a class="logo" href="#/agenda" aria-label="Plan With Love, Life With Joy, về Agenda">
+        <svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+          <rect x="7" y="9" width="30" height="35" rx="7" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.6"/>
+          <path d="M13 9V5.5M20 9V5.5M27 9V5.5M34 9V5.5" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/>
+          <use href="#f-heart" x="12" y="19" width="20" height="20"/>
+          <use href="#f-sun" class="lm-sun" x="28" y="0" width="20" height="20"/>
+          <use href="#f-sprig" x="3" y="32" width="14" height="14"/>
         </svg>
-        <span class="logo-text">LIFE <span>PLANNER</span></span>
+        <span class="logo-text">
+        <span class="lt-1">Plan With <b class="lt-love">Love</b><svg class="lt-ht" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-heart"/></svg><i class="lt-cm">,</i></span>
+        <span class="lt-2">Life With <b class="lt-joy">Joy</b><svg class="lt-sun" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-sun" width="24" height="24"/></svg><svg class="lt-fl" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-sakura"/></svg></span>
+        <svg class="lt-sp lt-sp1" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-spark"/></svg><svg class="lt-sp lt-sp2" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-spark"/></svg>
+        <svg class="lt-h lt-h1" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-heart"/></svg><svg class="lt-h lt-h2" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-heart"/></svg>
+      </span>
       </a>
       <span class="spacer"></span>
       <button type="button" class="round" id="btn-search" aria-label="Tìm kiếm">
@@ -97,17 +103,17 @@
   <script src="js/core/api-mock.js?v=v2d"></script>
   <script src="js/core/api-sheet.js?v=v2d"></script>
   <script src="js/core/api.js?v=v2d"></script>
-  <script src="js/core/flowers.js?v=v2m"></script>
+  <script src="js/core/flowers.js?v=v2n"></script>
   <script src="js/core/cute.js?v=v2d"></script>
   <script src="js/core/ui.js?v=v2d"></script>
   <script src="js/core/store.js?v=v2d"></script>
   <script src="js/core/logic-routines.js?v=v2d"></script>
   <script src="js/core/logic-tasks.js?v=v2d"></script>
   <script src="js/core/stats.js?v=v2d"></script>
-  <script src="js/core/router.js?v=v2m"></script>
+  <script src="js/core/router.js?v=v2n"></script>
   <script src="js/core/search.js?v=v2d"></script>
   <script src="js/core/notify.js?v=v2d"></script>
-  <script src="js/core/shell.js?v=v2d"></script>
+  <script src="js/core/shell.js?v=v2n"></script>
   <script src="js/core/motion.js?v=v2d"></script>
   <!-- Các màn (mỗi phần sở hữu file của mình) -->
   <script src="js/views/agenda.js?v=v2m"></script>

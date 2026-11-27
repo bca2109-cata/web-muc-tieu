@@ -24,3 +24,9 @@ Mục tiêu: bớt cảm giác "AI làm", giữ cá tính sổ tay (giấy, băn
 - Lời chào Agenda nói số việc thật: "Hôm nay còn 8 việc cần làm."
 - Ghi chú trống: nét vẽ tay cuốn sổ và cây bút, câu chỉ dẫn cụ thể.
 - Tổng kết: số chính (Hoàn thành) rất to, ba số phụ nhỏ; tiêu đề khối chỉ chữ có đường kẻ đậm; đường biểu đồ màu mực đậm, nền vùng ≥ 80% gần như bỏ.
+
+## Tên mới và tiêu đề (27/11)
+- Tên web: **Plan With Love, Life With Joy** (thẻ trình duyệt, tên khi cài ra màn hình, trang giới thiệu).
+- Tiêu đề hai nhịp: "Plan With Love♥," (Love hồng, trái tim đập) và "Life With Joy☀" (Joy cam, mặt trời xoay tia, bông anh đào lắc). Quanh chữ có hạt lấp lánh và trái tim nhỏ bay lên; đường lượn bên dưới chuyển từ hồng sang cam vàng.
+- Biểu tượng sổ tay: trái tim thay bông cúc, mặt trời nhỏ ở góc. Mọi chuyển động tắt khi máy bật "giảm chuyển động"; hạt và trái tim nhỏ ẩn khi cuộn trang.
+- Chưa đổi: biểu tượng ứng dụng PNG (icons/), tên Sheet dữ liệu, web cũ.

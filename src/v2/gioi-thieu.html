@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fffafc">
   <script>try{var lpT=localStorage.getItem('lp_theme');if(lpT==='light'||lpT==='dark')document.documentElement.setAttribute('data-theme',lpT)}catch(e){}</script>
-  <title>Life Planner</title>
-  <meta name="description" content="Life Planner: Daily, Ad-hoc, Personal và ghi chú ở cùng một chỗ, lưu trong Google Sheet của bạn.">
+  <title>Plan With Love, Life With Joy</title>
+  <meta name="description" content="Plan With Love, Life With Joy: Daily, Ad-hoc, Personal và ghi chú ở cùng một chỗ, lưu trong Google Sheet của bạn.">
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/base.css?v=v2c">
   <link rel="stylesheet" href="css/so-tay.css?v=v2c">
   <link rel="stylesheet" href="css/nut-giay.css?v=v2f">
+  <link rel="stylesheet" href="css/lam-moi.css?v=v2n">
   <link rel="stylesheet" href="css/gioi-thieu.css?v=v2b">
 </head>
 <body>
@@ -22,14 +23,20 @@
   <div class="bg-flowers" id="bg-flowers" aria-hidden="true"></div>
 
   <header class="gt-top">
-    <a class="logo" href="index.html#/agenda" aria-label="Life Planner, mở Agenda">
-      <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
-        <rect x="6" y="5" width="28" height="32" rx="7" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.4"/>
-        <path d="M12 5V2.5M18 5V2.5M24 5V2.5M30 5V2.5" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>
-        <use href="#f-daisy" x="10" y="12" width="20" height="20" style="color:var(--petal-2)"/>
-        <use href="#f-sprig" x="22" y="24" width="14" height="14"/>
-      </svg>
-      <span class="logo-text">LIFE <span>PLANNER</span></span>
+    <a class="logo" href="index.html#/agenda" aria-label="Plan With Love, Life With Joy, mở Agenda">
+      <svg class="logo-mark" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+          <rect x="7" y="9" width="30" height="35" rx="7" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2.6"/>
+          <path d="M13 9V5.5M20 9V5.5M27 9V5.5M34 9V5.5" stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round"/>
+          <use href="#f-heart" x="12" y="19" width="20" height="20"/>
+          <use href="#f-sun" class="lm-sun" x="28" y="0" width="20" height="20"/>
+          <use href="#f-sprig" x="3" y="32" width="14" height="14"/>
+        </svg>
+      <span class="logo-text">
+        <span class="lt-1">Plan With <b class="lt-love">Love</b><svg class="lt-ht" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-heart"/></svg><i class="lt-cm">,</i></span>
+        <span class="lt-2">Life With <b class="lt-joy">Joy</b><svg class="lt-sun" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-sun" width="24" height="24"/></svg><svg class="lt-fl" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-sakura"/></svg></span>
+        <svg class="lt-sp lt-sp1" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-spark"/></svg><svg class="lt-sp lt-sp2" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-spark"/></svg>
+        <svg class="lt-h lt-h1" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-heart"/></svg><svg class="lt-h lt-h2" viewBox="0 0 24 24" aria-hidden="true"><use href="#f-heart"/></svg>
+      </span>
     </a>
     <a class="btn btn-soft gt-top-cta" href="index.html#/agenda">Mở app</a>
   </header>
@@ -43,7 +50,7 @@
         <h1 id="gt-h1">Không quên việc nào nữa.</h1>
         <p class="gt-lead">Daily, Ad-hoc, Personal và ghi chú ở cùng một chỗ, lưu trong Google Sheet của bạn.</p>
         <div class="gt-actions">
-          <a class="btn btn-primary gt-big" href="index.html#/agenda">Mở Life Planner</a>
+          <a class="btn btn-primary gt-big" href="index.html#/agenda">Mở web</a>
           <a class="btn btn-soft gt-big" href="#mot-ngay">Xem một ngày dùng</a>
         </div>
       </div>
@@ -109,13 +116,13 @@
     <section class="gt-end card" aria-labelledby="gt-go">
       <h2 id="gt-go">Bắt đầu ngày hôm nay</h2>
       <p>Mở Agenda, xem việc đầu tiên.</p>
-      <a class="btn btn-primary gt-big" href="index.html#/agenda">Mở Life Planner</a>
+      <a class="btn btn-primary gt-big" href="index.html#/agenda">Mở web</a>
     </section>
   </main>
 
-  <footer class="gt-foot"><p>Life Planner V2 · dùng riêng</p></footer>
+  <footer class="gt-foot"><p>Plan With Love, Life With Joy · dùng riêng</p></footer>
 
-  <script src="js/core/flowers.js?v=v2c"></script>
+  <script src="js/core/flowers.js?v=v2n"></script>
   <script>LP.flowers.install(); LP.flowers.applyBg();</script>
 </body>
 </html>

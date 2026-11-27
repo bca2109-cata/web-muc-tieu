@@ -67,7 +67,7 @@ LP.shell = (function () {
   function bindHeadSize() {
     var head = document.querySelector('.site-head'), root = document.documentElement;
     function size() { root.style.setProperty('--head-h', Math.round(head.getBoundingClientRect().height) + 'px'); }
-    function scrolled() { var on = (window.pageYOffset || 0) > 40; if (root.classList.contains('is-scrolled') !== on) { root.classList.toggle('is-scrolled', on); size(); } }
+    function scrolled() { var y = window.pageYOffset || 0, was = root.classList.contains('is-scrolled'), on = y > 40 ? true : y < 4 ? false : was; /* có độ trễ để đầu trang co lại không làm trang nhảy qua lại */ if (root.classList.contains('is-scrolled') !== on) { root.classList.toggle('is-scrolled', on); size(); } }
     size(); scrolled();
     window.addEventListener('scroll', scrolled, { passive: true });
     window.addEventListener('resize', size);

@@ -207,3 +207,48 @@ h1{font-weight:700}
 .mt-g-w .mt-fill{background-color:var(--cv-work)!important}
 .mt-g-s .mt-fill{background-color:var(--cv-study)!important}
 .mt-g-h .mt-fill{background-color:var(--cv-health)!important}
+
+/* ---------- 7. Tên mới: Plan With Love, Life With Joy ---------- */
+:root{--joy:#d27300}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--joy:#ffc83d}}
+:root[data-theme="dark"]{--joy:#ffc83d}
+.logo{position:relative}
+.logo-mark{overflow:visible}
+.logo-text{display:flex;flex-direction:column;position:relative;font-size:clamp(17px,4.9vw,27px);font-weight:700;line-height:1.04;letter-spacing:0;padding-bottom:8px;color:var(--ink)}
+.logo-text>.lt-1,.logo-text>.lt-2{color:var(--ink);display:block}
+.lt-2{margin-left:1.1em}
+.lt-love{color:var(--accent);font-weight:700}
+.lt-joy{color:var(--joy);font-weight:700}
+.lt-ht,.lt-sun,.lt-fl{display:inline-block;vertical-align:-.12em;margin-left:.12em}
+.lt-ht{width:.78em;height:.78em;transform-origin:50% 60%;animation:lt-beat 2.4s ease-in-out infinite}
+.lt-sun{width:1em;height:1em;vertical-align:-.2em;color:var(--joy)}
+.lt-sun .sun-rays,.lm-sun .sun-rays{transform-origin:0 0;animation:lt-spin 14s linear infinite}
+.lt-fl{width:.8em;height:.8em;color:var(--petal-8);animation:lt-sway 4s ease-in-out infinite}
+.lt-cm{font-style:normal;color:var(--accent)}
+/* Hạt lấp lánh và trái tim nhỏ bay quanh chữ */
+.lt-sp,.lt-h{position:absolute;pointer-events:none}
+.lt-sp1{width:.62em;height:.62em;right:-.1em;top:-.35em;animation:lt-twinkle 2.6s ease-in-out infinite}
+.lt-sp2{width:.42em;height:.42em;left:.1em;top:1.7em;animation:lt-twinkle 3.2s ease-in-out .8s infinite}
+.lt-h{width:.5em;height:.5em;opacity:0}
+.lt-h1{left:3.4em;top:.1em;animation:lt-rise 4.2s ease-out infinite}
+.lt-h2{left:.3em;top:.5em;width:.4em;height:.4em;animation:lt-rise 4.2s ease-out 2.1s infinite}
+.lt-sp1,.lt-sp2{filter:drop-shadow(0 0 2px rgba(255,200,60,.6))}
+/* Đường lượn dưới chữ: chuyển từ hồng sang cam vàng */
+.logo-text::after{left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,var(--petal-2),#ffa066 55%,#f2b400);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='8'%3E%3Cpath d='M0 4q5.5-5.500 11 0t11 0' fill='none' stroke='%23000' stroke-width='2.600' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='8'%3E%3Cpath d='M0 4q5.5-5.500 11 0t11 0' fill='none' stroke='%23000' stroke-width='2.600' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+  background-size:100% 100%;border:0;border-radius:0;opacity:1}
+.lm-sun{color:var(--joy)}
+:root.is-scrolled .logo-text{font-size:clamp(15px,4.2vw,22px);padding-bottom:6px}
+:root.is-scrolled .lt-sp,:root.is-scrolled .lt-h{display:none}
+.gt-top .logo-text{font-size:clamp(12.5px,3.7vw,30px)}
+.gt-top .logo{flex:1 1 auto;min-width:0}
+@media (max-width:480px){.gt-top .logo-mark{width:34px;height:34px}.gt-top .lt-fl{display:none}}
+@keyframes lt-beat{0%,60%,100%{transform:scale(1)}15%{transform:scale(1.22)}30%{transform:scale(1)}42%{transform:scale(1.14)}}
+@keyframes lt-spin{to{transform:rotate(360deg)}}
+@keyframes lt-sway{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
+@keyframes lt-twinkle{0%,100%{transform:scale(.55) rotate(0);opacity:.35}50%{transform:scale(1) rotate(25deg);opacity:1}}
+@keyframes lt-rise{0%{transform:translateY(8px) scale(.6);opacity:0}20%{opacity:.9}100%{transform:translateY(-14px) scale(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.lt-ht,.lt-fl,.lt-sp,.lt-h,.sun-rays{animation:none!important}.lt-h{display:none}.lt-sp{opacity:.9}}
+.topbar{padding-top:8px}
+.logo-mark{width:clamp(40px,10vw,52px);height:clamp(40px,10vw,52px)}

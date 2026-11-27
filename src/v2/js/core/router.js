@@ -48,7 +48,7 @@ LP.router = (function () {
     el.setAttribute('data-route', p.name);
     document.documentElement.setAttribute('data-route', p.name);   // đổi màu nhấn theo màn (lam-moi.css)
     cur = { name: p.name, params: p.params, def: def, placeholder: !def };
-    document.title = ((def && def.title) || TITLES[p.name]) + ' · Life Planner';
+    document.title = ((def && def.title) || TITLES[p.name]) + ' · Plan With Love, Life With Joy';
     if (def) { try { def.mount(el, p.params); } catch (e) { console.error(e); el.innerHTML = '<section class="card"><p>Màn này gặp lỗi khi mở. Thử tải lại trang.</p></section>'; } }
     else placeholder(el, p.name);
     emit('route', { name: p.name, params: p.params });
