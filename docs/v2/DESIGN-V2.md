@@ -6,6 +6,8 @@ Mục tiêu: bớt cảm giác "AI làm", giữ cá tính sổ tay (giấy, băn
 - **Chủ đạo là hồng** (giữ bộ màu hồng của `tokens.css`: nền, nút, nhãn, logo, số chính, đường kẻ). Bản tối cũng giữ tông hồng đậm.
 - Màu khác chỉ để phối: mỗi tab một màu riêng (Agenda hồng, Lịch vàng, Ghi chú xanh lá, Mục tiêu tím, Tổng kết xanh biển), cộng màu nhóm và biểu đồ có sẵn.
 
+- **Biểu đồ và nội dung nhiều màu** (bảng `--v1…--v7`: hồng, cam, vàng, xanh lá, xanh dương, tím, xanh ngọc): mỗi khối Tổng kết một màu tiêu đề; hạng Daily bị sót, thanh Chen ngang, vòng thói quen mỗi mục một màu; khối Daily ở Agenda có vạch trái và tiêu đề màu riêng; thanh tiến độ Mục tiêu theo màu nhóm; điểm biểu đồ xanh khi đạt mốc, cam khi dưới mốc.
+
 ## Chữ
 - Tiêu đề và số lớn: Mali 700 (`--display`). Còn lại Quicksand.
 

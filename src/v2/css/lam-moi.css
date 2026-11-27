@@ -142,3 +142,68 @@ h1{font-weight:700}
   .mt-switch>button,.ag-switch>.chip,.lich-seg>button{white-space:nowrap}
   .mt-switch:not(.mt-tabs)>button,.ag-switch>.chip,.lich-seg>button{padding:7px 10px!important}
 }
+
+/* ---------- 6. Thêm màu cho biểu đồ và nội dung (hồng vẫn là chủ đạo) ---------- */
+:root{--v1:#e0457b;--v2:#f08a2c;--v3:#f2b400;--v4:#2eaa72;--v5:#3b82d6;--v6:#8a63e0;--v7:#1fa6a6;
+  --v1d:#a8204f;--v2d:#a3470a;--v3d:#7a5300;--v4d:#1e7149;--v5d:#245a9e;--v6d:#5a38b0;--v7d:#0f6e6e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--v1d:#ff8fb8;--v2d:#ffb98f;--v3d:#ffd772;--v4d:#8fe3b8;--v5d:#a9c6ff;--v6d:#cfb8ff;--v7d:#7fe0e0}}
+:root[data-theme="dark"]{--v1d:#ff8fb8;--v2d:#ffb98f;--v3d:#ffd772;--v4d:#8fe3b8;--v5d:#a9c6ff;--v6d:#cfb8ff;--v7d:#7fe0e0}
+
+/* Tổng kết: mỗi khối một màu (đường kẻ tiêu đề + chấm màu) */
+.mt-block{--bc:var(--v1);--bcd:var(--v1d)}
+.mt-block:nth-of-type(2){--bc:var(--v5);--bcd:var(--v5d)}
+.mt-block:nth-of-type(3){--bc:var(--v4);--bcd:var(--v4d)}
+.mt-block:nth-of-type(4){--bc:var(--v2);--bcd:var(--v2d)}
+.mt-block:nth-of-type(5){--bc:var(--v6);--bcd:var(--v6d)}
+.mt-block:nth-of-type(6){--bc:var(--v7);--bcd:var(--v7d)}
+.mt-block .mt-h{border-bottom-color:var(--bc);color:var(--bcd)}
+.mt-block .mt-h::before{content:"";display:inline-block;width:12px;height:12px;margin-right:9px;border-radius:50%;background:var(--bc);vertical-align:-1px}
+.mt-block .mt-h3{color:var(--bcd)}
+.mt-tile-hero .mt-tv{background:linear-gradient(transparent 64%,color-mix(in srgb,var(--v3) 55%,transparent) 64% 92%,transparent 92%)}
+
+/* Đường xu hướng: hồng đậm, điểm xanh khi đạt mốc, cam đỏ khi dưới mốc */
+.mt-tline{stroke:var(--v1);stroke-width:3.4}
+.mt-dot{background:var(--v4);border:2px solid var(--surface)}
+.mt-dot.is-low{background:var(--v2)}
+.mt-dot.is-now{background:var(--v1);box-shadow:0 0 0 2px var(--v1d)}
+.mt-tband{fill:var(--v4);opacity:.08}
+.mt-cv.is-low{color:var(--v2d)}
+.mt-sw-line{background:var(--v1)}.mt-sw-band{background:color-mix(in srgb,var(--v4) 30%,var(--surface))}.mt-sw-low{background:var(--v2)}
+
+/* Daily hay bị sót: mỗi hạng một màu */
+.mt-rank li:nth-child(1) .mt-mini>span{background:var(--v1)}
+.mt-rank li:nth-child(2) .mt-mini>span{background:var(--v2)}
+.mt-rank li:nth-child(3) .mt-mini>span{background:var(--v3)}
+.mt-rank li:nth-child(4) .mt-mini>span{background:var(--v5)}
+.mt-rank li:nth-child(5) .mt-mini>span{background:var(--v6)}
+.mt-rank li:nth-child(1) .mt-rn{background:var(--v1);color:#fff}.mt-rank li:nth-child(2) .mt-rn{background:var(--v2);color:#fff}
+.mt-rank li:nth-child(3) .mt-rn{background:var(--v3);color:#221b33}.mt-rank li:nth-child(4) .mt-rn{background:var(--v5);color:#fff}.mt-rank li:nth-child(5) .mt-rn{background:var(--v6);color:#fff}
+/* Chen ngang: thanh xanh ngọc */
+.mt-hf{background:var(--v7)}
+.mt-hbars li:nth-child(even) .mt-hf{background:var(--v5)}
+/* Thói quen: mỗi thói quen một màu vòng */
+.mt-habs li:nth-child(4n+1) .mt-rfill{stroke:var(--v4)}.mt-habs li:nth-child(4n+2) .mt-rfill{stroke:var(--v5)}
+.mt-habs li:nth-child(4n+3) .mt-rfill{stroke:var(--v6)}.mt-habs li:nth-child(4n+4) .mt-rfill{stroke:var(--v2)}
+
+/* Agenda: mỗi khối Daily một màu (vạch trái, tiêu đề, thanh tiến độ) */
+.ag-runs>.ag-run{--bc:var(--v1);--bcd:var(--v1d)}
+.ag-runs>.ag-run:nth-child(3n+2){--bc:var(--v3);--bcd:var(--v3d)}
+.ag-runs>.ag-run:nth-child(3n+3){--bc:var(--v5);--bcd:var(--v5d)}
+.ag .ag-run,.ag .ag-tasks{box-shadow:inset 5px 0 0 var(--bc,var(--v2));border-left-color:transparent}
+.ag-run:not(.is-done)::before{opacity:.85}
+.ag-tasks{--bc:var(--v2)}
+.ag-run h2,.ag-tasks h2{color:var(--bcd,var(--ink))}
+.ag-blk:nth-of-type(3n+1) .bar14>span{background:var(--v1)}
+.ag-blk:nth-of-type(3n+2) .bar14>span{background:var(--v3)}
+.ag-blk:nth-of-type(3n+3) .bar14>span{background:var(--v5)}
+.ag-blk:nth-of-type(3n+1) .bar14{background:color-mix(in srgb,var(--v1) 14%,var(--surface))}
+.ag-blk:nth-of-type(3n+2) .bar14{background:color-mix(in srgb,var(--v3) 18%,var(--surface))}
+.ag-blk:nth-of-type(3n+3) .bar14{background:color-mix(in srgb,var(--v5) 14%,var(--surface))}
+.ag-ring .s-ok{stroke:var(--v4)}.ag-ring .s-pr{stroke:var(--v3)}.ag-ring .s-warn{stroke:var(--v1)}
+.ag-mini>span{background:var(--v7)}
+.ag-chart:nth-child(1) h2{color:var(--v1d)}.ag-chart:nth-child(2) h2{color:var(--v5d)}.ag-chart:nth-child(3) h2{color:var(--v4d)}
+
+/* Mục tiêu: thanh tiến độ theo màu nhóm */
+.mt-g-w .mt-fill{background-color:var(--cv-work)!important}
+.mt-g-s .mt-fill{background-color:var(--cv-study)!important}
+.mt-g-h .mt-fill{background-color:var(--cv-health)!important}
