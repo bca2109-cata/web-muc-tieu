@@ -34,3 +34,9 @@ Mục tiêu: bớt cảm giác "AI làm", giữ cá tính sổ tay (giấy, băn
 ## Khung chào "Thứ Sáu, 27/11" (27/11)
 - Cờ tam giác nhiều màu treo dọc mép trên (đung đưa nhẹ), cầu vồng và mây trôi sau mặt trời, hạt lấp lánh, chấm màu, trái tim nhỏ bay lên. Ngày/tháng có vệt tô vàng.
 - Tắt chuyển động khi máy bật "giảm chuyển động". Code: `helloDeco()` trong `js/views/agenda.js`, CSS mục 8 của `css/lam-moi.css`.
+
+## Khung chào: vòng trang trí thêm
+- Bóng bay hồng/xanh/vàng đung đưa (`.ag-balloon`), ẩn ở màn hình ≤560px để không đè nút chọn ngày.
+- Hoa giấy nhiều màu rơi chậm (`.ag-cf`), sao băng thỉnh thoảng lướt qua (`.ag-shoot`), mặt trời xoay rất chậm.
+- Lịch: ô tiêu đề của ngày hôm nay có hai ngôi sao nhỏ lấp lánh.
+- Mọi chuyển động tắt khi máy bật "giảm chuyển động".

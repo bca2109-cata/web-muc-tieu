@@ -282,3 +282,23 @@ h1{font-weight:700}
 @keyframes ag-float{0%{transform:translateY(0) scale(.6);opacity:0}20%{opacity:.95}100%{transform:translateY(-46px) scale(1.05);opacity:0}}
 @media (max-width:430px){.ag-rainbow{width:112px;height:56px}.ag-cloud1{right:66px;top:40px;width:36px;height:18px}.ag-s1{right:104px}.ag-d1{right:128px}.ag-h1{right:92px}}
 @media (prefers-reduced-motion:reduce){.ag-cloud,.ag-bunting,.ag-dc{animation:none!important}.ag-h1,.ag-h2,.ag-h3{display:none}.ag-dc{opacity:.9}}
+
+/* Khung chào: thêm bóng bay, hoa giấy rơi, sao băng, mặt trời xoay */
+.ag-balloon{position:absolute;bottom:-14px;animation:ag-bob 4.5s ease-in-out infinite;transform-origin:50% 100%}
+.ag-b1{right:236px;animation-delay:0s}.ag-b2{right:204px;bottom:-22px;animation-delay:-1.5s;width:22px;height:44px}.ag-b3{right:172px;bottom:-18px;animation-delay:-3s;width:24px;height:48px}
+.ag-cf{position:absolute;top:-10px;width:6px;height:6px;border-radius:1px;opacity:.75;animation:ag-fall 7s linear infinite}
+.ag-shoot{position:absolute;top:30px;right:60px;width:70px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff 70%,#ffd25a);opacity:0;transform:rotate(28deg);animation:ag-shoot 7s ease-in 2s infinite}
+.ag-hello .ag-sun{animation:ag-slow 48s linear infinite}
+@keyframes ag-bob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+@keyframes ag-fall{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:.8}100%{transform:translateY(150px) rotate(300deg);opacity:0}}
+@keyframes ag-shoot{0%,86%{opacity:0;transform:translate(0,0) rotate(28deg)}90%{opacity:1}100%{opacity:0;transform:translate(-120px,60px) rotate(28deg)}}
+@keyframes ag-slow{to{transform:translateY(-50%) rotate(360deg)}}
+@media (max-width:430px){.ag-b1{right:200px}.ag-b2{right:170px}.ag-b3{display:none}.ag-cf:nth-of-type(n+14){display:none}}
+@media (prefers-reduced-motion:reduce){.ag-balloon,.ag-cf,.ag-shoot,.ag-hello .ag-sun{animation:none!important}.ag-cf,.ag-shoot{display:none}}
+
+/* Lịch: ô hôm nay có lấp lánh quanh vòng khoanh */
+.lhead.is-today{position:relative}
+.lhead.is-today::before,.lhead.is-today::after{content:"";position:absolute;width:12px;height:12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.500l2.600 7.900 7.900 2.600-7.900 2.600L12 22.500l-2.600-7.900L1.500 12l7.900-2.600z' fill='%23ffd25a' stroke='%23f0a000'/%3E%3C/svg%3E") center/contain no-repeat;animation:ag-twinkle 2.8s ease-in-out infinite;pointer-events:none}
+.lhead.is-today::before{top:6px;left:14%}.lhead.is-today::after{top:30px;right:10%;width:9px;height:9px;animation-delay:1.2s}
+@media (prefers-reduced-motion:reduce){.lhead.is-today::before,.lhead.is-today::after{animation:none}}
+@media (max-width:560px){.ag-balloon{display:none}}
