@@ -57,6 +57,16 @@ function doiMaBiMat() {
 }
 
 // Tạo sheet thiếu, thêm cột thiếu vào cuối dòng tiêu đề, không đụng cột cũ. Web gọi trước mỗi lần ghi.
+// Kiểm tra cột cho mọi bảng mất hàng chục lần gọi Sheet. Mỗi lần lưu đều chạy thì chậm cả chục giây,
+// nên chỉ chạy một lần mỗi 6 giờ (nhớ bằng CacheService). Đổi COLS_KEY khi thêm cột mới vào SHEETS để buộc chạy lại.
+var COLS_KEY = 'lpv2_cols_ok_1';
+function ensureColumnsOnce_() {
+  var cache = CacheService.getScriptCache();
+  if (cache.get(COLS_KEY)) return;
+  ensureColumns_();
+  cache.put(COLS_KEY, '1', 21600);
+}
+
 function ensureColumns_() {
   var ss = SpreadsheetApp.getActive();
   Object.keys(SHEETS).forEach(function (name) {
@@ -102,7 +112,7 @@ function handle_(req) {
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);
     try {
-      ensureColumns_();
+      ensureColumnsOnce_();
       var out = a === 'save' ? save_(req.sheet, req.row) : remove_(req.sheet, req.id);
       SpreadsheetApp.flush();
       return out;
