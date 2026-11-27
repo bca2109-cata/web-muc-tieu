@@ -20,7 +20,7 @@ function docsLocked_(fn) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    ensureColumns_();
+    ensureColumnsOnce_();
     var out = fn();
     SpreadsheetApp.flush();
     return out;
@@ -53,6 +53,32 @@ function docsRead_(name) {
   return out;
 }
 
+
+// Đọc đúng MỘT dòng theo id (cột A), không đọc cả bảng. Trả null nếu không có.
+function docsReadOne_(name, id) {
+  var sh = SpreadsheetApp.getActive().getSheetByName(name);
+  if (!sh) return null;
+  var r = findRow_(sh, id);
+  if (!r) return null;
+  return docsRowObj_(sh, r);
+}
+function docsRowObj_(sh, r, head) {
+  var tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone(), lc = head ? head.length : sh.getLastColumn();
+  head = head || sh.getRange(1, 1, 1, lc).getValues()[0].map(String);
+  var vals = sh.getRange(r, 1, 1, lc).getValues()[0], o = { __row: r };
+  head.forEach(function (h, j) { if (h) o[h] = fromCell_(vals[j], tz, h); });
+  return o;
+}
+// Các dòng DocChunks của một tài liệu (tìm theo cột doc_id), không đọc cả bảng
+function docsChunksOf_(docId) {
+  var sh = SpreadsheetApp.getActive().getSheetByName('DocChunks');
+  if (!sh || sh.getLastRow() < 2) return [];
+  var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String), col = head.indexOf('doc_id') + 1;
+  if (col < 1) return [];
+  var cells = sh.getRange(2, col, sh.getLastRow() - 1, 1).createTextFinder(String(docId)).matchEntireCell(true).findAll();
+  return cells.map(function (cell) { return docsRowObj_(sh, cell.getRow(), head); });
+}
+
 function docPublic_(o) {
   return { id: o.id, space: o.space, title: o.title, sort_order: o.sort_order, headings: o.headings || '[]',
     created_at: o.created_at, updated_at: o.updated_at, deleted: o.deleted === 'TRUE' ? 'TRUE' : '' };
@@ -64,9 +90,9 @@ function docsIndex_() {
 }
 
 function docGet_(id) {
-  var row = docsRead_('Docs').filter(function (r) { return r.id === id; })[0];
+  var row = docsReadOne_('Docs', id);
   if (!row) throw new Error('Không thấy tài liệu');
-  var parts = docsRead_('DocChunks').filter(function (c) { return c.doc_id === id && c.deleted !== 'TRUE'; })
+  var parts = docsChunksOf_(id).filter(function (c) { return c.deleted !== 'TRUE'; })
     .sort(function (a, b) { return Number(a.part) - Number(b.part); })
     .map(function (c) { return String(c.content == null ? '' : c.content); });
   var out = docPublic_(row);
@@ -80,7 +106,7 @@ function docGet_(id) {
 function docSave_(doc) {
   if (!doc) throw new Error('Thiếu tài liệu');
   var id = doc.id || Utilities.getUuid().replace(/-/g, '').slice(0, 10);
-  var cur = docsRead_('Docs').filter(function (r) { return r.id === id; })[0];
+  var cur = docsReadOne_('Docs', id);
   if (cur && !doc.force && doc.base_updated_at && String(cur.updated_at) > String(doc.base_updated_at)) {
     return { conflict: true, server: docGet_(id) };
   }
@@ -95,22 +121,23 @@ function docSave_(doc) {
     deleted: doc.deleted !== undefined ? (doc.deleted && String(doc.deleted).toUpperCase() !== 'FALSE' ? 'TRUE' : '') : (cur ? cur.deleted : '')
   };
   save_('Docs', row);
-  if (doc.content !== undefined && doc.content !== null) docsWriteChunks_(id, String(doc.content));
+  if (doc.content !== undefined && doc.content !== null) docsWriteChunks_(id, String(doc.content), !!cur);
   return docPublic_(row);
 }
 
-function docsWriteChunks_(id, content) {
+function docsWriteChunks_(id, content, existed) {
   var parts = docsSplit_(content, DOC_CHUNK);
   parts.forEach(function (p, n) { save_('DocChunks', { id: id + '-' + n, doc_id: id, part: n, content: p }); });
-  // Bản mới ngắn hơn bản cũ: các đoạn thừa đánh dấu đã xóa
-  docsRead_('DocChunks').forEach(function (c) {
-    if (c.doc_id === id && Number(c.part) >= parts.length && c.deleted !== 'TRUE') remove_('DocChunks', c.id);
+  // Tài liệu mới chưa có đoạn cũ nên không cần dọn. Tài liệu cũ chỉ xem các đoạn của chính nó.
+  if (!existed) return;
+  docsChunksOf_(id).forEach(function (c) {
+    if (Number(c.part) >= parts.length && c.deleted !== 'TRUE') remove_('DocChunks', c.id);
   });
 }
 
 // Xóa mềm: chuyển vào Thùng rác. Khôi phục bằng docSave với deleted rỗng
 function docDelete_(id) {
-  var cur = docsRead_('Docs').filter(function (r) { return r.id === id; })[0];
+  var cur = docsReadOne_('Docs', id);
   if (!cur) return { id: id };
   save_('Docs', { id: id, created_at: cur.created_at, updated_at: nowStamp_(), space: cur.space, title: cur.title, sort_order: cur.sort_order, headings: cur.headings, deleted: 'TRUE' });
   return { id: id };
