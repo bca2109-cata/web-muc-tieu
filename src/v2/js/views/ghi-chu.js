@@ -33,9 +33,20 @@ LP.views = LP.views || {};
   function patchStore(row) {
     var list = docs(), i = list.findIndex(function (r) { return r.id === row.id; });
     var dead = LP.util.truthy(row.deleted);
-    if (dead) { if (i >= 0) list.splice(i, 1); trashRows = trashRows.filter(function (r) { return r.id !== row.id; }); trashRows.push(indexRow(row)); return; }
+    if (dead) { if (i >= 0) list.splice(i, 1); trashRows = trashRows.filter(function (r) { return r.id !== row.id; }); trashRows.push(indexRow(row)); idxSave(); return; }
     trashRows = trashRows.filter(function (r) { return r.id !== row.id; });
     if (i >= 0) list[i] = indexRow(row); else list.push(indexRow(row));
+    idxSave();
+  }
+  /* Danh sách tài liệu nhớ trên máy: lần sau mở tab thấy ngay, bản mới từ Google Sheet về sau thì thay vào */
+  var IDX = 'lpv2_gc_index';
+  function idxSave() { try { localStorage.setItem(IDX, JSON.stringify({ docs: docs(), trash: trashRows })); } catch (e) { /* bỏ qua */ } }
+  function idxHydrate() {
+    if (docs().length) return;
+    try {
+      var c = JSON.parse(localStorage.getItem(IDX) || 'null');
+      if (c && Array.isArray(c.docs)) { c.docs.forEach(function (r) { docs().push(r); }); if (Array.isArray(c.trash)) trashRows = c.trash; }
+    } catch (e) { /* bỏ qua */ }
   }
   function ensureIndex() {
     if (!indexPromise) {
@@ -43,6 +54,7 @@ LP.views = LP.views || {};
         var list = docs(); list.length = 0;
         trashRows = [];
         (rows || []).forEach(function (r) { if (LP.util.truthy(r.deleted)) trashRows.push(indexRow(r)); else list.push(indexRow(r)); });
+        idxSave();
         return list;
       }, function (e) { indexPromise = null; throw e; });
     }
@@ -183,6 +195,7 @@ LP.views = LP.views || {};
       '<aside class="gc-list card" aria-label="Danh sách tài liệu"></aside>' +
       '<section class="gc-main"></section><aside class="gc-side" aria-label="Mục lục"></aside></div>';
     S.root = el.firstChild; S.listEl = S.root.querySelector('.gc-list'); S.mainEl = S.root.querySelector('.gc-main'); S.sideEl = S.root.querySelector('.gc-side');
+    idxHydrate();
     renderList();
     S.listEl.addEventListener('click', onListClick);
     ensureIndex().then(function () { if (S && S.el === el) renderList(); }, function () { ui.toast('Không tải được danh sách tài liệu.'); });
