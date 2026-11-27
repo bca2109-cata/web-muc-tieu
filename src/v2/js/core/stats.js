@@ -51,14 +51,21 @@ LP.stats = (function () {
   function missedTop(from, to, n) {
     var last = upTo(to), map = {};
     if (from > last) return [];
+    function add(r, it, d) {
+      var k = it.id;
+      (map[k] = map[k] || { routineId: r.id, itemId: k, title: it.title, routineName: r.name, count: 0, dates: [] });
+      map[k].count++; map[k].dates.push(d);
+    }
     D.range(from, last).forEach(function (d) {
       LP.logic.routines.runsFor(d).forEach(function (run) {
         run.items.forEach(function (m) {
-          if (m.status === 'skipped' || m.status === 'done') return;
-          var k = m.item.id;
-          (map[k] = map[k] || { routineId: m.routine.id, itemId: k, title: m.item.title, routineName: m.routine.name, count: 0, dates: [] });
-          map[k].count++; map[k].dates.push(d);
+          if (m.status) return;   // đã tick, bỏ qua hoặc mang sang thì không phải bỏ sót
+          add(m.routine, m.item, d);
         });
+      });
+      // +1 chưa xong ở ngày tới hạn cũng là bỏ sót (cùng cách đếm với LP.logic.routines.summary)
+      LP.logic.routines.decidedUnits(d).forEach(function (e) {
+        if (e.source === 'plus1' && !e.ref.done) add(e.ref.routine, e.ref.item, d);
       });
     });
     return Object.keys(map).map(function (k) { return map[k]; })

@@ -1,4 +1,4 @@
-/* V2 · chạy test. Dùng: npm run test:v2 -- core | phan-1 ... phan-5 | all
+/* V2 · chạy test. Dùng: npm run test:v2 -- core | phan-1 ... phan-5 | doi-chieu | all
    Chỉ in MỘT dòng JSON tóm tắt: { pass, fail: [{ test, detail }] } (kèm tên file đã chạy khi chạy all). */
 const fs = require('fs');
 const path = require('path');
@@ -6,7 +6,7 @@ const { create } = require('./helpers');
 
 (async () => {
   const arg = process.argv[2] || 'all';
-  const all = fs.readdirSync(__dirname).filter(f => /^(core|phan-\d+)\.js$/.test(f)).map(f => f.replace(/\.js$/, '')).sort();
+  const all = fs.readdirSync(__dirname).filter(f => /^(core|phan-\d+|doi-chieu)\.js$/.test(f)).map(f => f.replace(/\.js$/, '')).sort();
   const names = arg === 'all' ? all : [arg];
   const summary = { pass: 0, fail: [] };
   for (const n of names) {

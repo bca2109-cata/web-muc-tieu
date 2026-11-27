@@ -199,7 +199,8 @@ LP.agenda = (function () {
   function chartsHtml(cards, tasks) {
     var done = 0, total = 0;
     // Vòng đếm luồng hôm nay: hạng mục cố định + mục đã quyết làm hôm nay (T+1, mang sang) + việc. Không đếm mục sót chưa quyết.
-    cards.forEach(function (c) { done += c.done; total += c.total; });
+    // Hạng mục Bỏ qua không tính vào mẫu số (cùng quy tắc với Tổng kết: done / (tổng − bỏ qua))
+    cards.forEach(function (c) { done += c.done; total += c.total - c.own.filter(function (m) { return m.status === 'skipped'; }).length; });
     tasks.forEach(function (x) { total++; if (x.done) done++; });
     var cap = T.capacity(st.date), ev = cap.evening;
     var facts = (total ? '' : '<p class="ag-empty">Chưa có việc nào để hoàn thành.</p>');

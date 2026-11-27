@@ -109,5 +109,5 @@ LP.thoiQuen = (function () {
     root = null; onChange = null;
   }
 
-  return { mount: mount, unmount: unmount, toggle: toggle };
+  return { mount: mount, unmount: unmount, toggle: toggle, openForm: form };
 })();

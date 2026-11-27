@@ -38,6 +38,10 @@ module.exports = async function (h) {
       await unit(page, u);
       for (const back of [0, 1]) {
         if (back) await page.click('[data-nav="-1"]');
+        if (!(await page.locator('.mt-tile').count())) {   // kỳ trống: chỉ còn một dòng, các ô ẩn (đúng nguyên tắc mục 6 của 02-THIET-KE)
+          A.ok((await page.locator('.mt-tk').innerText()).includes('Kỳ này chưa có số liệu'), u + ' ' + back + ': kỳ không ô mà cũng không có dòng kỳ trống');
+          continue;
+        }
         const got = { pct: await tile(page, 'pct'), missed: await tile(page, 'missed'), adhoc: await tile(page, 'adhoc'), int: await tile(page, 'int') };
         const want = await page.evaluate(() => {
           const r = LP.tongKet.range(LP.tongKet.state().unit, LP.tongKet.state().anchor), S = LP.stats;
