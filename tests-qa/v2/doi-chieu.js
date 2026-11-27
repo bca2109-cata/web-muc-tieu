@@ -251,4 +251,25 @@ module.exports = async function (h) {
     A.strictEqual(+(await card.getAttribute('data-total')), total0, 'thẻ chưa trở lại');
     h.noErrors(page);
   });
+
+  await h.test('11. Chưa có thói quen: câu "Chưa có thói quen", nút "Thêm thói quen" mở form thói quen', async () => {
+    const page = await h.open({ w: 1280, hash: '#/tong-ket' });
+    await unit(page, 'month');
+    A.ok(await page.locator('.mt-habs').count() === 1, 'mock phải có thói quen lúc đầu');
+    await page.evaluate(() => { LP.store.get().habits.slice().forEach(x => LP.store.remove('Habits', x.id)); });
+    await page.waitForTimeout(250);   // Tổng kết tự vẽ lại khi dữ liệu đổi
+    A.strictEqual(await page.evaluate(() => LP.store.get().habits.length), 0, 'chưa xóa hết thói quen');
+    const blk = page.locator('.mt-block', { has: page.locator('h2', { hasText: 'Thói quen' }) });
+    const txt = await blk.innerText();
+    A.ok(txt.indexOf('Chưa có thói quen') >= 0, 'thiếu câu Chưa có thói quen: ' + txt);
+    const btn = blk.locator('[data-addhab]');
+    A.strictEqual(await btn.count(), 1, 'thiếu nút Thêm thói quen');
+    A.ok((await btn.innerText()).includes('Thêm thói quen'));
+    await btn.click();
+    const form = page.locator('.mt-form');
+    await form.waitFor({ timeout: 3000 });
+    A.ok(await form.locator('input[name="name"]').count() === 1, 'form thói quen không mở');
+    A.ok((await page.locator('body').innerText()).includes('Thêm thói quen'));
+    h.noErrors(page);
+  });
 };
