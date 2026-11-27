@@ -316,3 +316,9 @@ h1{font-weight:700}
 .ag-cf{animation-duration:4.5s!important}
 .ag-hello .ag-dnum{background-size:200% 100%;animation:ag-shine 3s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.ag-rainbow,.ag-hello .ag-dnum{animation:none!important}}
+
+/* Câu chúc mừng khi xong việc */
+.lp-praise{position:fixed;z-index:9999;max-width:min(300px,calc(100vw - 16px));padding:9px 14px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:700 14px/1.35 var(--font);text-align:center;box-shadow:var(--lift,0 6px 18px rgba(0,0,0,.18));pointer-events:none;animation:lp-praise 2.6s ease both}
+.lp-praise::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
+@keyframes lp-praise{0%{opacity:0;transform:translateY(10px) scale(.9)}12%{opacity:1;transform:translateY(0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+@media (prefers-reduced-motion:reduce){.lp-praise{animation:lp-praise-r 2.6s both}@keyframes lp-praise-r{0%,85%{opacity:1}100%{opacity:0}}}
