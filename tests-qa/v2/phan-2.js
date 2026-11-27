@@ -94,8 +94,8 @@ module.exports = async function (h) {
     const a = await box('.lblk[data-task="t-baohiem"]');
     A.ok(Math.abs(a.top - (7 * 60 / 30 * 36)) <= 2, '13:00 phải ở y=504, có ' + a.top);
     const k = await box('.lblk[data-task="t-kham"]'), b = await box('.lblk[data-step="st-t-bcnguon-1"]');
-    A.ok(Math.abs(Math.abs(k.top - b.top) - 36) <= 1, 'hai mục trùng giờ phải cách nhau đúng một dòng, có ' + Math.abs(k.top - b.top));
-    A.ok(Math.abs(k.left - b.left) <= 1 && k.w > k.cw * 0.9 && b.w > b.cw * 0.9, 'phải cùng cột, không chung hàng');
+    A.ok(Math.abs(k.top - b.top) <= 1 && Math.abs(k.top - (8 * 60 / 30 * 36)) <= 2, 'hai mục trùng 14:00 phải cùng top (y=576), có ' + k.top + ' / ' + b.top);
+    A.ok(Math.abs(Math.abs(k.left - b.left) - k.cw / 2) <= 2 && k.w < k.cw * 0.55 && b.w < b.cw * 0.55, 'phải chia đôi bề ngang cột, đứng cạnh nhau');
     h.noErrors(page);
   });
 
@@ -240,5 +240,46 @@ module.exports = async function (h) {
       const page = await h.open({ w: 1024, h: 768, hash });
       await h.noOverflow(page); h.noErrors(page);
     }
+  });
+
+  await h.test('Đợt 2 · Vạch thời lượng: việc 120 phút cao gấp 4 việc 30 phút, bắt đầu đúng giờ', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    await setTimes(page, [['t-kham', '2026-11-26', '09:00', 120], ['t-baohiem', '2026-11-26', '13:00', 30]]);
+    const bar = id => page.locator('.lcol[data-date="2026-11-26"] .ldur[data-for="' + id + '"]').evaluate(e => ({ h: e.getBoundingClientRect().height, top: e.offsetTop, w: e.getBoundingClientRect().width, pe: getComputedStyle(e).pointerEvents }));
+    const a = await bar('t-kham'), b = await bar('t-baohiem');
+    A.ok(Math.abs(a.h - 4 * b.h) <= 1 && b.h === 36, 'cao ' + a.h + ' vs ' + b.h);
+    A.ok(a.top === 6 * 36 && a.w === 3 && a.pe === 'none', JSON.stringify(a));
+    const blk = await page.locator('.lcol[data-date="2026-11-26"] .lblk[data-task="t-kham"]').evaluate(e => e.getBoundingClientRect().height);
+    A.strictEqual(blk, 36, 'dòng chữ vẫn cao một ô');
+    h.noErrors(page);
+  });
+
+  await h.test('Đợt 2 · Mốc hạn có giờ là vạch .ldue-line đỏ đúng giờ; việc xong thì xám; hạn không giờ ở Cả ngày', async () => {
+    const page = await h.open({ w: 1280, h: 1600, hash: WEEK });
+    await page.evaluate(() => { const t = LP.store.find('Tasks', 't-bcnguon'); LP.store.upsert('Tasks', Object.assign({}, t, { due_date: '2026-11-27', due_time: '17:29' })); });
+    const l = page.locator('.lcol[data-date="2026-11-27"] .ldue-line');
+    A.strictEqual(await l.count(), 1);
+    const r = await l.evaluate(e => { const c = e.parentElement.getBoundingClientRect(), b = e.getBoundingClientRect(), cs = getComputedStyle(e); return { y: b.top - c.top, h: b.height, w: b.width, cw: c.width, bg: cs.backgroundColor, drag: e.getAttribute('draggable'), txt: e.textContent }; });
+    A.ok(Math.abs(r.y - (17 * 60 + 29 - 360) / 30 * 36) <= 2, 'vị trí ' + r.y);
+    A.ok(r.h === 2 && Math.abs(r.w - r.cw) <= 1 && !r.drag && /^Hạn 17:29 · /.test(r.txt), JSON.stringify(r));
+    const warn = await page.evaluate(() => { const d = document.createElement('i'); d.style.background = 'var(--warn)'; document.body.appendChild(d); const c = getComputedStyle(d).backgroundColor; d.remove(); return c; });
+    A.strictEqual(r.bg, warn, 'vạch phải màu var(--warn)');
+    await l.click(); await page.waitForSelector('.modal'); await page.keyboard.press('Escape');
+    await page.evaluate(() => LP.logic.tasks.setDone(LP.store.find('Tasks', 't-bcnguon'), true));
+    const g = await page.locator('.lcol[data-date="2026-11-27"] .ldue-line').evaluate(e => ({ done: e.classList.contains('is-done'), bg: getComputedStyle(e).backgroundColor }));
+    A.ok(g.done && g.bg !== warn, 'việc xong phải xám: ' + JSON.stringify(g));
+    h.noErrors(page);
+  });
+
+  await h.test('Đợt 2 · Bộ lọc đổi chữ; chữ trạng thái trống; khung lưới có cuộn riêng', async () => {
+    const page = await h.open({ w: 1280, h: 860, hash: WEEK });
+    const f = page.locator('[data-imp]');
+    A.strictEqual((await f.innerText()).trim(), 'Chỉ việc ♥♥ trở lên');
+    A.strictEqual(await f.getAttribute('title'), 'Làm mờ việc ♥ (Thường), giữ rõ việc ♥♥ và ♥♥♥');
+    A.ok(/Không có việc chờ xếp lịch/.test(await page.locator('.lday-un').innerText()) || (await page.locator('.lday-un .lcard').count()) > 0);
+    const o = await page.evaluate(() => { const g = document.querySelector('.lgrid'); return { oy: getComputedStyle(g).overflowY, sh: g.scrollHeight, ch: g.clientHeight, bar: document.querySelector('.lich-bar').getBoundingClientRect().bottom, all: document.querySelector('.lallday').getBoundingClientRect().bottom }; });
+    A.ok(o.oy === 'auto' && o.sh > o.ch && o.bar < 860 && o.all < 860, JSON.stringify(o));
+    const t = await (await h.open({ w: 1280, hash: '#/lich?view=thang&date=2026-11-25' })).locator('[data-imp]').innerText();
+    A.strictEqual(t.trim(), 'Chỉ việc ♥♥ trở lên');
   });
 };
