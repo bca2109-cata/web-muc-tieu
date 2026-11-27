@@ -568,7 +568,7 @@ LP.agenda = (function () {
     off: function () {
       var d = st.date, row = S().daysOff.filter(function (r) { return r.date === d; })[0];
       LP.ui.confirm(row ? 'Bỏ đánh dấu ngày nghỉ' : 'Đánh dấu ngày nghỉ',
-        row ? 'Ngày ' + D.fmt(d) + ' sẽ lại là ngày làm việc, các lượt Daily hiện lại.' : 'Ngày ' + D.fmt(d) + ' sẽ là ngày nghỉ: không có lượt Daily, Quỹ Ad-hoc về 0.',
+        row ? 'Ngày ' + D.fmt(d) + ' sẽ lại là ngày làm việc, các lượt Daily hiện lại.' : 'Ngày ' + D.fmt(d) + ' sẽ là ngày nghỉ: chưa có Daily nào, Quỹ Ad-hoc về 0.',
         { ok: row ? 'Bỏ đánh dấu' : 'Đánh dấu nghỉ' }).then(function (yes) {
         if (!yes) return;
         if (row) LP.store.remove('DaysOff', row.id); else LP.store.upsert('DaysOff', { date: d, note: '' });
