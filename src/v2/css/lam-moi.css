@@ -317,8 +317,15 @@ h1{font-weight:700}
 .ag-hello .ag-dnum{background-size:200% 100%;animation:ag-shine 3s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.ag-rainbow,.ag-hello .ag-dnum{animation:none!important}}
 
-/* Câu chúc mừng khi xong việc */
-.lp-praise{position:fixed;z-index:9999;max-width:min(300px,calc(100vw - 16px));padding:9px 14px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:700 14px/1.35 var(--font);text-align:center;box-shadow:var(--lift,0 6px 18px rgba(0,0,0,.18));pointer-events:none;animation:lp-praise 2.6s ease both}
-.lp-praise::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
-@keyframes lp-praise{0%{opacity:0;transform:translateY(10px) scale(.9)}12%{opacity:1;transform:translateY(0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
-@media (prefers-reduced-motion:reduce){.lp-praise{animation:lp-praise-r 2.6s both}@keyframes lp-praise-r{0%,85%{opacity:1}100%{opacity:0}}}
+/* Câu chúc mừng khi xong việc: tờ giấy note nhỏ dán ở đáy màn hình */
+.lp-praise{position:fixed;z-index:9999;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(92px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;max-width:min(330px,calc(100vw - 24px));padding:12px 16px 12px 10px;border-radius:6px 14px 8px 12px;background:#fff7d6;color:#6b3a2a;border:1.5px solid #f2dc8e;box-shadow:2px 4px 0 rgba(214,51,108,.18);font:700 14.5px/1.4 'Mali',var(--font);pointer-events:none;transform:rotate(-1.8deg);animation:lp-praise 2.8s ease both}
+.lp-praise .pr-tape{position:absolute;top:-9px;left:50%;width:54px;height:16px;margin-left:-27px;background:repeating-linear-gradient(135deg,#ffc9dc 0 6px,#ffe3ee 6px 12px);opacity:.92;transform:rotate(3deg);border-radius:2px}
+.lp-praise .pr-fl{flex:none;width:34px;height:34px;animation:lp-wob 1.6s ease-in-out infinite}
+.lp-praise .pr-ht{flex:none;width:18px;height:18px;align-self:flex-end;animation:lp-wob 1.2s ease-in-out infinite reverse}
+.lp-praise .pr-tx{flex:1}
+@media (min-width:900px){.lp-praise{bottom:28px}}
+@keyframes lp-praise{0%{opacity:0;transform:translateY(24px) rotate(-6deg) scale(.85)}10%{opacity:1;transform:translateY(0) rotate(-1.8deg) scale(1.04)}16%{transform:rotate(-1.8deg) scale(1)}85%{opacity:1}100%{opacity:0;transform:translateY(14px) rotate(-1.8deg)}}
+@keyframes lp-wob{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.lp-praise{animation:lp-praise-r 2.8s both}.lp-praise .pr-fl,.lp-praise .pr-ht{animation:none}@keyframes lp-praise-r{0%,85%{opacity:1}100%{opacity:0}}}
+:root[data-theme="dark"] .lp-praise{background:#4a3a1f;color:#ffe9b8;border-color:#7a5f2a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lp-praise{background:#4a3a1f;color:#ffe9b8;border-color:#7a5f2a}}

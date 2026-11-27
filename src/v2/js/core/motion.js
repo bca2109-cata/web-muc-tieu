@@ -8,7 +8,7 @@
     'Từng việc nhỏ làm nên điều lớn. Cố lên!', 'Quá xuất sắc! Hãy tự thưởng cho mình một nụ cười.', 'Một việc xong, một niềm vui mới.',
     'Bạn đang làm rất tốt, đừng dừng lại nhé!', 'Chăm chỉ như vậy, thành công sẽ đến thôi.', 'Hoàn thành rồi! Bạn mạnh mẽ hơn bạn nghĩ.',
     'Yêu thương bản thân, và cứ tiến lên nhé!'
-  ], lastPraise = -1, praiseEl = null, praiseTimer = null;
+  ], FL = ['f-daisy', 'f-sakura', 'f-tulip', 'f-plumeria'], lastPraise = -1, praiseEl = null, praiseTimer = null;
   function praise(x, y) {
     var i; do { i = Math.floor(Math.random() * PRAISE.length); } while (i === lastPraise && PRAISE.length > 1);
     lastPraise = i;
@@ -17,11 +17,12 @@
     praiseEl = document.createElement('div');
     praiseEl.className = 'lp-praise';
     praiseEl.setAttribute('role', 'status');
-    praiseEl.textContent = PRAISE[i];
+    praiseEl.innerHTML = '<i class="pr-tape"></i>' +
+      '<svg class="pr-fl" viewBox="0 0 64 64" aria-hidden="true" style="color:var(--petal-' + [1, 8, 3, 4, 5, 6][i % 6] + ')"><use href="#' + FL[i % FL.length] + '" width="64" height="64"/></svg>' +
+      '<span class="pr-tx"></span>' +
+      '<svg class="pr-ht" viewBox="0 0 64 64" aria-hidden="true" style="color:var(--accent)"><use href="#f-heart" width="64" height="64"/></svg>';
+    praiseEl.querySelector('.pr-tx').textContent = PRAISE[i];
     document.body.appendChild(praiseEl);
-    var w = praiseEl.offsetWidth, vw = document.documentElement.clientWidth;
-    praiseEl.style.left = Math.max(8, Math.min(vw - w - 8, x - w / 2)) + 'px';
-    praiseEl.style.top = Math.max(8, y - 64) + 'px';
     var el = praiseEl;
     praiseTimer = setTimeout(function () { el.remove(); if (praiseEl === el) praiseEl = null; }, 2600);
   }
