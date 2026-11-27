@@ -5,69 +5,32 @@
    4) Phông tiêu đề Mali cho tên màn và số lớn, còn lại Quicksand.
    5) Bóng: chỉ 2 mức. Thẻ phẳng viền 1.5px; bóng nổi chỉ cho thứ đang mở (hộp thoại, menu, thông báo). */
 
-/* ---------- 1. Màu ---------- */
+/* ---------- 1. Màu ----------
+   CHỦ ĐẠO LÀ HỒNG (giữ nguyên bộ màu hồng của tokens.css cho nền, nút, nhãn, logo, số chính).
+   Các màu khác chỉ để phối: mỗi tab một màu riêng (icon và nền tab), cùng màu nhóm và biểu đồ có sẵn. */
 :root{
-  --bg:#fffdf8; --surface:#ffffff; --ink:#221b33; --muted:#5f5873; --line:#ece4d6;
-  --plain-bg:#f4efe6; --track:#f0eadf; --tick-line:#8b7fa8; --dash:#d3c6ac;
-  --accent:#e04a1c; --accent-soft:#ffe4d9; --accent-deep:#b3310c; --accent-ink:#ffffff;
-  --hello-1:#ffd2b3; --hello-2:#ffe29a; --hello-3:#fff3c4;
-  --sel-bg:#221b33; --toast-bg:#221b33;
+  --lift:0 10px 28px rgba(59,34,53,.18);
   --shadow:0 0 0 1.5px var(--line);
-  --lift:0 10px 28px rgba(34,27,51,.18);
   --display:'Mali','Quicksand',system-ui,sans-serif;
   --r:8px;
-  /* màu riêng từng màn (dùng cho tab) */
-  --c-agenda:#e04a1c; --c-lich:#0b7fb8; --c-ghi-chu:#10935d; --c-muc-tieu:#7448f2; --c-tong-ket:#e5a000; --c-cai-dat:#55627f;
-  --s-agenda:#ffe4d9; --s-lich:#d9f0fc; --s-ghi-chu:#d5f6e6; --s-muc-tieu:#e7ddff; --s-tong-ket:#fff0c4; --s-cai-dat:#e4e8f0;
-  --d-agenda:#b3310c; --d-lich:#0a5f8c; --d-ghi-chu:#0b6e44; --d-muc-tieu:#5128c2; --d-tong-ket:#7a5200; --d-cai-dat:#3a4764;
+  --c-agenda:#d6336c; --c-lich:#e08a00; --c-ghi-chu:#10935d; --c-muc-tieu:#7448f2; --c-tong-ket:#0b7fb8;
+  --s-agenda:#ffe0ec; --s-lich:#fff0c4; --s-ghi-chu:#d5f6e6; --s-muc-tieu:#e7ddff; --s-tong-ket:#d9f0fc;
+  --d-agenda:#a8204f; --d-lich:#7a4a00; --d-ghi-chu:#0b6e44; --d-muc-tieu:#5128c2; --d-tong-ket:#0a5f8c;
 }
-:root[data-route="agenda"]{--accent:var(--c-agenda);--accent-soft:var(--s-agenda);--accent-deep:var(--d-agenda)}
-:root[data-route="lich"]{--accent:var(--c-lich);--accent-soft:var(--s-lich);--accent-deep:var(--d-lich)}
-:root[data-route="ghi-chu"]{--accent:var(--c-ghi-chu);--accent-soft:var(--s-ghi-chu);--accent-deep:var(--d-ghi-chu)}
-:root[data-route="muc-tieu"]{--accent:var(--c-muc-tieu);--accent-soft:var(--s-muc-tieu);--accent-deep:var(--d-muc-tieu)}
-:root[data-route="tong-ket"]{--accent:var(--c-tong-ket);--accent-soft:var(--s-tong-ket);--accent-deep:var(--d-tong-ket);--accent-ink:#221b33}
-:root[data-route="cai-dat"],:root[data-route="mau"],:root[data-route="soat"],:root[data-route="ton"]{--accent:var(--c-cai-dat);--accent-soft:var(--s-cai-dat);--accent-deep:var(--d-cai-dat)}
-
-/* Bản tối: nền tím than, không còn mận hồng */
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#16131f; --surface:#211d2d; --ink:#f6f1ff; --muted:#cbc2de; --line:#383249;
-  --plain-bg:#2b2639; --track:#2e2940; --tick-line:#a79bc4; --dash:#5a5073;
-  --accent:#ff8a63; --accent-soft:#4a2619; --accent-deep:#ffab8e; --accent-ink:#1a1426;
-  --hello-1:#5a2f1d; --hello-2:#54401a; --hello-3:#3d3516;
-  --sel-bg:#ff8a63; --toast-bg:#383249;
-  --shadow:0 0 0 1.5px var(--line); --lift:0 10px 28px rgba(0,0,0,.5);
-  --c-agenda:#ff8a63; --c-lich:#5cc4f5; --c-ghi-chu:#4fd8a0; --c-muc-tieu:#a98aff; --c-tong-ket:#ffc83d; --c-cai-dat:#9fb0d0;
-  --s-agenda:#4a2619; --s-lich:#12384d; --s-ghi-chu:#123d2c; --s-muc-tieu:#2f2358; --s-tong-ket:#4a3a0c; --s-cai-dat:#29324a;
-  --d-agenda:#ffab8e; --d-lich:#8fd8fa; --d-ghi-chu:#86e8bf; --d-muc-tieu:#c6b2ff; --d-tong-ket:#ffd873; --d-cai-dat:#c3cfe6;
+  --lift:0 10px 28px rgba(0,0,0,.5);
+  --c-agenda:#ff8fb8; --c-lich:#ffc83d; --c-ghi-chu:#4fd8a0; --c-muc-tieu:#a98aff; --c-tong-ket:#5cc4f5;
+  --s-agenda:#4a2438; --s-lich:#4a3a0c; --s-ghi-chu:#123d2c; --s-muc-tieu:#2f2358; --s-tong-ket:#12384d;
+  --d-agenda:#f07fac; --d-lich:#ffd873; --d-ghi-chu:#86e8bf; --d-muc-tieu:#c6b2ff; --d-tong-ket:#8fd8fa;
 }}
 :root[data-theme="dark"]{
-  --bg:#16131f; --surface:#211d2d; --ink:#f6f1ff; --muted:#cbc2de; --line:#383249;
-  --plain-bg:#2b2639; --track:#2e2940; --tick-line:#a79bc4; --dash:#5a5073;
-  --accent:#ff8a63; --accent-soft:#4a2619; --accent-deep:#ffab8e; --accent-ink:#1a1426;
-  --hello-1:#5a2f1d; --hello-2:#54401a; --hello-3:#3d3516;
-  --sel-bg:#ff8a63; --toast-bg:#383249;
-  --shadow:0 0 0 1.5px var(--line); --lift:0 10px 28px rgba(0,0,0,.5);
-  --c-agenda:#ff8a63; --c-lich:#5cc4f5; --c-ghi-chu:#4fd8a0; --c-muc-tieu:#a98aff; --c-tong-ket:#ffc83d; --c-cai-dat:#9fb0d0;
-  --s-agenda:#4a2619; --s-lich:#12384d; --s-ghi-chu:#123d2c; --s-muc-tieu:#2f2358; --s-tong-ket:#4a3a0c; --s-cai-dat:#29324a;
-  --d-agenda:#ffab8e; --d-lich:#8fd8fa; --d-ghi-chu:#86e8bf; --d-muc-tieu:#c6b2ff; --d-tong-ket:#ffd873; --d-cai-dat:#c3cfe6;
-}
-:root[data-theme="dark"][data-route="agenda"]{--accent:var(--c-agenda);--accent-soft:var(--s-agenda);--accent-deep:var(--d-agenda)}
-:root[data-theme="dark"][data-route="lich"]{--accent:var(--c-lich);--accent-soft:var(--s-lich);--accent-deep:var(--d-lich)}
-:root[data-theme="dark"][data-route="ghi-chu"]{--accent:var(--c-ghi-chu);--accent-soft:var(--s-ghi-chu);--accent-deep:var(--d-ghi-chu)}
-:root[data-theme="dark"][data-route="muc-tieu"]{--accent:var(--c-muc-tieu);--accent-soft:var(--s-muc-tieu);--accent-deep:var(--d-muc-tieu)}
-:root[data-theme="dark"][data-route="tong-ket"]{--accent:var(--c-tong-ket);--accent-soft:var(--s-tong-ket);--accent-deep:var(--d-tong-ket);--accent-ink:#1a1426}
-:root[data-theme="dark"][data-route="cai-dat"]{--accent:var(--c-cai-dat);--accent-soft:var(--s-cai-dat);--accent-deep:var(--d-cai-dat)}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"])[data-route="agenda"]{--accent:var(--c-agenda);--accent-soft:var(--s-agenda);--accent-deep:var(--d-agenda)}
-  :root:not([data-theme="light"])[data-route="lich"]{--accent:var(--c-lich);--accent-soft:var(--s-lich);--accent-deep:var(--d-lich)}
-  :root:not([data-theme="light"])[data-route="ghi-chu"]{--accent:var(--c-ghi-chu);--accent-soft:var(--s-ghi-chu);--accent-deep:var(--d-ghi-chu)}
-  :root:not([data-theme="light"])[data-route="muc-tieu"]{--accent:var(--c-muc-tieu);--accent-soft:var(--s-muc-tieu);--accent-deep:var(--d-muc-tieu)}
-  :root:not([data-theme="light"])[data-route="tong-ket"]{--accent:var(--c-tong-ket);--accent-soft:var(--s-tong-ket);--accent-deep:var(--d-tong-ket);--accent-ink:#1a1426}
-  :root:not([data-theme="light"])[data-route="cai-dat"]{--accent:var(--c-cai-dat);--accent-soft:var(--s-cai-dat);--accent-deep:var(--d-cai-dat)}
+  --lift:0 10px 28px rgba(0,0,0,.5);
+  --c-agenda:#ff8fb8; --c-lich:#ffc83d; --c-ghi-chu:#4fd8a0; --c-muc-tieu:#a98aff; --c-tong-ket:#5cc4f5;
+  --s-agenda:#4a2438; --s-lich:#4a3a0c; --s-ghi-chu:#123d2c; --s-muc-tieu:#2f2358; --s-tong-ket:#12384d;
+  --d-agenda:#f07fac; --d-lich:#ffd873; --d-ghi-chu:#86e8bf; --d-muc-tieu:#c6b2ff; --d-tong-ket:#8fd8fa;
 }
 
 /* Logo: nét lượn dưới chữ theo màu nhấn (trước là hồng cố định) */
-.logo-text::after{background:none;border-bottom:3px solid var(--accent);border-radius:0 0 40% 40%/0 0 100% 100%;height:6px;opacity:.9}
 
 /* Nút giấy: giấy lấy màu nhấn của màn, không còn hồng cố định */
 .btn-primary{--paper:var(--accent-soft);--paper-hv:color-mix(in srgb,var(--accent) 22%,var(--surface));--paper-pr:color-mix(in srgb,var(--accent) 32%,var(--surface));--txt:var(--accent-deep)}
@@ -166,7 +129,6 @@ h1{font-weight:700}
 .mt-l80{border-top:1.5px dashed var(--muted);opacity:.7}
 .mt-sw-band{background:var(--line);opacity:1}
 .mt-sw-line{background:var(--ink)}
-.logo-text>span{color:var(--accent-deep)}
 
 /* ---------- Ghi chú trống: nét vẽ tay ---------- */
 .gc-empty .ph-draw{display:grid;place-items:center;margin-bottom:6px;color:var(--ink);transform:rotate(-2deg)}
