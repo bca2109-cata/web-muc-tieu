@@ -46,6 +46,7 @@ LP.router = (function () {
     el.innerHTML = '';
     el.removeAttribute('aria-busy');
     el.setAttribute('data-route', p.name);
+    document.documentElement.setAttribute('data-route', p.name);   // đổi màu nhấn theo màn (lam-moi.css)
     cur = { name: p.name, params: p.params, def: def, placeholder: !def };
     document.title = ((def && def.title) || TITLES[p.name]) + ' · Life Planner';
     if (def) { try { def.mount(el, p.params); } catch (e) { console.error(e); el.innerHTML = '<section class="card"><p>Màn này gặp lỗi khi mở. Thử tải lại trang.</p></section>'; } }
