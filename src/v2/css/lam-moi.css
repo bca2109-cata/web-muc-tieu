@@ -302,3 +302,17 @@ h1{font-weight:700}
 .lhead.is-today::before{top:6px;left:14%}.lhead.is-today::after{top:30px;right:10%;width:9px;height:9px;animation-delay:1.2s}
 @media (prefers-reduced-motion:reduce){.lhead.is-today::before,.lhead.is-today::after{animation:none}}
 @media (max-width:560px){.ag-balloon{display:none}}
+
+/* Khung chào: chuyển động rõ hơn */
+@keyframes ag-sway{0%,100%{transform:rotate(-1.8deg) skewX(-2deg)}50%{transform:rotate(1.8deg) skewX(2deg)}}
+@keyframes ag-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(-26px)}}
+@keyframes ag-bob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-16px) rotate(6deg)}}
+@keyframes ag-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes ag-shine{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+.ag-bunting{animation-duration:2.6s}
+.ag-cloud{animation-duration:6s}.ag-cloud2{animation-direction:reverse}
+.ag-rainbow{transform-origin:50% 100%;animation:ag-pulse 4s ease-in-out infinite}
+.ag-s1,.ag-s2,.ag-s3{animation-duration:1.6s}
+.ag-cf{animation-duration:4.5s!important}
+.ag-hello .ag-dnum{background-size:200% 100%;animation:ag-shine 3s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.ag-rainbow,.ag-hello .ag-dnum{animation:none!important}}
