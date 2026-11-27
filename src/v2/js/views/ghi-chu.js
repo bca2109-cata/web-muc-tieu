@@ -217,15 +217,24 @@ LP.views = LP.views || {};
   }
   function flushThen(fn) { if (S && S.dirty) { save(); } fn(); }
 
+  var pendingCreate = {};
   function newDoc(space) {
     var max = docs().reduce(function (m, d) { return Math.max(m, LP.util.num(d.sort_order)); }, 0);
     var doc = { id: LP.util.uid(), space: space, title: 'Tài liệu mới', sort_order: max + 1, headings: '[]', deleted: '', content: '<p><br></p>' };
     flushThen(function () {
-      LP.api.docSave(doc).then(function (row) {
-        cache[row.id] = Object.assign({}, doc, row, { content: doc.content });
-        patchStore(row);
-        LP.router.go('ghi-chu', { doc: row.id, nov: '1' });
-      }, function () { ui.toast('Chưa tạo được tài liệu. Kiểm tra mạng rồi thử lại.'); });
+      /* Mở ngay, không chờ Google Sheet (mỗi lần gọi mất vài giây); tạo trên Sheet chạy nền.
+         Gõ nhanh hơn lúc tạo xong thì bản lưu kế tiếp chờ lượt tạo (xem save). */
+      cache[doc.id] = Object.assign({}, doc);
+      patchStore(doc);
+      LP.router.go('ghi-chu', { doc: doc.id, nov: '1' });
+      pendingCreate[doc.id] = LP.api.docSave(doc).then(function (row) {
+        cache[row.id] = Object.assign({}, cache[row.id] || doc, row, { content: (cache[row.id] || doc).content });
+        patchStore(Object.assign({}, cache[row.id]));
+        if (S && S.doc && S.doc.id === row.id) { S.base = row.updated_at || S.base; S.doc.updated_at = row.updated_at; S.doc.created_at = row.created_at || S.doc.created_at; }
+      }, function () {
+        ui.toast('Chưa tạo được tài liệu trên Google Sheet. Bản nháp vẫn giữ trên máy này, sẽ thử lưu lại khi bạn sửa.');
+        if (S && S.doc && S.doc.id === doc.id) { S.dirty = true; clearTimeout(S.timer); S.timer = setTimeout(save, 10000); }
+      }).then(function () { delete pendingCreate[doc.id]; });
     });
   }
 
@@ -335,6 +344,7 @@ LP.views = LP.views || {};
   // Lưu ngay. Trả Promise; gọi lúc chuyển màn thì dữ liệu lấy đồng bộ trước khi màn bị gỡ
   function save(always) {
     if (!S || !S.ed) return Promise.resolve();
+    if (pendingCreate[S.doc.id]) { var cur0 = S; return pendingCreate[S.doc.id].then(function () { return S === cur0 ? save(always) : null; }); }
     if (S.saving) { var cur = S; return S.saving.then(function () { return S === cur ? save(always) : null; }); }
     if (!S.dirty && !always) return Promise.resolve();
     clearTimeout(S.timer);
