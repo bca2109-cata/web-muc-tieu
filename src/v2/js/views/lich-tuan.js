@@ -138,10 +138,10 @@ LP.lich = (function () {
     var days = allDates(st.anchor), un = unscheduled();
     st.el.innerHTML = head(days) + '<div class="lweek">' + days.map(dayHtml).join('') +
       '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
-      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section></div>';
+      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc chờ xếp lịch</p>') + '</div></section></div>';
   }
   function filterHtml() {
-    return '<span class="lich-filter"><button type="button" class="sg-btn" data-imp aria-pressed="' + st.onlyImp + '">' + UI.icon('heart', 'ic18') + 'Quan trọng trở lên</button></span>';
+    return '<span class="lich-filter"><button type="button" class="sg-btn" data-imp aria-pressed="' + st.onlyImp + '" title="Làm mờ việc ♥ (Thường), giữ rõ việc ♥♥ và ♥♥♥">Chỉ việc ♥♥ trở lên</button></span>';
   }
   function head(days) {
     var lab = 'Tuần ' + D.fmt(days[0]) + ' – ' + D.fmt(days[6]) + '/' + days[6].slice(0, 4);
@@ -153,40 +153,51 @@ LP.lich = (function () {
   var T0 = 6 * 60, T1 = 22 * 60, STEP = 30, ROW = 36;
   function yOf(min) { return (min - T0) / STEP * ROW; }
 
-  // Mục trùng giờ xếp từ trên xuống: mỗi mục một dòng, dòng đã có người thì xuống dòng trống kế tiếp
+  // Mục đặt đúng giờ bắt đầu. Các mục chồng thời gian (start < end của mục kia, end = start + max(thời lượng, 30p))
+  // gom thành nhóm, chia đều bề ngang cột ngày như Outlook: cột i trong nhóm n cột có left = i/n, width = 1/n
   function layout(list) {
-    list.sort(function (a, b) { return a.start - b.start; });
-    var used = {};
+    list.sort(function (a, b) { return a.start - b.start || b.end - a.end; });
+    var group = [], gEnd = -1, colEnd = [];
+    function flush() { var n = colEnd.length; group.forEach(function (e) { e.n = n; }); group = []; colEnd = []; gEnd = -1; }
     list.forEach(function (e) {
-      var r = Math.floor((e.start - T0) / STEP);
-      while (used[r]) r++;
-      used[r] = true; e.row = r;
+      if (group.length && e.start >= gEnd) flush();
+      var c = 0; while (c < colEnd.length && colEnd[c] > e.start) c++;
+      colEnd[c] = e.end; e.i = c; gEnd = Math.max(gEnd, e.end); group.push(e);
     });
+    if (group.length) flush();
     return list;
   }
 
   function entriesFor(d) {
-    var timed = [], allday = [];
+    var timed = [], allday = [], dues = [];
     function put(e) {
       var s = D.timeToMin(e.time);
       if (s == null || s < T0 || s >= T1) { allday.push(e); return; }
-      e.start = s; e.end = s + STEP; timed.push(e);
+      e.start = s; e.end = s + Math.max(e.dur || 0, STEP); timed.push(e);
     }
     LP.logic.routines.itemsFor(d).forEach(function (m) {
-      put({ kind: 'fix', m: m, time: m.time, dur: num(m.item.est_min) || STEP });
+      put({ kind: 'fix', m: m, time: m.time, dur: num(m.item.est_min) });
     });
-    LP.logic.tasks.tasksFor(d).forEach(function (x) { put({ kind: 'task', x: x, time: x.time, dur: x.duration || STEP }); });
-    dueMarks(d).forEach(function (t) { put({ kind: 'due', t: t, time: t.due_time, dur: STEP }); });
-    return { timed: layout(timed), allday: allday };
+    LP.logic.tasks.tasksFor(d).forEach(function (x) { put({ kind: 'task', x: x, time: x.time, dur: x.duration }); });
+    // Mốc hạn: có giờ trong khung thì thành vạch ngang (việc đã xong vẫn vẽ, màu xám); không giờ thì ở dải Cả ngày
+    LP.store.get().tasks.forEach(function (t) {
+      if (t.due_date !== d || t.status === 'cancelled') return;
+      var done = t.status === 'done', s = D.timeToMin(t.due_time);
+      if (s != null && s >= T0 && s < T1) dues.push({ kind: 'due', t: t, start: s, done: done });
+      else if (!done) allday.push({ kind: 'due', t: t, time: t.due_time });
+    });
+    dues.sort(function (a, b) { return a.start - b.start; });
+    dues.forEach(function (e, i) { e.k = i && (e.start - dues[i - 1].start) / STEP * ROW < 14 ? dues[i - 1].k + 1 : 0; });
+    return { timed: layout(timed), allday: allday, dues: dues };
   }
 
   // Chỉ tên việc dạng chữ; giờ, thời lượng, mức quan trọng xem ở tooltip và menu
   function blockInner(e) {
-    if (e.kind === 'due') return esc('Hạn ' + (e.t.due_time ? e.t.due_time + ' · ' : '· ') + e.t.title);
-    var t = e.kind === 'fix' ? e.m.item.title : e.x.title; return LP.cute.html(t) + esc(t);
+    if (e.kind === 'due') return '<span class="lblk-t">' + esc(dueText(e.t)) + '</span>';
+    var t = e.kind === 'fix' ? e.m.item.title : e.x.title; return '<span class="lblk-t">' + LP.cute.html(t) + esc(t) + '</span>';
   }
   function blockHtml(e, pos) {
-    var cls = 'lblk' + (pos && e.end - e.start <= STEP ? ' short' : ''), attr = '';
+    var cls = 'lblk', attr = '';
     if (e.kind === 'due') {
       cls += ' ldue ldue-blk'; attr = ' tabindex="0" data-due-task="' + esc(e.t.id) + '" title="' + esc(dueText(e.t)) + '"';
     } else if (e.kind === 'fix') {
@@ -199,6 +210,22 @@ LP.lich = (function () {
     }
     return '<div class="' + cls + (pos ? '' : ' lstrip') + '"' + attr + (pos ? ' style="' + pos + '"' : '') + '>' + blockInner(e) + '</div>';
   }
+  function slotStyle(e) {
+    return 'top:' + yOf(e.start) + 'px;height:' + ROW + 'px;left:' + (e.i / e.n * 100) + '%;width:calc(' + (100 / e.n) + '% - 2px)';
+  }
+  // Vạch dọc mảnh sát mép trái: từ giờ bắt đầu, dài đúng thời lượng (Daily không có thời lượng: 30p, nhạt hơn)
+  function barHtml(e) {
+    var fix = e.kind === 'fix', grp = fix ? (e.m.routine && e.m.routine.group === 'ca_nhan' ? 'health' : 'work') : groupOf(e.x.task);
+    var dur = Math.max(e.dur || 0, STEP), end = Math.min(e.start + dur, T1), imp = fix ? 3 : (num(e.x.task.importance) || 1);
+    var cls = 'ldur g-' + grp + (fix && !e.dur ? ' faint' : '') + ((fix ? e.m.done : e.x.done) ? ' is-done' : '') + (st.onlyImp && imp < 2 ? ' dim' : '');
+    return '<i class="' + cls + '" data-for="' + esc(fix ? e.m.item.id : e.x.task.id) + '" style="top:' + yOf(e.start) + 'px;height:' + (yOf(end) - yOf(e.start)) + 'px;left:' + (e.i / e.n * 100) + '%"></i>';
+  }
+  // Mốc hạn có giờ: vạch ngang đỏ chạy hết cột tại đúng giờ hạn, chấm tròn đầu trái, chữ nhỏ trên vạch
+  function dueLineHtml(e) {
+    var imp = num(e.t.importance) || 1;
+    return '<div class="ldue-blk ldue-line' + (e.done ? ' is-done' : '') + (st.onlyImp && imp < 2 ? ' dim' : '') + '" tabindex="0" data-due-task="' + esc(e.t.id) + '" title="' + esc(dueText(e.t)) + '" style="top:' + yOf(e.start) + 'px;--k:' + e.k + '">' +
+      '<span class="ldue-t">' + esc(dueText(e.t)) + '</span></div>';
+  }
 
   function headHtml(d) {
     var today = D.today(), off = D.isDayOff(d), past = d < today;
@@ -208,7 +235,16 @@ LP.lich = (function () {
       '</div>';
   }
 
-  // Mở tuần: cuộn tới giờ hiện tại (vạch Bây giờ ở khoảng 1/3 khung); tuần khác thì tới mục sớm nhất
+  // Khung lưới giờ cuộn riêng: cao hết phần màn hình còn lại, trang không tự cuộn
+  function fitGrid() {
+    var g = st.el && st.el.querySelector('.lgrid'); if (!g) return;
+    var top = g.getBoundingClientRect().top + (window.pageYOffset || 0);
+    // Chừa chỗ cho khu "Chưa có ngày" bên dưới và phần đệm cuối trang, để cả trang vừa một màn hình
+    var un = st.el.querySelector('.lgrid + .lday-un'), main = g.closest('.main');
+    var below = (un ? un.getBoundingClientRect().height + 12 : 0) + (main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0);
+    g.style.maxHeight = Math.max(320, Math.round(window.innerHeight - top - below)) + 'px';
+  }
+  // Mở tuần: cuộn trong khung lưới tới giờ hiện tại (vạch Bây giờ ở khoảng 1/3 khung); tuần khác thì tới mục sớm nhất
   function scrollGrid(per, days, nowMin) {
     var y = null;
     if (days.indexOf(D.today()) >= 0 && nowMin >= T0 && nowMin < T1) y = yOf(nowMin);
@@ -218,31 +254,36 @@ LP.lich = (function () {
       y = yOf(first == null ? 8 * 60 : first);
     }
     requestAnimationFrame(function () {
-      var col = st.el && st.el.querySelector('.lcol'); if (!col) return;
-      window.scrollTo(0, Math.max(0, col.getBoundingClientRect().top + window.pageYOffset + y - window.innerHeight / 3));
+      var g = st.el && st.el.querySelector('.lgrid'), col = g && g.querySelector('.lcol'); if (!col) return;
+      var base = col.getBoundingClientRect().top - g.getBoundingClientRect().top + g.scrollTop;
+      var top = g.querySelector('.lg-top'), H = top ? top.offsetHeight : 0;
+      // Đặt mốc ở 1/3 phần lưới còn thấy được, trừ hàng ngày + dải Cả ngày đang dính trên đầu
+      g.scrollTop = Math.max(0, base + y - H - (g.clientHeight - H) / 3);
     });
   }
   function renderGrid() {
     var days = allDates(st.anchor), un = unscheduled(), today = D.today(), nowMin = D.timeToMin(D.now());
     var per = days.map(entriesFor), h = '';
+    var old = st.el.querySelector('.lgrid'), keep = old ? old.scrollTop : 0;
     var gut = '';
     for (var m = T0; m < T1; m += 60) gut += '<span style="top:' + yOf(m) + 'px">' + D.minToTime(m) + '</span>';
-    h += '<div class="lgrid" style="--row:' + ROW + 'px"><div class="lg-corner"></div>' + days.map(headHtml).join('');
+    h += '<div class="lgrid" style="--row:' + ROW + 'px"><div class="lg-top"><div class="lg-corner"></div>' + days.map(headHtml).join('');
     h += '<div class="lg-ad-label">Cả ngày</div>' + days.map(function (d, i) {
       return '<div class="lallday' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + '" data-date="' + d + '">' + per[i].allday.map(function (e) { return blockHtml(e, ''); }).join('') + '</div>';
-    }).join('');
-    h += '<div class="lgut" style="height:' + yOf(T1) + 'px">' + gut + '</div>';
-    h += days.map(function (d, i) {
-      var blocks = per[i].timed.map(function (e) {
-        return blockHtml(e, 'top:' + (e.row * ROW) + 'px;height:' + ROW + 'px;left:0;right:0');
-      }).join('');
-      var now = d === today && nowMin >= T0 && nowMin < T1 ? '<div class="lnow" style="top:' + yOf(nowMin) + 'px" title="Bây giờ ' + D.now() + '"><i></i></div>' : '';
-      return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + now + '</div>';
     }).join('') + '</div>';
+    h += '<div class="lg-body"><div class="lgut" style="height:' + yOf(T1) + 'px">' + gut + '</div>';
+    h += days.map(function (d, i) {
+      var blocks = per[i].timed.map(function (e) { return barHtml(e) + blockHtml(e, slotStyle(e)); }).join('');
+      var dues = per[i].dues.map(dueLineHtml).join('');
+      var now = d === today && nowMin >= T0 && nowMin < T1 ? '<div class="lnow" style="top:' + yOf(nowMin) + 'px" title="Bây giờ ' + D.now() + '"><i></i></div>' : '';
+      return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + dues + now + '</div>';
+    }).join('') + '</div></div>';
     h += '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
-      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc</p>') + '</div></section>';
+      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc chờ xếp lịch</p>') + '</div></section>';
     st.el.innerHTML = head(days) + h;
+    fitGrid();
     if (st.needScroll) { st.needScroll = false; scrollGrid(per, days, nowMin); }
+    else { var g = st.el.querySelector('.lgrid'); if (g) g.scrollTop = keep; }
   }
   function renderWeek() { if (isMobile()) renderList(); else renderGrid(); }
 
@@ -366,12 +407,13 @@ LP.lich = (function () {
     bindWeek();
     var mq = window.matchMedia('(max-width: 767px)'), h = function () { render(); };
     if (mq.addEventListener) mq.addEventListener('change', h);
+    window.addEventListener('resize', fitGrid);
     el.addEventListener('keydown', function (e) {
       var b = e.target.closest && e.target.closest('.lblk[data-task],.ldue-blk[data-due-task]');
       if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); editTask(b.getAttribute('data-task') || b.getAttribute('data-due-task')); }
     });
     ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.on('change:' + s, h); });
-    st.off = function () { if (mq.removeEventListener) mq.removeEventListener('change', h); ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.off('change:' + s, h); }); };
+    st.off = function () { window.removeEventListener('resize', fitGrid); if (mq.removeEventListener) mq.removeEventListener('change', h); ['Tasks', 'TaskSteps', 'RoutineChecks', 'Interruptions', 'DaysOff'].forEach(function (s) { LP.store.off('change:' + s, h); }); };
     render();
   }
   function unmount() {

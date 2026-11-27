@@ -212,12 +212,13 @@ module.exports = async function (h) {
 
   /* ---------- Lịch ---------- */
   await h.test('19-21. Lịch tuần tự cuộn tới giờ hiện tại, hàng ngày dính, giờ hạn nằm đúng khung giờ', async () => {
-    const page = await h.open({ w: 1280, h: 600, hash: WEEK });
+    const page = await h.open({ w: 1280, h: 860, hash: WEEK });
     await page.waitForTimeout(250);
-    const y = await page.evaluate(() => ({ s: window.pageYOffset, now: document.querySelector('.lnow').getBoundingClientRect().top, ih: window.innerHeight }));
-    A.ok(y.s > 0 && y.now > y.ih * 0.15 && y.now < y.ih * 0.55, JSON.stringify(y));
-    const hd = await page.evaluate(() => Math.round(document.querySelector('.lhead').getBoundingClientRect().top) - Math.round(document.querySelector('.site-head').getBoundingClientRect().height));
-    A.ok(Math.abs(hd) <= 2, 'hàng thứ/ngày phải dính ngay dưới đầu trang: ' + hd);
+    // Đợt 2: chỉ cuộn bên trong khung lưới, trang không tự cuộn
+    const y = await page.evaluate(() => { const g = document.querySelector('.lgrid').getBoundingClientRect(), n = document.querySelector('.lnow').getBoundingClientRect(); return { s: window.pageYOffset, gs: document.querySelector('.lgrid').scrollTop, f: (n.top - g.top - document.querySelector('.lg-top').offsetHeight) / (g.height - document.querySelector('.lg-top').offsetHeight) }; });
+    A.ok(y.s === 0 && y.gs > 0 && y.f > 0.2 && y.f < 0.46, JSON.stringify(y));
+    const hd = await page.evaluate(() => { const g = document.querySelector('.lgrid').getBoundingClientRect(); document.querySelector('.lgrid').scrollTop += 200; return Math.round(document.querySelector('.lhead').getBoundingClientRect().top - g.top); });
+    A.ok(hd >= 0 && hd <= 20, 'hàng thứ/ngày phải dính trên đầu khung lưới: ' + hd);
     await page.evaluate(() => { const t = LP.store.find('Tasks', 't-bcnguon'); LP.store.upsert('Tasks', Object.assign({}, t, { due_date: '2026-11-27', due_time: '17:29' })); });
     A.strictEqual(await page.locator('.lcol[data-date="2026-11-27"] .ldue-blk').count(), 1, 'giờ hạn 17:29 phải nằm trong khung giờ');
     A.strictEqual(await page.locator('.lallday[data-date="2026-11-27"] .ldue-blk').count(), 0, 'không nằm ở Cả ngày');

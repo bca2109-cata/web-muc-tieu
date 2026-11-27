@@ -120,7 +120,8 @@ module.exports = async function (h) {
     await page.reload();
     await page.waitForFunction(() => window.LP && LP.ready === true);
     await wait(page);
-    A.strictEqual(await page.locator('[data-act="order"][data-order="desc"].is-on').count(), 1);
+    A.ok((await tx(page, '.ag-order')).includes('Muộn → sớm'), 'chip thứ tự phải nhớ chiều muộn → sớm');
+    A.strictEqual(await page.locator('.ag-order[data-order="asc"]').count(), 1);
     A.strictEqual(await page.locator('.ag-tl').count(), 1);
   });
 
@@ -634,7 +635,8 @@ module.exports = async function (h) {
     const page = await h.open({ hash: '#/agenda' });
     A.strictEqual(await page.locator('.ag-chart').count(), 3);
     const facts = await tx(page, '.ag-facts');
-    A.ok(/Quỹ Personal 20 phút \/ 1 giờ 30/.test(facts) && /Giờ chen ngang 30 phút/.test(facts), facts);
+    A.ok(/Ad-hoc\s+\S.* \/ 3 giờ/.test(facts) && /gồm 30 phút chen ngang/.test(facts) && /Personal\s+20 phút \/ 1 giờ 30/.test(facts) && !/Quỹ Personal|Giờ chen ngang/.test(facts), facts);
+    A.strictEqual(await page.locator('.ag-mini').count(), 2);
     const blk = (await page.locator('.ag-blk').allInnerTexts()).map(b => b.replace(/\n/g, ' '));
     A.ok(blk.some(b => /Chia số AI Class\s+1\/4/.test(b)), blk.join('|'));
     A.ok(blk.some(b => /^Ad-hoc hôm nay\s+0\/1/.test(b)) && blk.some(b => /^Personal hôm nay\s+0\/1/.test(b)), 'thiếu khối Ad-hoc / Cá nhân: ' + blk.join('|'));
@@ -696,7 +698,7 @@ module.exports = async function (h) {
     const page = await h.open({ hash: '#/agenda' });
     await page.click('[data-act="prev"]');
     await wait(page);
-    A.ok((await tx(page, '.ag-head')).includes('Thứ Ba, 24/11/2026') && (await tx(page, '.ag-head')).includes('Đã qua · chỉ xem'));
+    A.ok((await tx(page, '.ag-head')).includes('Thứ Ba, 24/11') && (await tx(page, '.ag-head')).includes('Đã qua · chỉ xem'));
     A.strictEqual(await page.locator('.tick:not([disabled])').count(), 0);
     A.strictEqual(await page.locator('[data-act="off"], .ag-pending').count(), 0);
     await page.click('[data-act="today"]');
@@ -736,5 +738,37 @@ module.exports = async function (h) {
     await page.locator('.ag-tl-row', { hasText: 'Chia số cho các tổ' }).locator('.tick').click();
     await wait(page);
     A.ok(/Xong/.test(await page.locator('.ag-tl-row', { hasText: 'Chia số cho các tổ' }).innerText()));
+  });
+
+  await h.test('Đợt 2: khung chào (h1 là ngày, lời chào chỉ hôm nay, hình không mặt cười), quỹ có thanh, chip ngày nghỉ', async () => {
+    for (const [now, art] of [['08:30', 'sun'], ['15:00', 'cloud'], ['21:31', 'moon']]) {
+      const page = await h.open({ query: q('2026-11-25', now), hash: '#/agenda' });
+      A.strictEqual((await tx(page, '.ag-hello h1')).trim(), 'Thứ Tư, 25/11');
+      const greet = now === '08:30' ? 'Chào buổi sáng!' : now === '15:00' ? 'Chào buổi chiều!' : 'Chào buổi tối!';
+      A.strictEqual((await tx(page, '.ag-greet')).trim(), greet);
+      A.strictEqual((await tx(page, '.ag-dayrel')).trim(), 'Hôm nay');
+      A.strictEqual(await page.locator('.ag-daylabel').count(), 0);
+      A.strictEqual(await page.locator('.ag-sun circle[fill="#3b2235"]').count(), 0, 'không còn mặt cười');
+      A.strictEqual(await page.locator('.ag-sun clipPath#lpcc').count(), 1);
+      A.strictEqual(await page.locator('.ag-sun path[stroke="#7fa9c6"]').count(), art === 'cloud' ? 1 : 0, 'mây chỉ hiện buổi chiều');
+      A.strictEqual(await page.locator('.ag-sun path[fill="#ffe08f"]').count(), art === 'moon' ? 1 : 0, 'trăng chỉ hiện buổi tối');
+      A.strictEqual(await page.locator('.ag-sun').getAttribute('width'), '84');
+      A.strictEqual(await page.locator('[data-act="off"].chip').count(), 1);
+      A.strictEqual(await page.locator('[data-act="off"].btn-soft').count(), 0);
+      h.noErrors(page);
+    }
+    const p2 = await h.open({ hash: '#/agenda?date=2026-11-24' });
+    A.strictEqual((await tx(p2, '.ag-hello h1')).trim(), 'Thứ Ba, 24/11');
+    A.strictEqual(await p2.locator('.ag-greet').count(), 0);
+    A.strictEqual((await tx(p2, '.ag-dayrel')).trim(), 'Hôm qua');
+    const p3 = await h.open({ hash: '#/agenda?date=2026-11-30' });   // ngày nghỉ: quỹ Ad-hoc = 0 thì ẩn dòng Ad-hoc
+    const f3 = await tx(p3, '.ag-facts');
+    A.ok(!/Ad-hoc/.test(f3) && /Personal/.test(f3), f3);
+    const p4 = await h.open({ hash: '#/agenda' });
+    await p4.click('[data-act="mode"][data-mode="overview"]');
+    A.strictEqual(await p4.locator('.ag-order').getAttribute('title'), 'Bấm để đảo thứ tự');
+    A.strictEqual(await p4.locator('.ag-order[data-order="desc"]').count(), 1);
+    A.strictEqual(await p4.locator('.ag-order').count(), 1);
+    A.strictEqual(await p4.locator('.ag-order').evaluate(e => getComputedStyle(e).marginLeft !== '0px'), true, 'chip thứ tự sát phải');
   });
 };
