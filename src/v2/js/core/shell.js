@@ -67,7 +67,14 @@ LP.shell = (function () {
   function bindHeadSize() {
     var head = document.querySelector('.site-head'), root = document.documentElement;
     function size() { root.style.setProperty('--head-h', Math.round(head.getBoundingClientRect().height) + 'px'); }
-    function scrolled() { var y = window.pageYOffset || 0, was = root.classList.contains('is-scrolled'), on = y > 40 ? true : y < 4 ? false : was; /* có độ trễ để đầu trang co lại không làm trang nhảy qua lại */ if (root.classList.contains('is-scrolled') !== on) { root.classList.toggle('is-scrolled', on); size(); } }
+    function scrolled() {
+      var y = window.pageYOffset || 0, was = root.classList.contains('is-scrolled'), on = was;
+      /* Co lại làm trang ngắn đi. Chỉ co khi phần cuộn còn dư nhiều (so với chiều cao thu lại), nếu không trang sẽ co rồi giãn liên tục khi kéo xuống tận cùng. */
+      var room = (document.documentElement.scrollHeight - window.innerHeight) - (was ? 0 : 160);
+      if (!was) on = y > 40 && room > 40;
+      else if (y < 4) on = false;
+      if (was !== on) { root.classList.toggle('is-scrolled', on); size(); }
+    }
     size(); scrolled();
     window.addEventListener('scroll', scrolled, { passive: true });
     window.addEventListener('resize', size);
