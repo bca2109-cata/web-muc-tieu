@@ -159,6 +159,22 @@ LP.agenda = (function () {
     return '<svg class="ag-sun" width="84" height="84" viewBox="0 0 120 120" aria-hidden="true" focusable="false">' + body + '</svg>';
   }
 
+  // Trang trí khung chào (27/11): cầu vồng và mây sau mặt trời, cờ tam giác phía trên, hạt lấp lánh, trái tim bay
+  function helloDeco() {
+    function u(id, cls) { return '<svg class="ag-dc ' + cls + '" viewBox="0 0 24 24" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
+    var arcs = ['#ff6f91', '#ff9a4d', '#ffd25a', '#5cc49a', '#5aa9f0', '#a68bf0'].map(function (c, i) {
+      var r = 78 - i * 8;
+      return '<path d="M' + (120 - r) + ' 120A' + r + ' ' + r + ' 0 0 1 ' + (120 + r) + ' 120" fill="none" stroke="' + c + '" stroke-width="8"/>';
+    }).join('');
+    return '<span class="ag-deco" aria-hidden="true">' +
+      '<svg class="ag-rainbow" viewBox="0 0 240 120" width="150" height="75">' + arcs + '</svg>' +
+      '<svg class="ag-cloud ag-cloud1" viewBox="0 0 60 30" width="46" height="23"><path d="M10 28a9 9 0 0 1 1-18 12 12 0 0 1 23-2 10 10 0 0 1 16 8 7 7 0 0 1 0 12z" fill="#fff" opacity=".95"/></svg>' +
+      '<svg class="ag-cloud ag-cloud2" viewBox="0 0 60 30" width="38" height="19"><path d="M10 28a9 9 0 0 1 1-18 12 12 0 0 1 23-2 10 10 0 0 1 16 8 7 7 0 0 1 0 12z" fill="#fff" opacity=".9"/></svg>' +
+      '<span class="ag-bunting"></span>' +
+      u('f-spark', 'ag-s1') + u('f-spark', 'ag-s2') + u('f-spark', 'ag-s3') + u('f-heart', 'ag-h1') + u('f-heart', 'ag-h2') + u('f-heart', 'ag-h3') +
+      '<i class="ag-dot ag-d1"></i><i class="ag-dot ag-d2"></i><i class="ag-dot ag-d3"></i><i class="ag-dot ag-d4"></i></span>';
+  }
+
   /* ---------- Đầu trang ---------- */
   function headHtml(extra) {
     var d = st.date, t = D.today(), pills = '';
@@ -173,7 +189,7 @@ LP.agenda = (function () {
     var rel = d === t ? 'Hôm nay' : d === D.add(t, -1) ? 'Hôm qua' : d === D.add(t, 1) ? 'Ngày mai' : d < t ? 'Ngày đã qua' : 'Ngày sắp tới';
     var fl = LP.flowers.html;
     return '<div class="ag-head"><section class="ag-hello" aria-label="Chào">' + helloArt(d === t ? h : 8) + fl('daisy', 44, 2, 'ag-hello-f1') + fl('sakura', 26, 8, 'ag-hello-f2') +
-      '<h1>' + esc(D.weekdayName(d) + ', ' + D.fmt(d)) + '</h1>' + (d === t ? '<p class="ag-greet">' + hello + '</p>' : '') + '<div class="ag-date" role="group" aria-label="Chọn ngày xem">' +
+      helloDeco() + '<h1>' + esc(D.weekdayName(d) + ', ') + '<span class="ag-dnum">' + esc(D.fmt(d)) + '</span></h1>' + (d === t ? '<p class="ag-greet">' + hello + '</p>' : '') + '<div class="ag-date" role="group" aria-label="Chọn ngày xem">' +
       '<button type="button" class="ag-daybtn" data-act="prev" aria-label="Ngày trước">' + icon('back', 'ic18') + '</button>' +
       '<span class="ag-daypick"><span class="ag-dayrel">' + rel + '</span></span>' +
       '<button type="button" class="ag-daybtn" data-act="next" aria-label="Ngày sau">' + icon('back', 'ic18 ag-flip') + '</button></div></section>' +
