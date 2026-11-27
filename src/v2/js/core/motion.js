@@ -19,7 +19,12 @@
     praiseEl = document.createElement('div');
     praiseEl.className = 'lp-praise';
     praiseEl.setAttribute('role', 'status');
-    praiseEl.innerHTML = '<i class="pr-tape"></i>' +
+    praiseEl.innerHTML = '<i class="pr-tape"></i><i class="pr-tape pr-t2"></i>' +
+      '<svg class="pr-sp pr-sp1" viewBox="0 0 64 64" aria-hidden="true"><use href="#f-spark" width="64" height="64"/></svg>' +
+      '<svg class="pr-sp pr-sp2" viewBox="0 0 64 64" aria-hidden="true"><use href="#f-spark" width="64" height="64"/></svg>' +
+      '<svg class="pr-fh pr-fh1" viewBox="0 0 64 64" aria-hidden="true" style="color:var(--accent)"><use href="#f-heart" width="64" height="64"/></svg>' +
+      '<svg class="pr-fh pr-fh2" viewBox="0 0 64 64" aria-hidden="true" style="color:var(--petal-4)"><use href="#f-heart" width="64" height="64"/></svg>' +
+      '<svg class="pr-fh pr-fh3" viewBox="0 0 64 64" aria-hidden="true" style="color:var(--petal-3)"><use href="#f-heart" width="64" height="64"/></svg>' +
       '<svg class="pr-fl" viewBox="0 0 64 64" aria-hidden="true" style="color:var(--petal-' + [1, 8, 3, 4, 5, 6][i % 6] + ')"><use href="#' + FL[i % FL.length] + '" width="64" height="64"/></svg>' +
       '<span class="pr-tx"></span>' +
       '<svg class="pr-ht" viewBox="0 0 64 64" aria-hidden="true" style="color:var(--accent)"><use href="#f-heart" width="64" height="64"/></svg>';
@@ -32,8 +37,7 @@
   document.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('.tick');
     if (!t || t.disabled || t.getAttribute('aria-pressed') === 'true') return;
-    var now = Date.now(), rapid = now - lastTick < 6000; lastTick = now;
-    praise(rapid ? 'short' : 'full');
+    praise('full');
     /* Xong hết việc trong ngày: câu chúc lớn hơn, hiện sau khi màn hình cập nhật */
     setTimeout(function () {
       var h = document.querySelector('.ag-greet'), txt = h ? h.textContent : '';

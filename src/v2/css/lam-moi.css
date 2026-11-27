@@ -332,3 +332,18 @@ h1{font-weight:700}
 
 .lp-praise.is-finale{font-size:16px;padding:14px 18px 14px 12px;animation-duration:4.2s}
 .lp-praise.is-finale .pr-fl{width:42px;height:42px}
+
+/* Câu chúc: thêm đường chỉ khâu, băng dính hai góc, lấp lánh và tim bay lên */
+.lp-praise{padding:14px 18px 14px 12px}
+.lp-praise::before{content:"";position:absolute;inset:4px;border:1.5px dashed #e9c96a;border-radius:4px 11px 6px 9px;pointer-events:none}
+.lp-praise .pr-tape{width:46px}
+.lp-praise .pr-t2{left:auto;right:10px;margin-left:0;top:auto;bottom:-8px;transform:rotate(-4deg);background:repeating-linear-gradient(135deg,#cfe6ff 0 6px,#e8f3ff 6px 12px)}
+.lp-praise .pr-sp{position:absolute;width:16px;height:16px;color:#ffc83d;animation:lp-tw 1.4s ease-in-out infinite}
+.lp-praise .pr-sp1{top:-10px;right:-6px}.lp-praise .pr-sp2{bottom:-8px;left:20px;width:12px;height:12px;animation-delay:.6s}
+.lp-praise .pr-fh{position:absolute;width:13px;height:13px;top:-4px;opacity:0;animation:lp-up 2s ease-out infinite}
+.lp-praise .pr-fh1{left:22%}.lp-praise .pr-fh2{left:52%;animation-delay:.7s}.lp-praise .pr-fh3{left:80%;animation-delay:1.3s}
+@keyframes lp-tw{0%,100%{transform:scale(.5) rotate(0);opacity:.5}50%{transform:scale(1.1) rotate(30deg);opacity:1}}
+@keyframes lp-up{0%{transform:translateY(0) scale(.6);opacity:0}25%{opacity:1}100%{transform:translateY(-34px) scale(1.1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.lp-praise .pr-sp,.lp-praise .pr-fh{animation:none}.lp-praise .pr-fh{display:none}}
+:root[data-theme="dark"] .lp-praise::before{border-color:#8a6d33}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lp-praise::before{border-color:#8a6d33}}
