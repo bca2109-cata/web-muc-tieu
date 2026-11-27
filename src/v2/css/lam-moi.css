@@ -347,3 +347,9 @@ h1{font-weight:700}
 @media (prefers-reduced-motion:reduce){.lp-praise .pr-sp,.lp-praise .pr-fh{animation:none}.lp-praise .pr-fh{display:none}}
 :root[data-theme="dark"] .lp-praise::before{border-color:#8a6d33}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lp-praise::before{border-color:#8a6d33}}
+
+/* Nhóm nút chọn (.seg, bộ lọc): bóng dưới viền đổi từ filter:drop-shadow sang box-shadow của từng nút.
+   Filter làm cả nhóm vẽ vào một lớp riêng, nằm ngay dưới có hoa rơi chạy liên tục, nên thỉnh thoảng vệt bóng 3px
+   bị vẽ lỗi thành nét đen nhấp nháy dưới nhóm nút (thấy trong video "Lặp lại: Theo thứ"). Hình dạng bóng giữ nguyên. */
+.ag-switch,.lich-seg,.mt-switch:not(.mt-tabs),.seg{filter:none}
+.ag-switch>.chip,.lich-seg>button,.mt-switch:not(.mt-tabs)>button,.seg label,.sg-btn{box-shadow:0 2px 1px var(--paper-shadow)!important}
