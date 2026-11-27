@@ -207,3 +207,143 @@ h1{font-weight:700}
 .mt-g-w .mt-fill{background-color:var(--cv-work)!important}
 .mt-g-s .mt-fill{background-color:var(--cv-study)!important}
 .mt-g-h .mt-fill{background-color:var(--cv-health)!important}
+
+/* ---------- 7. Tên mới: Plan With Love, Life With Joy ---------- */
+:root{--joy:#d27300}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--joy:#ffc83d}}
+:root[data-theme="dark"]{--joy:#ffc83d}
+.logo{position:relative}
+.logo-mark{overflow:visible}
+.logo-text{display:flex;flex-direction:column;position:relative;font-size:clamp(17px,4.9vw,27px);font-weight:700;line-height:1.04;letter-spacing:0;padding-bottom:8px;color:var(--ink)}
+.logo-text>.lt-1,.logo-text>.lt-2{color:var(--ink);display:block}
+.lt-2{margin-left:1.1em}
+.lt-love{color:var(--accent);font-weight:700}
+.lt-joy{color:var(--joy);font-weight:700}
+.lt-ht,.lt-sun,.lt-fl{display:inline-block;vertical-align:-.12em;margin-left:.12em}
+.lt-ht{width:.78em;height:.78em;transform-origin:50% 60%;animation:lt-beat 2.4s ease-in-out infinite}
+.lt-sun{width:1em;height:1em;vertical-align:-.2em;color:var(--joy)}
+.lt-sun .sun-rays,.lm-sun .sun-rays{transform-origin:0 0;animation:lt-spin 14s linear infinite}
+.lt-fl{width:.8em;height:.8em;color:var(--petal-8);animation:lt-sway 4s ease-in-out infinite}
+.lt-cm{font-style:normal;color:var(--accent)}
+/* Hạt lấp lánh và trái tim nhỏ bay quanh chữ */
+.lt-sp,.lt-h{position:absolute;pointer-events:none}
+.lt-sp1{width:.62em;height:.62em;right:-.1em;top:-.35em;animation:lt-twinkle 2.6s ease-in-out infinite}
+.lt-sp2{width:.42em;height:.42em;left:.1em;top:1.7em;animation:lt-twinkle 3.2s ease-in-out .8s infinite}
+.lt-h{width:.5em;height:.5em;opacity:0}
+.lt-h1{left:3.4em;top:.1em;animation:lt-rise 4.2s ease-out infinite}
+.lt-h2{left:.3em;top:.5em;width:.4em;height:.4em;animation:lt-rise 4.2s ease-out 2.1s infinite}
+.lt-sp1,.lt-sp2{filter:drop-shadow(0 0 2px rgba(255,200,60,.6))}
+/* Đường lượn dưới chữ: chuyển từ hồng sang cam vàng */
+.logo-text::after{left:0;right:0;bottom:0;height:8px;background:linear-gradient(90deg,var(--petal-2),#ffa066 55%,#f2b400);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='8'%3E%3Cpath d='M0 4q5.5-5.500 11 0t11 0' fill='none' stroke='%23000' stroke-width='2.600' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='8'%3E%3Cpath d='M0 4q5.5-5.500 11 0t11 0' fill='none' stroke='%23000' stroke-width='2.600' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+  background-size:100% 100%;border:0;border-radius:0;opacity:1}
+.lm-sun{color:var(--joy)}
+:root.is-scrolled .logo-text{font-size:clamp(15px,4.2vw,22px);padding-bottom:6px}
+:root.is-scrolled .lt-sp,:root.is-scrolled .lt-h{display:none}
+.gt-top .logo-text{font-size:clamp(12.5px,3.7vw,30px)}
+.gt-top .logo{flex:1 1 auto;min-width:0}
+@media (max-width:480px){.gt-top .logo-mark{width:34px;height:34px}.gt-top .lt-fl{display:none}}
+@keyframes lt-beat{0%,60%,100%{transform:scale(1)}15%{transform:scale(1.22)}30%{transform:scale(1)}42%{transform:scale(1.14)}}
+@keyframes lt-spin{to{transform:rotate(360deg)}}
+@keyframes lt-sway{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
+@keyframes lt-twinkle{0%,100%{transform:scale(.55) rotate(0);opacity:.35}50%{transform:scale(1) rotate(25deg);opacity:1}}
+@keyframes lt-rise{0%{transform:translateY(8px) scale(.6);opacity:0}20%{opacity:.9}100%{transform:translateY(-14px) scale(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.lt-ht,.lt-fl,.lt-sp,.lt-h,.sun-rays{animation:none!important}.lt-h{display:none}.lt-sp{opacity:.9}}
+.topbar{padding-top:8px}
+.logo-mark{width:clamp(40px,10vw,52px);height:clamp(40px,10vw,52px)}
+
+/* ---------- 8. Khung "Thứ Sáu, 27/11" sinh động hơn ---------- */
+.ag-hello{isolation:isolate}
+.ag-deco{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.ag-hello>.ag-sun{z-index:1}
+.ag-rainbow{position:absolute;right:-6px;bottom:-4px;opacity:.9}
+.ag-cloud{position:absolute;filter:drop-shadow(0 1px 0 rgba(0,0,0,.05));animation:ag-drift 9s ease-in-out infinite}
+.ag-cloud1{right:112px;top:34px}
+.ag-cloud2{right:6px;bottom:6px;animation-delay:-4s;animation-duration:11s}
+.ag-bunting{position:absolute;left:0;right:0;top:0;height:22px;transform-origin:50% 0;animation:ag-sway 5s ease-in-out infinite;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='22'%3E%3Cpath d='M0 2Q65 9 130 2' fill='none' stroke='%23b08a9c' stroke-width='1.2'/%3E%3Cpath d='M3 2.600L21 3.800 12 19z' fill='%23ff8fb8'/%3E%3Cpath d='M29 3.900L47 4.600 38 20z' fill='%23ffd25a'/%3E%3Cpath d='M55 4.700L73 4.800 64 20z' fill='%237fd1a8'/%3E%3Cpath d='M81 4.700L99 4.100 90 19z' fill='%238fb8ff'/%3E%3Cpath d='M107 4L125 3 116 18z' fill='%23c9b6ff'/%3E%3C/svg%3E") repeat-x 0 0/130px 22px}
+.ag-dc{position:absolute}
+.ag-s1{width:14px;height:14px;right:150px;top:12px;animation:ag-twinkle 2.6s ease-in-out infinite}
+.ag-s2{width:10px;height:10px;right:96px;bottom:18px;animation:ag-twinkle 3.1s ease-in-out .7s infinite}
+.ag-s3{width:12px;height:12px;right:14px;top:26px;animation:ag-twinkle 2.9s ease-in-out 1.4s infinite}
+.ag-h1,.ag-h2,.ag-h3{width:14px;height:14px;opacity:0;animation:ag-float 5s ease-out infinite}
+.ag-h1{right:120px;bottom:10px}.ag-h2{right:70px;bottom:14px;width:11px;height:11px;animation-delay:1.7s}.ag-h3{right:36px;bottom:8px;animation-delay:3.2s}
+.ag-dot{position:absolute;border-radius:50%;opacity:.8}
+.ag-d1{width:7px;height:7px;background:#ff8fb8;right:176px;top:46px}.ag-d2{width:6px;height:6px;background:#5aa9f0;right:132px;bottom:30px}
+.ag-d3{width:8px;height:8px;background:#5cc49a;left:46%;bottom:9px}.ag-d4{width:6px;height:6px;background:#a68bf0;left:58%;top:34px}
+/* Ngày: số ngày/tháng có vệt tô nổi bật */
+.ag-dnum{display:inline-block;color:var(--accent-deep);padding:0 4px;background:linear-gradient(transparent 62%,color-mix(in srgb,var(--v3) 55%,transparent) 62% 90%,transparent 90%);border-radius:2px}
+.ag-hello h1{font-size:24px}
+.ag-greet{color:var(--ink)}
+@keyframes ag-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(-10px)}}
+@keyframes ag-sway{0%,100%{transform:rotate(-.6deg)}50%{transform:rotate(.6deg)}}
+@keyframes ag-twinkle{0%,100%{transform:scale(.5) rotate(0);opacity:.35}50%{transform:scale(1) rotate(25deg);opacity:1}}
+@keyframes ag-float{0%{transform:translateY(0) scale(.6);opacity:0}20%{opacity:.95}100%{transform:translateY(-46px) scale(1.05);opacity:0}}
+@media (max-width:430px){.ag-rainbow{width:112px;height:56px}.ag-cloud1{right:66px;top:40px;width:36px;height:18px}.ag-s1{right:104px}.ag-d1{right:128px}.ag-h1{right:92px}}
+@media (prefers-reduced-motion:reduce){.ag-cloud,.ag-bunting,.ag-dc{animation:none!important}.ag-h1,.ag-h2,.ag-h3{display:none}.ag-dc{opacity:.9}}
+
+/* Khung chào: thêm bóng bay, hoa giấy rơi, sao băng, mặt trời xoay */
+.ag-balloon{position:absolute;bottom:-14px;animation:ag-bob 4.5s ease-in-out infinite;transform-origin:50% 100%}
+.ag-b1{right:236px;animation-delay:0s}.ag-b2{right:204px;bottom:-22px;animation-delay:-1.5s;width:22px;height:44px}.ag-b3{right:172px;bottom:-18px;animation-delay:-3s;width:24px;height:48px}
+.ag-cf{position:absolute;top:-10px;width:6px;height:6px;border-radius:1px;opacity:.75;animation:ag-fall 7s linear infinite}
+.ag-shoot{position:absolute;top:30px;right:60px;width:70px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#fff 70%,#ffd25a);opacity:0;transform:rotate(28deg);animation:ag-shoot 7s ease-in 2s infinite}
+.ag-hello .ag-sun{animation:ag-slow 48s linear infinite}
+@keyframes ag-bob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+@keyframes ag-fall{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:.8}100%{transform:translateY(150px) rotate(300deg);opacity:0}}
+@keyframes ag-shoot{0%,86%{opacity:0;transform:translate(0,0) rotate(28deg)}90%{opacity:1}100%{opacity:0;transform:translate(-120px,60px) rotate(28deg)}}
+@keyframes ag-slow{to{transform:translateY(-50%) rotate(360deg)}}
+@media (max-width:430px){.ag-b1{right:200px}.ag-b2{right:170px}.ag-b3{display:none}.ag-cf:nth-of-type(n+14){display:none}}
+@media (prefers-reduced-motion:reduce){.ag-balloon,.ag-cf,.ag-shoot,.ag-hello .ag-sun{animation:none!important}.ag-cf,.ag-shoot{display:none}}
+
+/* Lịch: ô hôm nay có lấp lánh quanh vòng khoanh */
+.lhead.is-today{position:relative}
+.lhead.is-today::before,.lhead.is-today::after{content:"";position:absolute;width:12px;height:12px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1.500l2.600 7.900 7.900 2.600-7.900 2.600L12 22.500l-2.600-7.900L1.500 12l7.900-2.600z' fill='%23ffd25a' stroke='%23f0a000'/%3E%3C/svg%3E") center/contain no-repeat;animation:ag-twinkle 2.8s ease-in-out infinite;pointer-events:none}
+.lhead.is-today::before{top:6px;left:14%}.lhead.is-today::after{top:30px;right:10%;width:9px;height:9px;animation-delay:1.2s}
+@media (prefers-reduced-motion:reduce){.lhead.is-today::before,.lhead.is-today::after{animation:none}}
+@media (max-width:560px){.ag-balloon{display:none}}
+
+/* Khung chào: chuyển động rõ hơn */
+@keyframes ag-sway{0%,100%{transform:rotate(-1.8deg) skewX(-2deg)}50%{transform:rotate(1.8deg) skewX(2deg)}}
+@keyframes ag-drift{0%,100%{transform:translateX(0)}50%{transform:translateX(-26px)}}
+@keyframes ag-bob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-16px) rotate(6deg)}}
+@keyframes ag-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes ag-shine{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+.ag-bunting{animation-duration:2.6s}
+.ag-cloud{animation-duration:6s}.ag-cloud2{animation-direction:reverse}
+.ag-rainbow{transform-origin:50% 100%;animation:ag-pulse 4s ease-in-out infinite}
+.ag-s1,.ag-s2,.ag-s3{animation-duration:1.6s}
+.ag-cf{animation-duration:4.5s!important}
+.ag-hello .ag-dnum{background-size:200% 100%;animation:ag-shine 3s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.ag-rainbow,.ag-hello .ag-dnum{animation:none!important}}
+
+/* Câu chúc mừng khi xong việc: tờ giấy note nhỏ dán ở đáy màn hình */
+.lp-praise{position:fixed;z-index:9999;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(92px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;max-width:min(330px,calc(100vw - 24px));padding:12px 16px 12px 10px;border-radius:6px 14px 8px 12px;background:#fff7d6;color:#6b3a2a;border:1.5px solid #f2dc8e;box-shadow:2px 4px 0 rgba(214,51,108,.18);font:700 14.5px/1.4 'Mali',var(--font);pointer-events:none;transform:rotate(-1.8deg);animation:lp-praise 2.8s ease both}
+.lp-praise .pr-tape{position:absolute;top:-9px;left:50%;width:54px;height:16px;margin-left:-27px;background:repeating-linear-gradient(135deg,#ffc9dc 0 6px,#ffe3ee 6px 12px);opacity:.92;transform:rotate(3deg);border-radius:2px}
+.lp-praise .pr-fl{flex:none;width:34px;height:34px;animation:lp-wob 1.6s ease-in-out infinite}
+.lp-praise .pr-ht{flex:none;width:18px;height:18px;align-self:flex-end;animation:lp-wob 1.2s ease-in-out infinite reverse}
+.lp-praise .pr-tx{flex:1}
+@media (min-width:900px){.lp-praise{bottom:28px}}
+@keyframes lp-praise{0%{opacity:0;transform:translateY(24px) rotate(-6deg) scale(.85)}10%{opacity:1;transform:translateY(0) rotate(-1.8deg) scale(1.04)}16%{transform:rotate(-1.8deg) scale(1)}85%{opacity:1}100%{opacity:0;transform:translateY(14px) rotate(-1.8deg)}}
+@keyframes lp-wob{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg) scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.lp-praise{animation:lp-praise-r 2.8s both}.lp-praise .pr-fl,.lp-praise .pr-ht{animation:none}@keyframes lp-praise-r{0%,85%{opacity:1}100%{opacity:0}}}
+:root[data-theme="dark"] .lp-praise{background:#4a3a1f;color:#ffe9b8;border-color:#7a5f2a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lp-praise{background:#4a3a1f;color:#ffe9b8;border-color:#7a5f2a}}
+
+.lp-praise.is-finale{font-size:16px;padding:14px 18px 14px 12px;animation-duration:4.2s}
+.lp-praise.is-finale .pr-fl{width:42px;height:42px}
+
+/* Câu chúc: thêm đường chỉ khâu, băng dính hai góc, lấp lánh và tim bay lên */
+.lp-praise{padding:14px 18px 14px 12px}
+.lp-praise::before{content:"";position:absolute;inset:4px;border:1.5px dashed #e9c96a;border-radius:4px 11px 6px 9px;pointer-events:none}
+.lp-praise .pr-tape{width:46px}
+.lp-praise .pr-t2{left:auto;right:10px;margin-left:0;top:auto;bottom:-8px;transform:rotate(-4deg);background:repeating-linear-gradient(135deg,#cfe6ff 0 6px,#e8f3ff 6px 12px)}
+.lp-praise .pr-sp{position:absolute;width:16px;height:16px;color:#ffc83d;animation:lp-tw 1.4s ease-in-out infinite}
+.lp-praise .pr-sp1{top:-10px;right:-6px}.lp-praise .pr-sp2{bottom:-8px;left:20px;width:12px;height:12px;animation-delay:.6s}
+.lp-praise .pr-fh{position:absolute;width:13px;height:13px;top:-4px;opacity:0;animation:lp-up 2s ease-out infinite}
+.lp-praise .pr-fh1{left:22%}.lp-praise .pr-fh2{left:52%;animation-delay:.7s}.lp-praise .pr-fh3{left:80%;animation-delay:1.3s}
+@keyframes lp-tw{0%,100%{transform:scale(.5) rotate(0);opacity:.5}50%{transform:scale(1.1) rotate(30deg);opacity:1}}
+@keyframes lp-up{0%{transform:translateY(0) scale(.6);opacity:0}25%{opacity:1}100%{transform:translateY(-34px) scale(1.1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.lp-praise .pr-sp,.lp-praise .pr-fh{animation:none}.lp-praise .pr-fh{display:none}}
+:root[data-theme="dark"] .lp-praise::before{border-color:#8a6d33}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lp-praise::before{border-color:#8a6d33}}

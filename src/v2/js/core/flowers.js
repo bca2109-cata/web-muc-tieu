@@ -89,7 +89,12 @@ LP.flowers = (function () {
       return '<g fill="currentColor" opacity="' + (k % 3 === 1 ? '.88' : '1') + '">' + fl + '</g><g fill="' + SH + '">' + fl + '</g><circle cx="' + c[0] + '" cy="' + c[1] + '" r=".75" fill="#fff6c9"/>';
     }).join('') + '</symbol>';
 
-  var DEFS = GRAD + NEWF +
+  var NEWF2 =
+    '<symbol id="f-heart" viewBox="0 0 24 24"><path d="M12 21.5C2.5 15.2 1.5 7.4 6.8 5.8c2.3-.7 4.2.7 5.2 2.3 1-1.6 2.9-3 5.2-2.3 5.300 1.600 4.300 9.400-5.200 15.700z" fill="#e0457b"/><path d="M12 21.5C2.5 15.2 1.5 7.4 6.8 5.8c2.3-.7 4.2.7 5.2 2.3 1-1.6 2.9-3 5.2-2.3 5.300 1.600 4.300 9.400-5.200 15.700z" fill="' + SH + '"/><path d="M6 8.600c.9-1.100 2.400-1.200 3.400-.4" stroke="#fff" stroke-opacity=".75" stroke-width="1.600" fill="none" stroke-linecap="round"/></symbol>' +
+    '<symbol id="f-sun" viewBox="-12 -12 24 24"><circle r="4.800" fill="url(#fl-core)" stroke="#e08a00" stroke-width="1.200"/><g class="sun-rays" stroke="#f0a000" stroke-width="2" stroke-linecap="round"><path d="M0-7.800v-3M0 7.800v3M-7.800 0h-3M7.800 0h3M5.500-5.500l2.100-2.100M-5.500 5.500l-2.100 2.100M5.500 5.500l2.100 2.100M-5.500-5.500l-2.100-2.100"/></g></symbol>' +
+    '<symbol id="f-spark" viewBox="0 0 24 24"><path d="M12 1.500l2.600 7.900 7.900 2.600-7.900 2.600L12 22.500l-2.600-7.900L1.500 12l7.900-2.600z" fill="#ffd25a" stroke="#f0a000" stroke-width="1" stroke-linejoin="round"/></symbol>';
+
+  var DEFS = GRAD + NEWF + NEWF2 +
     '<symbol id="f-lavender" viewBox="0 0 24 24"><path d="M12 22V7" stroke="' + LEAF + '" stroke-width="1.6" stroke-linecap="round"/>' +
     '<path d="M12 19c-2.5-.5-4-2-4.4-3.6 2.2.2 3.8 1.5 4.4 3.6z" fill="' + LEAF2 + '"/><g fill="currentColor"><ellipse cx="12" cy="3" rx="1.4" ry="2"/>' +
     '<ellipse cx="10.3" cy="6" rx="1.5" ry="2" transform="rotate(-20 10.3 6)"/><ellipse cx="13.7" cy="6" rx="1.5" ry="2" transform="rotate(20 13.7 6)"/>' +

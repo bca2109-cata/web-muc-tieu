@@ -24,3 +24,19 @@ Mục tiêu: bớt cảm giác "AI làm", giữ cá tính sổ tay (giấy, băn
 - Lời chào Agenda nói số việc thật: "Hôm nay còn 8 việc cần làm."
 - Ghi chú trống: nét vẽ tay cuốn sổ và cây bút, câu chỉ dẫn cụ thể.
 - Tổng kết: số chính (Hoàn thành) rất to, ba số phụ nhỏ; tiêu đề khối chỉ chữ có đường kẻ đậm; đường biểu đồ màu mực đậm, nền vùng ≥ 80% gần như bỏ.
+
+## Tên mới và tiêu đề (27/11)
+- Tên web: **Plan With Love, Life With Joy** (thẻ trình duyệt, tên khi cài ra màn hình, trang giới thiệu).
+- Tiêu đề hai nhịp: "Plan With Love♥," (Love hồng, trái tim đập) và "Life With Joy☀" (Joy cam, mặt trời xoay tia, bông anh đào lắc). Quanh chữ có hạt lấp lánh và trái tim nhỏ bay lên; đường lượn bên dưới chuyển từ hồng sang cam vàng.
+- Biểu tượng sổ tay: trái tim thay bông cúc, mặt trời nhỏ ở góc. Mọi chuyển động tắt khi máy bật "giảm chuyển động"; hạt và trái tim nhỏ ẩn khi cuộn trang.
+- Chưa đổi: biểu tượng ứng dụng PNG (icons/), tên Sheet dữ liệu, web cũ.
+
+## Khung chào "Thứ Sáu, 27/11" (27/11)
+- Cờ tam giác nhiều màu treo dọc mép trên (đung đưa nhẹ), cầu vồng và mây trôi sau mặt trời, hạt lấp lánh, chấm màu, trái tim nhỏ bay lên. Ngày/tháng có vệt tô vàng.
+- Tắt chuyển động khi máy bật "giảm chuyển động". Code: `helloDeco()` trong `js/views/agenda.js`, CSS mục 8 của `css/lam-moi.css`.
+
+## Khung chào: vòng trang trí thêm
+- Bóng bay hồng/xanh/vàng đung đưa (`.ag-balloon`), ẩn ở màn hình ≤560px để không đè nút chọn ngày.
+- Hoa giấy nhiều màu rơi chậm (`.ag-cf`), sao băng thỉnh thoảng lướt qua (`.ag-shoot`), mặt trời xoay rất chậm.
+- Lịch: ô tiêu đề của ngày hôm nay có hai ngôi sao nhỏ lấp lánh.
+- Mọi chuyển động tắt khi máy bật "giảm chuyển động".
