@@ -196,19 +196,21 @@ LP.lich = (function () {
     if (e.kind === 'due') return '<span class="lblk-t">' + esc(dueText(e.t)) + '</span>';
     var t = e.kind === 'fix' ? e.m.item.title : e.x.title; return '<span class="lblk-t">' + LP.cute.html(t) + esc(t) + '</span>';
   }
+  // Title luôn là tên đầy đủ kèm giờ: "08:30 · Chia số cho các team"
+  function timeTitle(time, title) { return (time ? time + ' · ' : '') + title; }
   function blockHtml(e, pos) {
     var cls = 'lblk', attr = '';
     if (e.kind === 'due') {
       cls += ' ldue ldue-blk'; attr = ' tabindex="0" data-due-task="' + esc(e.t.id) + '" title="' + esc(dueText(e.t)) + '"';
     } else if (e.kind === 'fix') {
       cls += ' fixed' + (e.m.done ? ' is-done' : '');
-      attr = ' data-fixed="1" title="' + esc(e.m.item.title) + ' ' + esc(e.m.time) + '"';
+      attr = ' data-fixed="1" title="' + esc(timeTitle(e.m.time, e.m.item.title)) + '"';
     } else {
       var t = e.x.task, imp = num(t.importance) || 1;
       cls += ' g-' + groupOf(t) + (e.x.done ? ' is-done' : '') + (st.onlyImp && imp < 2 ? ' dim' : '');
-      attr = (e.x.done ? '' : ' draggable="true"') + ' tabindex="0" data-task="' + esc(t.id) + '" data-step="' + (e.x.step ? esc(e.x.step.id) : '') + '" title="' + esc(e.x.title) + '"';
+      attr = (e.x.done ? '' : ' draggable="true"') + ' tabindex="0" data-task="' + esc(t.id) + '" data-step="' + (e.x.step ? esc(e.x.step.id) : '') + '" title="' + esc(timeTitle(e.x.time, e.x.title)) + '"';
     }
-    return '<div class="' + cls + (pos ? '' : ' lstrip') + '"' + attr + (pos ? ' style="' + pos + '"' : '') + '>' + blockInner(e) + '</div>';
+    return '<div class="' + cls + (pos ? '' : ' lstrip') + '"' + attr + (pos ? ' data-n="' + e.n + '" style="' + pos + '"' : '') + '>' + blockInner(e) + '</div>';
   }
   function slotStyle(e) {
     return 'top:' + yOf(e.start) + 'px;height:' + ROW + 'px;left:' + (e.i / e.n * 100) + '%;width:calc(' + (100 / e.n) + '% - 2px)';
@@ -243,6 +245,11 @@ LP.lich = (function () {
     var un = st.el.querySelector('.lgrid + .lday-un'), main = g.closest('.main');
     var below = (un ? un.getBoundingClientRect().height + 12 : 0) + (main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0);
     g.style.maxHeight = Math.max(320, Math.round(window.innerHeight - top - below)) + 'px';
+    fitBlocks(g);
+  }
+  // Mục bị chia cột (nhóm từ 2 mục) mà rộng dưới 90px thì ẩn icon để dành chỗ cho chữ
+  function fitBlocks(g) {
+    g.querySelectorAll('.lblk[data-n]').forEach(function (b) { b.classList.toggle('is-narrow', +b.getAttribute('data-n') >= 2 && b.offsetWidth < 90); });
   }
   // Mở tuần: cuộn trong khung lưới tới giờ hiện tại (vạch Bây giờ ở khoảng 1/3 khung); tuần khác thì tới mục sớm nhất
   function scrollGrid(per, days, nowMin) {
@@ -278,8 +285,10 @@ LP.lich = (function () {
       var now = d === today && nowMin >= T0 && nowMin < T1 ? '<div class="lnow" style="top:' + yOf(nowMin) + 'px" title="Bây giờ ' + D.now() + '"><i></i></div>' : '';
       return '<div class="lcol' + (d === today ? ' is-today' : '') + (D.isDayOff(d) || D.dow(d) === 7 ? ' is-off' : '') + (d < today ? ' is-past' : '') + '" data-date="' + d + '" style="height:' + yOf(T1) + 'px">' + blocks + dues + now + '</div>';
     }).join('') + '</div></div>';
-    h += '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
-      '<div class="lday-cards">' + (un.length ? un.map(plainCard).join('') : '<p class="muted lday-empty">Không có việc chờ xếp lịch</p>') + '</div></section>';
+    // Không có việc chưa có ngày: thu thành một dòng mảnh để lưới giờ dùng phần chiều cao dư ra
+    h += un.length ? '<section class="lday lday-un" data-date=""><header class="lday-head"><span class="lday-dow">Chưa có ngày</span></header>' +
+      '<div class="lday-cards">' + un.map(plainCard).join('') + '</div></section>'
+      : '<section class="lday lday-un is-slim" data-date=""><span class="lday-dow">Chưa có ngày</span><span class="muted">·</span><span class="muted">Không có việc chờ xếp lịch</span></section>';
     st.el.innerHTML = head(days) + h;
     fitGrid();
     if (st.needScroll) { st.needScroll = false; scrollGrid(per, days, nowMin); }

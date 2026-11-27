@@ -284,4 +284,44 @@ module.exports = async function (h) {
     const t = await (await h.open({ w: 1280, hash: '#/lich?view=thang&date=2026-11-25' })).locator('[data-imp]').innerText();
     A.strictEqual(t.trim(), 'Chỉ việc ♥♥ trở lên');
   });
+  await h.test('Đợt 2b. Lịch tuần 1280×860: lưới giờ hiện ≥ 5 giờ, dòng "Chưa có ngày" mảnh, mục hẹp ẩn icon, title có giờ', async () => {
+    const page = await h.open({ w: 1280, h: 860, hash: '#/lich' });
+    await page.waitForTimeout(250);
+    const m = await page.evaluate(() => {
+      const g = document.querySelector('.lgrid'), top = g.querySelector('.lg-top'), un = document.querySelector('.lday-un');
+      const row = parseFloat(getComputedStyle(g).getPropertyValue('--row')) || 36;
+      const blks = Array.from(g.querySelectorAll('.lblk[data-n]')).map(b => ({ n: +b.getAttribute('data-n'), w: b.offsetWidth, icon: !!b.querySelector('.lp-cute') && getComputedStyle(b.querySelector('.lp-cute')).display !== 'none', narrow: b.classList.contains('is-narrow'), title: b.getAttribute('title'), fixed: b.hasAttribute('data-fixed') }));
+      return { hours: (g.clientHeight - top.offsetHeight) / (row * 2), slim: un.classList.contains('is-slim'), unH: un.getBoundingClientRect().height, unText: un.innerText.replace(/\s+/g, ' '), blks, sh: document.documentElement.scrollHeight, ih: innerHeight };
+    });
+    A.ok(m.hours >= 5, 'khung lưới chỉ hiện ' + m.hours.toFixed(2) + ' giờ');
+    A.ok(m.slim && m.unH <= 30 && m.unH >= 26, 'dòng Chưa có ngày không mảnh: ' + m.unH);
+    A.strictEqual(m.unText, 'Chưa có ngày · Không có việc chờ xếp lịch');
+    A.ok(m.sh <= m.ih + 1, 'trang cuộn dọc: ' + m.sh + ' > ' + m.ih);
+    const grouped = m.blks.filter(b => b.n >= 2);
+    A.ok(grouped.some(b => b.w < 90), 'mock không có mục hẹp để thử');
+    grouped.forEach(b => { if (b.w < 90) A.ok(!b.icon && b.narrow, 'mục hẹp ' + b.w + 'px vẫn hiện icon'); else A.ok(!b.narrow, 'mục rộng ' + b.w + 'px bị ẩn icon'); });
+    m.blks.filter(b => b.n === 1).forEach(b => A.ok(!b.narrow, 'mục một cột bị ẩn icon'));
+    m.blks.forEach(b => A.ok(/^\d\d:\d\d · .+/.test(b.title || ''), 'title thiếu giờ: ' + b.title));
+    // Có việc chưa có ngày thì giữ khối như cũ
+    await page.evaluate(() => LP.store.upsert('Tasks', { title: 'Việc chưa có ngày', kind: 'canhan', status: 'todo', importance: '1' }));
+    await page.waitForTimeout(250);
+    const un = await page.evaluate(() => { const u = document.querySelector('.lday-un'); return { slim: u.classList.contains('is-slim'), cards: u.querySelectorAll('.lcard').length }; });
+    A.ok(!un.slim && un.cards === 1, 'có việc chưa có ngày mà vẫn thu mảnh: ' + JSON.stringify(un));
+    h.noErrors(page);
+  });
+
+  await h.test('Đợt 2b. Hôm nay khoanh bút đỏ: tuần 56×46, tháng 44×36, ô tháng không viền hồng; hom-nay.svg có trong cache', async () => {
+    const fs = require('fs'), path = require('path');
+    A.ok(fs.existsSync(path.resolve(__dirname, '../../src/v2/img/hom-nay.svg')), 'thiếu img/hom-nay.svg');
+    A.ok(fs.readFileSync(path.resolve(__dirname, '../../src/v2/sw.js'), 'utf8').includes('img/hom-nay.svg'), 'sw.js chưa cache hom-nay.svg');
+    for (const scheme of ['light', 'dark']) {
+      const wk = await h.open({ w: 1280, h: 860, scheme, hash: '#/lich' });
+      const a = await wk.evaluate(() => { const n = document.querySelector('.lhead.is-today .lday-num'), c = getComputedStyle(n); return { bg: c.backgroundImage, w: n.offsetWidth, h: n.offsetHeight, shadow: c.boxShadow, radius: c.borderRadius, color: c.color }; });
+      A.ok(a.bg.includes('hom-nay.svg') && a.w === 56 && a.h === 46 && a.shadow === 'none', scheme + ' tuần: ' + JSON.stringify(a));
+      const mo = await h.open({ w: 1280, h: 860, scheme, hash: '#/lich?view=thang&date=2026-11-25' });
+      const b = await mo.evaluate(() => { const cell = document.querySelector('.mcell.is-today'), n = cell.querySelector('.mtop>b.num'), c = getComputedStyle(n); return { border: getComputedStyle(cell).borderTopColor, bg: c.backgroundImage, w: n.offsetWidth, h: n.offsetHeight, color: c.color }; });
+      A.ok(b.bg.includes('hom-nay.svg') && b.w === 44 && b.h === 36 && /rgba\(0, 0, 0, 0\)|transparent/.test(b.border), scheme + ' tháng: ' + JSON.stringify(b));
+      h.noErrors(wk); h.noErrors(mo);
+    }
+  });
 };

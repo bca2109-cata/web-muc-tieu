@@ -277,7 +277,7 @@ module.exports = async function (h) {
     h.noErrors(page);
   });
 
-  await h.test('30-31. Tổng kết: trục Y 0–100%, không dữ liệu thì "Chưa có dữ liệu"; Nhìn lại có gợi ý, lưu có toast và nút "Đã lưu"', async () => {
+  await h.test('30-31. Tổng kết: trục Y 0–100%, không dữ liệu thì "Chưa có số liệu"; Nhìn lại có gợi ý, lưu có toast và nút "Đã lưu"', async () => {
     const page = await h.open({ w: 1280, hash: '#/tong-ket' });
     A.strictEqual((await page.locator('.mt-yax span').allInnerTexts()).filter(t => t === '0%' || t === '100%').length, 2, 'trục Y phải 0% và 100%');
     A.ok((await page.locator('[name="good"]').getAttribute('placeholder')).includes('Điều làm tốt'));
@@ -290,7 +290,7 @@ module.exports = async function (h) {
     await page.waitForTimeout(2200);
     A.strictEqual(await page.locator('[data-save]').innerText(), 'Lưu nhìn lại');
     await page.evaluate(() => { LP.store.get().routines.forEach(r => { r.active = 'FALSE'; }); LP.store.get().tasks.length = 0; LP.router.render(); });
-    A.ok((await page.locator('.mt-block').nth(1).innerText()).includes('Chưa có dữ liệu'));
+    A.ok((await page.locator('.mt-block').nth(1).innerText()).includes('Chưa có số liệu'));
     A.strictEqual(await page.locator('.mt-block').nth(1).locator('.mt-legend').count(), 0, 'phải ẩn chú thích');
   });
 

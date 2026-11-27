@@ -46,3 +46,22 @@
 
 ## 5. Khi phân vân
 Ưu tiên theo thứ tự: file này → `DESIGN.md` → giao diện web cũ đang chạy → canvas phác thảo (chỉ phần bố cục).
+
+## 6. Nguyên tắc nội dung (27/11)
+- **Trạng thái trống:** một câu ngắn, không quá 6 chữ, không chấm câu kiểu hướng dẫn ("Chưa có việc", "Không có Chen ngang"). Có việc làm được ngay thì kèm đúng một nút hành động ("+ Thêm thói quen").
+- **Không lặp** cùng một thông tin ở hai khối của cùng một màn.
+- **Thống kê, so sánh chỉ hiện khi có số liệu.** Kỳ trước không có số thì ẩn dòng so sánh, không hiện "Bằng kỳ trước (0)". Kỳ trống thì gộp thành một dòng ("Kỳ này chưa có số liệu"), ẩn các khối biểu đồ, giữ khối nhập liệu như "Nhìn lại".
+- **Không thêm khối thống kê nhỏ mới** nếu số liệu đã có ở nơi khác.
+- **Chú giải biểu đồ dùng chú thích màu** (ô màu + chữ ngắn, một dòng), không viết đoạn văn.
+- **Một con số, một nguồn:** Agenda, Lịch, Tổng kết và Mục tiêu phải ra cùng số cho cùng một thứ. Bộ test `tests-qa/v2/doi-chieu.js` canh việc này; sửa logic đếm thì chạy lại `npm run test:v2 -- doi-chieu`.
+- **Đã bác, không đề xuất lại:**
+  - Đổi tên Chen ngang, Daily, Ad-hoc, Personal.
+  - Bỏ lời chào theo buổi.
+  - Đổi "Sớm → muộn" thành "tăng dần".
+  - Thay 3 biểu đồ Agenda bằng dải số liệu.
+  - Bớt màu đỏ.
+  - Đẩy hoa rơi ra sau nội dung.
+  - Thêm hàng nút nhanh trùng nút + tulip.
+  - Thêm khái niệm "sự kiện" vào Lịch.
+  - Hình vẽ vector sạch có mặt cười.
+  - (Đã chọn giữ) Tên nhóm "Công việc / Cá nhân" ở Mục tiêu và Ghi chú.

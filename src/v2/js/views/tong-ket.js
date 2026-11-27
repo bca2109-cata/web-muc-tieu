@@ -99,7 +99,7 @@ LP.tongKet = (function () {
   }
   function delta(curV, prevV, unitTxt, goodUp, fmt) {
     fmt = fmt || function (v) { return String(v); };
-    if (prevV == null) return '<span class="mt-cmp"><span>Kỳ trước: chưa có số</span></span>';
+    if (prevV == null) return '';   // kỳ trước không có số liệu thì ẩn hẳn dòng so sánh
     if (curV == null) return '<span class="mt-cmp"><span>Kỳ trước: ' + fmt(prevV) + unitTxt + '</span></span>';
     var d = curV - prevV;
     if (d === 0) return '<span class="mt-cmp">' + icon('check', 'ic14') + '<span>Bằng kỳ trước (' + fmt(prevV) + unitTxt + ')</span></span>';
@@ -142,7 +142,7 @@ LP.tongKet = (function () {
     // Trục dọc bắt đầu từ mức thấp nhất (làm tròn xuống 20) để thấy rõ lên xuống
     var minP = cols.reduce(function (m, c) { return c.pct != null && c.pct < m ? c.pct : m; }, 100);
     var y0 = 0;   // trục dọc luôn từ 0% đến 100%
-    if (!cols.some(function (c) { return c.pct != null; })) return '<p class="muted mt-none">Chưa có dữ liệu</p>';
+    if (!cols.some(function (c) { return c.pct != null; })) return '<p class="muted mt-none">Chưa có số liệu</p>';
     var Y = function (v) { return (Math.min(100, Math.max(y0, v)) - y0) * 100 / (100 - y0); };
     // Ngày không có mục (cuối tuần, chưa tới) thì đường nối thẳng qua các điểm có số
     var seg = [];
@@ -179,7 +179,7 @@ LP.tongKet = (function () {
     var avgLine = avg == null ? '' : '<i class="mt-lavg" style="bottom:' + Y(avg) + '%"><span class="num">TB ' + avg + '%</span></i>';
     return '<div class="mt-chart is-trend" data-n="' + n + '" data-axis="' + (cols[0] && cols[0].day ? 'ngay' : 'thang') + '"><div class="mt-yax"><span>100%</span><span style="top:' + (100 - Y(80)) + '%">80%</span><span>' + '0%' + '</span></div>' +
       '<div class="mt-plot"><div class="mt-area">' + svg + '<i class="mt-l80" style="top:' + (100 - Y(80)) + '%"></i>' + avgLine + area + '</div><div class="mt-labs">' + labs + '</div></div></div>' +
-      '<div class="mt-legend"><span><i class="mt-sw mt-sw-line"></i>% mỗi ' + unitW + '</span><span><i class="mt-sw mt-sw-band"></i>Vùng tốt ≥ 80%</span><span><i class="mt-sw mt-sw-low"></i>Dưới 80%</span><span><i class="mt-sw mt-sw-now"></i>' + (unitW === 'ngày' ? 'Hôm nay' : 'Tháng này') + '</span><span><i class="mt-sw mt-sw-avg"></i>Trung bình</span></div>' +
+      '<div class="mt-legend"><span><i class="mt-sw mt-sw-band"></i>≥ 80%</span><span><i class="mt-sw mt-sw-low"></i>Dưới 80%</span><span><i class="mt-sw mt-sw-avg"></i>Trung bình kỳ</span></div>' +
       (hi ? '<p class="muted mt-sum">Tốt nhất <span class="num">' + esc(hi.label) + '</span> (<span class="num">' + hi.pct + '%</span>), thấp nhất <span class="num">' + esc(lo.label) + '</span> (<span class="num">' + lo.pct + '%</span>). ' +
         (under ? '<span class="num">' + under + '</span> ' + unitW + ' dưới mốc 80%.' : 'Không ' + unitW + ' nào dưới mốc 80%.') + ' Bấm một điểm để xem chi tiết.</p>' : '');
   }
@@ -230,23 +230,23 @@ LP.tongKet = (function () {
 
     var per = { week: 'Tuần', month: 'Tháng', quarter: 'Quý', year: 'Năm' }[st.unit] || 'Kỳ';
     var say = m.pct == null ? '' : '<p class="mt-say">' + per + ' này bạn xong <b class="num">' + m.pct + '%</b> việc' +
-      (pm.pct == null ? '' : m.pct > pm.pct ? ', <b class="mt-up">tốt hơn</b> kỳ trước' : m.pct < pm.pct ? ', <b class="mt-down">thấp hơn</b> kỳ trước' : ', bằng kỳ trước') +
-      (m.missed ? '. Có <b class="num">' + m.missed + '</b> hạng mục Daily bị sót.' : '. Không sót hạng mục Daily nào.') + '</p>';
+      (pm.total === 0 || pm.pct == null ? '' : m.pct > pm.pct ? ', <b class="mt-up">tốt hơn</b> kỳ trước' : m.pct < pm.pct ? ', <b class="mt-down">thấp hơn</b> kỳ trước' : ', bằng kỳ trước') +
+      (m.missed ? '. Có <b class="num">' + m.missed + '</b> Daily bị sót.' : '. Không có Daily bị sót.') + '</p>';
     var b1 = block('Tổng quan', 'grid', say + '<div class="mt-tiles">' +
       tile('pct', 'Hoàn thành', 'check', m.pct == null ? '–' : m.pct + '%', m.pct == null ? '' : m.pct, m.total ? m.done + '/' + m.total + ' mục' : 'Chưa có số liệu', delta(m.pct, pm.pct, '%', true)) +
-      tile('missed', 'Hạng mục bỏ sót', 'alert', m.total ? String(m.missed) : '–', m.total ? m.missed : '', m.total ? (m.missed ? 'trong ' + m.missedDays + ' ngày' : 'Không bỏ sót') : 'Chưa có số liệu', m.total ? delta(m.missed, pm.missed, '', false) : '') +
+      tile('missed', 'Daily bị sót', 'alert', m.total ? String(m.missed) : '–', m.total ? m.missed : '', m.total ? (m.missed ? 'trong ' + m.missedDays + ' ngày' : 'Không bị sót') : 'Chưa có số liệu', m.total && pm.total ? delta(m.missed, pm.missed, '', false) : '') +
       tile('adhoc', 'Ad-hoc đúng hạn', 'flag', m.ad.done + '/' + m.ad.total, m.ad.done + '/' + m.ad.total, 'còn mở ' + m.adOpen, delta(m.ad.total ? Math.round(m.ad.done * 100 / m.ad.total) : null, pm.ad.total ? Math.round(pm.ad.done * 100 / pm.ad.total) : null, '%', true)) +
-      tile('int', 'Chen ngang mỗi ngày', 'bolt', m.intAvg == null ? '–' : D.fmtMin(m.intAvg), m.intAvg == null ? '' : m.intAvg, m.intCount + ' lần, ' + D.fmtMin(m.intMin) + ' tổng', delta(m.intAvg, pm.intAvg, '', false, function (v) { return D.fmtMin(v); })) +
+      tile('int', 'Chen ngang mỗi ngày', 'bolt', m.intAvg == null ? '–' : D.fmtMin(m.intAvg), m.intAvg == null ? '' : m.intAvg, m.intCount + ' lần, ' + D.fmtMin(m.intMin) + ' tổng', delta(m.intAvg, pm.intCount ? pm.intAvg : null, '', false, function (v) { return D.fmtMin(v); })) +
       '</div>');
 
-    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', '<p class="muted mt-note">Mỗi điểm là một ' + (cols[0] && cols[0].day ? 'ngày' : 'tháng') + ': phần trăm việc đã xong (Daily, Ad-hoc, Personal). Đường nằm trong vùng xanh là tốt; điểm có ghi số là dưới 80%.</p>' + barChart(cols, r));
+    var b2 = block('Tỷ lệ hoàn thành công việc', 'barchart', barChart(cols, r));
 
     var missRows = top.length ? '<ol class="mt-rank">' + top.map(function (t, i) {
       return '<li><button type="button" data-miss="' + i + '"><span class="mt-rn num">' + (i + 1) + '</span><span class="mt-rt"><span class="mt-rtitle">' + LP.cute.html(t.title) + esc(t.title) + '</span><span class="muted">' + esc(t.routineName) + '</span>' +
         '<span class="bar14 mt-mini"><span class="b-warn" style="width:' + Math.round(t.count * 100 / top[0].count) + '%"></span></span></span><span class="num mt-rc">' + t.count + ' lần</span></button></li>';
-    }).join('') + '</ol>' : (m.total ? '<p class="mt-good">' + LP.flowers.html('sakura', 22, 1) + 'Không bỏ sót hạng mục nào trong kỳ này.</p>' : '<p class="muted">Chưa có số liệu.</p>');
-    var b3 = block('Daily và Ad-hoc', 'list', '<div class="mt-two">' + cell('Hạng mục hay bị sót', missRows) +
-      cell('Ad-hoc có hạn trong kỳ', adTotal ? donut(a, adTotal) : empty('Chưa có việc Ad-hoc nào có hạn trong kỳ này.')) + '</div>');
+    }).join('') + '</ol>' : (m.total ? '<p class="mt-good">' + LP.flowers.html('sakura', 22, 1) + 'Không có Daily bị sót</p>' : '<p class="muted mt-none">Chưa có Daily</p>');
+    var b3 = block('Daily và Ad-hoc', 'list', '<div class="mt-two">' + cell('Daily hay bị sót', missRows) +
+      cell('Ad-hoc có hạn trong kỳ', adTotal ? donut(a, adTotal) : empty('Chưa có Ad-hoc')) + '</div>');
 
     var maxL = Math.max.apply(null, lv.map(function (x) { return x.total; }).concat([1]));
     var stack = lv.some(function (x) { return x.total; }) ? '<ul class="mt-stack">' + lv.map(function (x) {
@@ -256,28 +256,33 @@ LP.tongKet = (function () {
         '<span class="bar14 mt-sbar" style="width:' + (x.total ? Math.max(14, Math.round(x.total * 100 / maxL)) : 0) + '%">' +
         ['rat-khan', 'khan', 'binh-thuong'].map(function (k) { return x[k] ? '<span class="mt-u-' + k + '" style="flex:' + x[k] + '" title="' + x[k] + '"></span>' : ''; }).join('') +
         '</span><span class="mt-sparts">' + (parts || 'Chưa có việc') + '</span></span><span class="num mt-stot">' + x.total + ' việc</span></button></li>';
-    }).join('') + '</ul><div class="mt-legend"><span><i class="mt-sw mt-u-rat-khan"></i>Rất khẩn</span><span><i class="mt-sw mt-u-khan"></i>Khẩn</span><span><i class="mt-sw mt-u-binh-thuong"></i>Bình thường</span></div>' +
-      '<p class="muted mt-sum">Ad-hoc và Personal trong kỳ, xếp theo số trái tim. Màu cho biết độ gấp so với hạn chót.</p>' : empty('Chưa có việc nào trong kỳ này.');
+    }).join('') + '</ul><div class="mt-legend"><span><i class="mt-sw mt-u-rat-khan"></i>Rất khẩn</span><span><i class="mt-sw mt-u-khan"></i>Khẩn</span><span><i class="mt-sw mt-u-binh-thuong"></i>Bình thường</span></div>' : empty('Chưa có việc');
     var maxI = Math.max.apply(null, ib.map(function (x) { return x.minutes; }).concat([1]));
     var intRows = ib.some(function (x) { return x.count; }) ? '<ul class="mt-hbars">' + ib.map(function (x, i) {
       var lab = st.unit === 'week' ? D.weekdayShort(x.from) + ' ' + D.fmt(x.from) : st.unit === 'month' ? D.fmt(x.from) + (x.to !== x.from ? '–' + D.fmt(x.to) : '') : x.label;
       return '<li><button type="button" data-int="' + i + '"' + (x.count ? '' : ' class="is-zero"') + '><span class="mt-hl num">' + esc(lab) + '</span><span class="mt-ht"><span class="mt-hf" style="width:' + (x.minutes ? Math.max(3, Math.round(x.minutes * 100 / maxI)) : 0) + '%"></span></span><span class="num mt-hv">' + (x.count ? D.fmtMin(x.minutes) : '0') + '</span></button></li>';
-    }).join('') + '</ul>' : empty('Không có Chen ngang nào trong kỳ này.');
-    var b4 = block('Mức độ và thời gian', 'hourglass', '<div class="mt-two">' + cell('Mức quan trọng và mức khẩn', stack) + cell('Chen ngang theo ' + (st.unit === 'week' ? 'ngày' : st.unit === 'month' ? 'tuần' : 'tháng'), intRows) + '</div>');
+    }).join('') + '</ul>' : empty('Không có Chen ngang');
+    var b4 = block('Mức quan trọng và Chen ngang', 'hourglass', '<div class="mt-two">' + cell('Mức quan trọng và mức khẩn', stack) + cell('Chen ngang theo ' + (st.unit === 'week' ? 'ngày' : st.unit === 'month' ? 'tuần' : 'tháng'), intRows) + '</div>');
 
     var hab = habits.length ? '<ul class="mt-habs">' + habits.map(function (x, i) {
       return '<li><button type="button" data-hab="' + i + '" data-id="' + esc(x.habit.id) + '">' + ring(x.pct, LP.stats.level(x.pct) || 'warn') +
         '<span class="mt-rt"><span class="mt-rtitle">' + esc(x.habit.name) + '</span><span class="muted"><span class="num mt-hdone">' + x.done + '/' + x.expected + '</span> ngày</span></span>' +
         (x.streak ? '<span class="mt-streak on">' + icon('flame', 'ic18') + '<span class="num">' + x.streak + '</span></span>' : '') + '</button></li>';
-    }).join('') + '</ul>' : empty('Chưa có thói quen nào.');
-    var b5 = block('Thói quen và nhìn lại', 'leaf', '<div class="mt-two">' + cell('Tiến độ thói quen', hab) + cell('Nhìn lại ' + r.label.toLowerCase(), review(r)) + '</div>');
+    }).join('') + '</ul>' : empty('Chưa có thói quen') + '<button type="button" class="btn mt-addhab" data-addhab>' + icon('plus') + 'Thêm thói quen</button>';
+    var b5 = block('Thói quen', 'leaf', hab);
+    var b6 = block('Nhìn lại ' + r.label.toLowerCase(), 'list', review(r));
 
-    root.innerHTML = '<section class="mt-page mt-tk">' + head + b1 + b2 + b3 + b4 + b5 + '</section>';
+    // Kỳ trống (không lượt Daily, việc, Chen ngang, lượt thói quen): gộp một dòng, ẩn các khối biểu đồ, giữ Nhìn lại
+    var noData = !m.total && !tasksIn(r).length && !m.intCount && !habits.some(function (x) { return x.done > 0; });
+    if (noData) {
+      b1 = block('Tổng quan', 'grid', empty('Kỳ này chưa có số liệu'));
+      root.innerHTML = '<section class="mt-page mt-tk is-empty">' + head + b1 + b6 + '</section>';
+    } else root.innerHTML = '<section class="mt-page mt-tk">' + head + b1 + b2 + b3 + b4 + b5 + b6 + '</section>';
   }
 
   /* ---------- Chi tiết trong tấm trượt ---------- */
   function listHtml(rows, emptyTxt) {
-    if (!rows.length) return '<p class="muted">' + esc(emptyTxt || 'Không có gì.') + '</p>';
+    if (!rows.length) return '<p class="muted">' + esc(emptyTxt || 'Không có gì') + '</p>';
     return '<ul class="mt-dlist">' + rows.map(function (x) {
       return '<li><span class="mt-dmain">' + esc(x[0]) + '</span>' + (x[1] ? '<span class="muted">' + esc(x[1]) + '</span>' : '') + (x[2] ? LP.ui.pill(x[2][0], x[2][1]) : '') + '</li>';
     }).join('') + '</ul>';
@@ -289,49 +294,50 @@ LP.tongKet = (function () {
     });
   }
   function openCol(c) {
-    var html = '<p class="mt-dsum"><span class="num">' + c.done + '</span> xong, <span class="num">' + c.missed + '</span> bỏ sót trên <span class="num">' + c.total + '</span> mục' + (c.pct == null ? '' : ' (<span class="num">' + c.pct + '%</span>)') + '.</p>';
+    var html = '<p class="mt-dsum"><span class="num">' + c.done + '</span> xong, <span class="num">' + c.missed + '</span> bị sót trên <span class="num">' + c.total + '</span> mục' + (c.pct == null ? '' : ' (<span class="num">' + c.pct + '%</span>)') + '.</p>';
     if (c.day) {
       var rows = [];
       LP.logic.routines.runsFor(c.from).forEach(function (run) {
         run.items.forEach(function (m) { rows.push([m.item.title, m.routine.name, STATUS[m.status] || ['Bỏ sót', 'missed']]); });
       });
       LP.logic.tasks.tasksFor(c.from).forEach(function (x) { rows.push([x.title, x.task.kind === 'canhan' ? 'Personal' : 'Ad-hoc', x.done ? ['Xong', 'ok'] : ['Chưa xong', 'plain']]); });
-      html += listHtml(rows, 'Không có mục nào trong ngày này.');
+      html += listHtml(rows, 'Không có mục');
     } else {
       var t = LP.stats.missedTop(c.from, c.to, 8);
-      html += '<h3 class="mt-h3">Hay bị sót trong tháng</h3>' + listHtml(t.map(function (x) { return [x.title, x.routineName, [x.count + ' lần', 'missed']]; }), 'Không bỏ sót hạng mục nào.');
+      html += '<h3 class="mt-h3">Hay bị sót trong tháng</h3>' + listHtml(t.map(function (x) { return [x.title, x.routineName, [x.count + ' lần', 'missed']]; }), 'Không có Daily bị sót');
     }
     LP.ui.sheet('Hoàn thành ' + (c.day ? c.wd + ' ' : '') + (c.day ? D.fmt(c.from) : c.label), html);
   }
 
   function onClick(e) {
-    var t = e.target.closest('[data-unit],[data-nav],[data-col],[data-miss],[data-seg],[data-lvl],[data-int],[data-hab]');
+    var t = e.target.closest('[data-unit],[data-nav],[data-col],[data-addhab],[data-miss],[data-seg],[data-lvl],[data-int],[data-hab]');
     if (!t || !cur) return;
     if (t.hasAttribute('data-unit')) { st.unit = t.getAttribute('data-unit'); saveUnit(st.unit); st.anchor = D.today(); render(); }
     else if (t.hasAttribute('data-nav')) { var a = shift(st.unit, st.anchor, +t.getAttribute('data-nav')); if (+t.getAttribute('data-nav') > 0 && range(st.unit, st.anchor).to >= D.today()) return; st.anchor = a; render(); }
     else if (t.hasAttribute('data-col')) openCol(cur.cols[+t.getAttribute('data-col')]);
+    else if (t.hasAttribute('data-addhab')) LP.thoiQuen.openForm();
     else if (t.hasAttribute('data-miss')) {
       var x = cur.top[+t.getAttribute('data-miss')];
-      LP.ui.sheet('Bỏ sót: ' + x.title, '<p class="muted">' + esc(x.routineName) + ', <span class="num">' + x.count + '</span> lần.</p>' + listHtml(x.dates.map(function (d) { return [D.weekdayName(d) + ' ' + D.fmt(d), '', ['Bỏ sót', 'missed']]; })));
+      LP.ui.sheet('Daily bị sót: ' + x.title, '<p class="muted">' + esc(x.routineName) + ', <span class="num">' + x.count + '</span> lần.</p>' + listHtml(x.dates.map(function (d) { return [D.weekdayName(d) + ' ' + D.fmt(d), '', ['Bỏ sót', 'missed']]; })));
     } else if (t.hasAttribute('data-seg')) {
       var k = t.getAttribute('data-seg'), names = { dung: 'Ad-hoc đúng hạn', tre: 'Ad-hoc trễ (xong trễ hoặc quá hạn chưa xong)', mo: 'Ad-hoc còn mở' };
-      LP.ui.sheet(names[k], listHtml(taskRows(cur.a[k]), 'Không có việc nào.'));
+      LP.ui.sheet(names[k], listHtml(taskRows(cur.a[k]), 'Không có việc'));
     } else if (t.hasAttribute('data-lvl')) {
       var l = cur.lv[+t.getAttribute('data-lvl') - 1];
       LP.ui.sheet('Mức quan trọng ' + l.level + ': ' + l.total + ' việc', listHtml(l.list.map(function (x) {
         var u = urgOf(x); return [x.title, (x.kind === 'adhoc' ? 'Ad-hoc' : 'Personal') + (x.due_date ? ', hạn ' + D.fmt(x.due_date) : ''), u === 'rat-khan' ? ['Rất khẩn', 'late'] : u === 'khan' ? ['Khẩn', 'missed'] : null];
-      }), 'Không có việc nào.'));
+      }), 'Không có việc'));
     } else if (t.hasAttribute('data-int')) {
       var b = cur.ib[+t.getAttribute('data-int')];
       var rows = S().interruptions.filter(function (i) { return i.date >= b.from && i.date <= b.to; }).sort(function (p, q) { return p.date < q.date ? -1 : 1; })
         .map(function (i) { return [i.title, D.weekdayShort(i.date) + ' ' + D.fmt(i.date), [D.fmtMin(num(i.duration_min)), 'plain']]; });
-      LP.ui.sheet('Chen ngang ' + D.fmt(b.from) + (b.to !== b.from ? ' – ' + D.fmt(b.to) : ''), listHtml(rows, 'Không có Chen ngang nào.'));
+      LP.ui.sheet('Chen ngang ' + D.fmt(b.from) + (b.to !== b.from ? ' – ' + D.fmt(b.to) : ''), listHtml(rows, 'Không có Chen ngang'));
     } else if (t.hasAttribute('data-hab')) {
       var h = cur.habits[+t.getAttribute('data-hab')], today = D.today(), last = cur.r.to < today ? cur.r.to : today, rows2 = [];
       if (cur.r.from <= last) D.range(cur.r.from, last).forEach(function (d) {
         if (LP.stats.habitDue(h.habit, d)) rows2.push([D.weekdayShort(d) + ' ' + D.fmt(d), '', LP.stats.habitDone(h.habit, d) ? ['Đã làm', 'ok'] : ['Chưa làm', 'undone']]);
       });
-      LP.ui.sheet(h.habit.name, '<p class="mt-dsum"><span class="num">' + h.done + '/' + h.expected + '</span> ngày, chuỗi hiện tại <span class="num">' + h.streak + '</span>, dài nhất trong kỳ <span class="num">' + h.best + '</span>.</p>' + listHtml(rows2.reverse(), 'Chưa có ngày nào có lịch.'));
+      LP.ui.sheet(h.habit.name, '<p class="mt-dsum"><span class="num">' + h.done + '/' + h.expected + '</span> ngày, chuỗi hiện tại <span class="num">' + h.streak + '</span>, dài nhất trong kỳ <span class="num">' + h.best + '</span>.</p>' + listHtml(rows2.reverse(), 'Chưa có ngày nào'));
     }
   }
   function onSubmit(e) {

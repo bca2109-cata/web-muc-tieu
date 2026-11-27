@@ -57,6 +57,7 @@ LP.logic.routines = (function () {
   // Lịch lặp có khớp ngày d không (chưa xét đã tick hết với mẫu theo khoảng)
   function scheduled(routine, d) {
     if (!truthy(routine.active) || !D.isWorkday(d)) return false;
+    if ((routine.created_at || '').slice(0, 10) > d) return false;   // mẫu chưa tồn tại thì không sinh lượt (không tính bỏ sót ngày trước khi tạo)
     if (routine.repeat === 'month_range') return !!monthWindow(routine, d);
     return String(routine.weekdays || '').split(',').map(function (x) { return x.trim(); }).indexOf(String(D.dow(d))) >= 0;
   }
@@ -277,7 +278,15 @@ LP.logic.routines = (function () {
     return LP.store.upsert('RoutineChecks', row);
   }
 
-  // Tổng kết một ngày đã qua: { total, done, skipped, carried, missed }. Chỉ tính hạng mục ngày lệch 0 theo run_date.
+  // Mục ĐÃ QUYẾT làm ở ngày d (+1 của lượt trước, đã mang sang, đã xếp giờ): cùng nguồn với vòng "Hoàn thành" ở Agenda,
+  // để Agenda, Tổng kết và biểu đồ 6 ngày đếm giống nhau. Ngày nghỉ / Chủ nhật không có.
+  function decidedUnits(d) {
+    if (!D.isWorkday(d)) return [];
+    return leftovers(d, { days: 14, decided: true, withDone: true }).filter(function (e) { return e.kind === 'item'; });
+  }
+
+  // Tổng kết một ngày đã qua: { total, done, skipped, carried, missed }. Gồm hạng mục của lượt ngày d (ngày lệch 0)
+  // và mục đã quyết làm ngày d (+1, mang sang). +1 chưa xong tính là bỏ sót, mục mang sang chưa xong tính là carried.
   function summary(d) {
     var s = { total: 0, done: 0, skipped: 0, carried: 0, missed: 0 };
     runsFor(d).forEach(function (run) {
@@ -287,11 +296,15 @@ LP.logic.routines = (function () {
         else if (m.status === 'carried') s.carried++; else s.missed++;
       });
     });
+    decidedUnits(d).forEach(function (e) {
+      s.total++;
+      if (e.ref.done) s.done++; else if (e.source === 'plus1') s.missed++; else s.carried++;
+    });
     return s;
   }
 
   return {
-    runsFor: runsFor, itemsFor: itemsFor, plusOneFor: plusOneFor, leftovers: leftovers, missedOn: missedOn,
+    runsFor: runsFor, decidedUnits: decidedUnits, itemsFor: itemsFor, plusOneFor: plusOneFor, leftovers: leftovers, missedOn: missedOn,
     check: check, checkOf: checkOf, summary: summary, scheduled: scheduled, monthWindow: monthWindow, itemsOf: itemsOf,
     byId: function (id) { return byId(S().routines, id); }
   };

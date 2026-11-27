@@ -87,6 +87,15 @@ Dòng 1 là header. Ngày dạng `yyyy-mm-dd`, giờ dạng `HH:MM`. Mỗi dòng
 - Sang ngày mới, hạng mục chưa tick không tự ghi gì. "Bỏ sót" được **tính ra** từ việc không có dòng `RoutineChecks`. Chỉ ghi khi tôi chọn ở màn Soát.
 - Tài liệu dài hơn 45.000 ký tự thì chia nhiều dòng `DocChunks`.
 
+## 5b. Quy tắc tính số liệu (27/11, người dùng đã duyệt)
+Mọi màn (Agenda, Lịch, Tổng kết, Mục tiêu) phải ra **cùng một con số** cho cùng một thứ. Bộ test `tests-qa/v2/doi-chieu.js` canh việc này; sửa logic đếm thì chạy lại `npm run test:v2 -- doi-chieu`.
+1. **Mẫu số vòng Hoàn thành:** hạng mục Daily "Bỏ qua" (`skipped`) **không tính** vào mẫu số. Công thức: done / (tổng − bỏ qua). Áp dụng cho vòng ở Agenda, biểu đồ 6 ngày, Tổng kết.
+2. **Một nguồn Daily cho một ngày:** Tổng kết lấy cùng nguồn với Agenda, tức hạng mục của lượt ngày đó (ngày lệch 0) **cộng** mục đã quyết làm ngày đó (+1 của lượt trước, mục mang sang), qua `LP.logic.routines.summary(d)` và `decidedUnits(d)`. Mục +1 chưa xong ở ngày tới hạn tính là **bị sót**; mục mang sang chưa xong tính là `carried`.
+3. **"Daily bị sót" không đếm mục mang sang:** `LP.stats.missedTop` chỉ đếm hạng mục chưa có dòng tick nào (và +1 chưa xong ở ngày tới hạn). Mục đã `done`, `skipped` hoặc `carried` thì không phải bị sót. Tổng các lần trong "Daily hay bị sót" phải bằng ô "Daily bị sót".
+4. **Mẫu chưa tồn tại thì không sinh lượt:** `scheduled(routine, d)` trả false khi ngày d trước ngày tạo mẫu (`created_at`). Nhờ đó không có "bỏ sót" cho những ngày trước khi mẫu được tạo.
+
+Ngoài ra: Tổng kết chỉ tính các ngày **đã qua** (hôm nay không tính); việc `cancelled` không được đếm ở bất kỳ đâu.
+
 ## 6. Quy ước giao diện
 Theo `docs/v2/02-THIET-KE.md` (giữ phong cách web cũ). Phải dùng biến trong `tokens.css`, **không viết thẳng mã màu**. Không emoji. Chữ tiếng Việt.
 

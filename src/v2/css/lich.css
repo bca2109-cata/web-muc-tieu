@@ -205,3 +205,20 @@
 .ldue-line.is-done,.ldue-line.is-done::before{background:var(--line)}
 .ldue-line.is-done{color:var(--muted);opacity:1}
 .ldue-line.dim{opacity:.35}
+
+/* ---- Đợt 2b: trùng giờ dễ đọc, khu "Chưa có ngày" thu mảnh, đánh dấu hôm nay kiểu khoanh bút ---- */
+:root{--today-ink:var(--accent-deep)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--today-ink:var(--accent-ink)}}
+:root[data-theme="dark"]{--today-ink:var(--accent-ink)}
+.lblk.is-narrow .lp-cute{display:none}
+.lday.lday-un.is-slim{flex-direction:row;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:14px;font-size:13px;box-shadow:none;background:transparent;border:2px dashed var(--line)}
+.lday-un.is-slim .lday-dow{font-size:13px}
+.lhead.is-today .lday-num{width:56px;height:46px;min-width:0;padding:0;border-radius:0;background:url(../img/hom-nay.svg) center/100% 100% no-repeat;color:var(--today-ink);box-shadow:none}
+.mcell.is-today{border-color:transparent}
+.mcell.is-today .mtop>b.num{display:grid;place-items:center;width:44px;height:36px;margin:-4px 0 -4px -6px;background:url(../img/hom-nay.svg) center/100% 100% no-repeat;color:var(--today-ink)}
+@media (max-width:767px){.mcell.is-today .mtop>b.num{width:36px;height:30px;margin:-4px 0 -4px -4px}}
+/* Gọn đầu lưới để khung giờ hiện được từ 5 giờ trở lên ở 1280×860 */
+.lg-top{padding-top:8px}
+.lhead{padding-bottom:6px}
+.lallday{padding:4px 2px}
+.lgrid+.lday-un{margin-top:8px}

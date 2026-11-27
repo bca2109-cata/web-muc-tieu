@@ -214,3 +214,15 @@
 .mt-sw-band{background:var(--ok-bar);opacity:.45}
 .mt-sw-low{border-radius:50%;background:var(--warn-bar)}
 .mt-sw-now{border-radius:50%;background:var(--accent)}
+
+/* Đợt 2: gắn việc có sẵn vào mục tiêu, kỳ trống, nút thêm thói quen */
+.mt-linked li{min-height:36px}
+.mt-ltitle{flex:1;min-width:0;overflow-wrap:anywhere}
+.mt-unlink{flex:none;min-height:32px;padding:2px 10px;font-size:12px}
+.mt-linkadd{margin-top:8px;align-self:flex-start}
+.mt-picker{margin-top:8px;display:grid;gap:8px}
+.mt-plist{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:220px;overflow:auto}
+.mt-pick{width:100%;display:grid;gap:2px;text-align:left;padding:8px 12px;border:2px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.mt-pick:hover,.mt-pick:focus-visible{border-color:var(--accent)}
+.mt-pmeta{font-size:12px;font-weight:600}
+.mt-addhab{margin-top:10px}

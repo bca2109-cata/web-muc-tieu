@@ -110,13 +110,7 @@ LP.mucTieu = (function () {
         return '<label><input type="radio" name="' + name + '" value="' + o[0] + '"' + (String(cur) === String(o[0]) ? ' checked' : '') + '><span>' + o[1] + '</span></label>';
       }).join('') + '</div>';
     }
-    var linked = '';
-    if (!isNew && g.progress_mode !== 'number') {
-      var ts = tasksOf(g);
-      linked = '<div class="field"><span>Việc gắn vào mục tiêu</span>' + (ts.length ? '<ul class="mt-linked">' + ts.map(function (t) {
-        return '<li class="' + (t.status === 'done' ? 'is-done' : '') + '">' + icon(t.status === 'done' ? 'check' : 'list', 'ic14') + '<span>' + esc(t.title) + '</span></li>';
-      }).join('') + '</ul>' : '<p class="muted">Chưa có việc nào. Chọn mục tiêu này khi thêm Ad-hoc hoặc Personal.</p>') + '</div>';
-    }
+    var linked = isNew ? '' : '<div class="field mt-linkwrap" data-linkwrap' + (g.progress_mode === 'number' ? ' hidden' : '') + '><span>Việc gắn vào mục tiêu</span><div data-linkbody></div></div>';
     var html = '<form class="mt-form" novalidate>' +
       '<label class="field is-req"><span>Tên mục tiêu</span><input class="input" name="title" maxlength="100" value="' + esc(g.title) + '" required></label>' +
       '<div class="field"><span>Nhóm</span>' + radios('group', [['cong_viec', 'Công việc'], ['ca_nhan', 'Cá nhân']], g.group) + '</div>' +
@@ -137,7 +131,55 @@ LP.mucTieu = (function () {
       sel.innerHTML = vals.map(function (v) { return '<option value="' + v + '">' + periodLabel(type, v) + '</option>'; }).join('');
       sel.value = keep && vals.indexOf(keep) >= 0 ? keep : currentValue(type, today);
     }
-    function showNum() { s.el.querySelector('.mt-numbers').hidden = f.mode.value !== 'number'; }
+    function showNum() {
+      var isNum = f.mode.value === 'number', lw = s.el.querySelector('[data-linkwrap]');
+      s.el.querySelector('.mt-numbers').hidden = !isNum;
+      if (lw) lw.hidden = isNum;
+    }
+    /* Việc gắn vào mục tiêu: danh sách, "Bỏ gắn", và chọn việc có sẵn để gắn (lưu ngay qua LP.store.upsert('Tasks')) */
+    var linkBody = s.el.querySelector('[data-linkbody]'), picking = false, pickQ = '';
+    function setGoal(t, gid) { LP.store.upsert('Tasks', Object.assign({}, t, { goal_id: gid })); }
+    function candidates() {
+      var q = LP.util.fold ? LP.util.fold(pickQ) : pickQ.toLowerCase();
+      return S().tasks.filter(function (t) {
+        if ((t.kind !== 'adhoc' && t.kind !== 'canhan') || t.status === 'done' || t.status === 'cancelled' || t.goal_id === g.id) return false;
+        return !q || (LP.util.fold ? LP.util.fold(t.title) : String(t.title).toLowerCase()).indexOf(q) >= 0;
+      });
+    }
+    function pickList() {
+      var c = candidates();
+      return c.length ? c.map(function (t) {
+        var other = t.goal_id ? S().goals.filter(function (x) { return x.id === t.goal_id; })[0] : null;
+        return '<li><button type="button" class="mt-pick" data-pick="' + esc(t.id) + '"><span class="mt-ptitle">' + esc(t.title) + '</span>' +
+          '<span class="muted mt-pmeta">' + (t.kind === 'adhoc' ? 'Ad-hoc' : 'Personal') + (t.due_date ? ', hạn ' + D.fmt(t.due_date) : '') + (other ? ' · đang gắn: ' + esc(other.title) : '') + '</span></button></li>';
+      }).join('') : '<li class="muted mt-none">Không có việc để gắn</li>';
+    }
+    function drawLinked() {
+      if (!linkBody) return;
+      var ts = tasksOf(g);
+      linkBody.innerHTML = (ts.length ? '<ul class="mt-linked">' + ts.map(function (t) {
+        return '<li class="' + (t.status === 'done' ? 'is-done' : '') + '" data-lid="' + esc(t.id) + '">' + icon(t.status === 'done' ? 'check' : 'list', 'ic14') + '<span class="mt-ltitle">' + esc(t.title) + '</span>' +
+          '<button type="button" class="btn mt-unlink" data-unlink="' + esc(t.id) + '">Bỏ gắn</button></li>';
+      }).join('') + '</ul>' : '<p class="muted mt-none">Chưa có việc</p>') +
+        (picking ? '<div class="mt-picker"><input class="input" type="search" data-linkq placeholder="Lọc theo tên" value="' + esc(pickQ) + '" autocomplete="off"><ul class="mt-plist" data-plist>' + pickList() + '</ul></div>'
+          : '<button type="button" class="btn mt-linkadd" data-linkopen>' + icon('plus') + 'Gắn việc có sẵn</button>');
+      if (picking) { var q = linkBody.querySelector('[data-linkq]'); q.focus(); q.setSelectionRange(pickQ.length, pickQ.length); }
+    }
+    drawLinked();
+    f.addEventListener('input', function (e) {
+      if (!e.target.matches('[data-linkq]')) return;
+      pickQ = e.target.value; f.querySelector('[data-plist]').innerHTML = pickList();
+    });
+    f.addEventListener('click', function (e) {
+      var u = e.target.closest('[data-unlink],[data-pick],[data-linkopen]');
+      if (!u) return;
+      if (u.hasAttribute('data-linkopen')) { picking = true; pickQ = ''; drawLinked(); return; }
+      var id = u.getAttribute('data-unlink') || u.getAttribute('data-pick'), t = S().tasks.filter(function (x) { return x.id === id; })[0];
+      if (!t) return;
+      if (u.hasAttribute('data-pick')) { setGoal(t, g.id); picking = false; pickQ = ''; LP.ui.toast('Đã gắn việc.'); }
+      else { setGoal(t, ''); LP.ui.toast('Đã bỏ gắn.'); }
+      drawLinked();
+    });
     fillPeriods(g.period_type === f.ptype.value ? g.period_value : ''); showNum();
     f.addEventListener('change', function (e) {
       if (e.target.name === 'ptype') fillPeriods('');
