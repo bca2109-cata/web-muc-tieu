@@ -126,15 +126,36 @@ LP.views = LP.views || {};
   };
 
   /* ---------- Màn Ghi chú ---------- */
+  // Xem trước: 1 dòng chữ thuần (khoảng 60 ký tự) lấy từ nội dung đã có trong bộ nhớ, không gọi thêm API
+  var prevCache = {};
+  function previewOf(d) {
+    var full = cache[d.id]; if (!full || !full.content) return '';
+    var key = (full.updated_at || '') + ':' + full.content.length, c = prevCache[d.id];
+    if (c && c.key === key) return c.text;
+    var tmp = document.createElement('div'); tmp.innerHTML = LP.editor.toHTML(full.content, heads(full));
+    var t = Array.prototype.map.call(tmp.children, function (n) { return n.textContent; }).join(' ').replace(/\s+/g, ' ').trim();
+    if (t.length > 60) t = t.slice(0, 60).replace(/\s+\S*$/, '').replace(/\s+$/, '') + '…';
+    prevCache[d.id] = { key: key, text: t };
+    return t;
+  }
+  // Mới sửa nhất lên đầu; tài liệu mới chưa có updated_at đứng đầu
+  function byRecent(a, b) {
+    var x = String(a.updated_at || ''), y = String(b.updated_at || '');
+    if (x === y) return String(a.title).localeCompare(String(b.title), 'vi');
+    if (!x) return -1; if (!y) return 1;
+    return x < y ? 1 : -1;
+  }
   function listHTML() {
-    var all = docs().slice().sort(function (a, b) { return (LP.util.num(a.sort_order) - LP.util.num(b.sort_order)) || String(a.title).localeCompare(String(b.title), 'vi'); });
+    var all = docs().slice().sort(byRecent);
     var h = SPACES.map(function (sp) {
       var rows = all.filter(function (d) { return (d.space || SPACES[0]) === sp; });
       return '<section class="gc-space"><div class="gc-space-head"><h2>' + esc(sp) + '</h2>' +
-        '<button type="button" class="icon-btn gc-add" data-new="' + esc(sp) + '" aria-label="Tạo tài liệu mới trong ' + esc(sp) + '">' + ui.icon('plus', 'ic18') + '</button></div>' +
+        '<button type="button" class="icon-btn gc-add" data-new="' + esc(sp) + '" title="Tạo tài liệu mới trong ' + esc(sp) + '" aria-label="Tạo tài liệu mới trong ' + esc(sp) + '">' + ui.icon('plus', 'ic18') + '</button></div>' +
         (rows.length ? '<ul class="gc-docs">' + rows.map(function (d) {
+          var pv = previewOf(d);
           return '<li><button type="button" class="gc-docrow' + (S && d.id === S.docId ? ' is-on' : '') + '" data-doc="' + esc(d.id) + '">' + ui.icon('doc', 'ic18') +
-            '<span class="gc-docrow-t">' + LP.cute.html(d.title, 'book') + esc(d.title || 'Chưa đặt tên') + '</span><span class="gc-docrow-m muted num">' + esc(stampParts(d.updated_at).slice(0, 5)) + '</span></button></li>';
+            '<span class="gc-docrow-b"><span class="gc-docrow-t">' + LP.cute.html(d.title, 'book') + esc(d.title || 'Chưa đặt tên') + '</span>' +
+            (pv ? '<span class="gc-docrow-p muted">' + esc(pv) + '</span>' : '') + '</span><span class="gc-docrow-m muted num">' + esc(stampParts(d.updated_at).slice(0, 5)) + '</span></button></li>';
         }).join('') + '</ul>' : '<p class="muted gc-none">Chưa có tài liệu.</p>') + '</section>';
     }).join('');
     h += '<section class="gc-space gc-trash"><button type="button" class="gc-trash-head" data-trash aria-expanded="' + (S && S.trashOpen ? 'true' : 'false') + '">' + ui.icon('trash', 'ic18') + '<span>Thùng rác</span><span class="num muted">' + trashRows.length + '</span></button>' +
@@ -171,7 +192,8 @@ LP.views = LP.views || {};
   }
 
   function emptyMain() {
-    S.mainEl.innerHTML = '<div class="card gc-empty"><div class="ph-flower">' + LP.flowers.html('daisy', 56, 2) + '</div><h1>Ghi chú</h1><p class="muted">Chọn một tài liệu ở bên trái, hoặc tạo tài liệu mới.</p></div>';
+    S.mainEl.innerHTML = '<div class="card gc-empty"><div class="ph-flower">' + LP.flowers.html('daisy', 56, 2) + '</div><h1>Ghi chú</h1><p class="muted">Chưa mở tài liệu nào</p><button type="button" class="btn btn-soft" data-new-empty>+ Tài liệu mới</button></div>';
+    S.mainEl.querySelector('[data-new-empty]').addEventListener('click', function () { newDoc(SPACES[0]); });
     S.sideEl.innerHTML = '';
   }
 
@@ -211,7 +233,7 @@ LP.views = LP.views || {};
     var my = S;
     loadDoc(id).then(function (doc) {
       if (S !== my) return;
-      S.doc = doc; S.base = doc.updated_at || '';
+      S.doc = doc; S.base = doc.updated_at || ''; renderList();
       buildDoc(params);
     }, function () {
       if (S !== my) return;

@@ -264,4 +264,33 @@ module.exports = async function (h) {
   /* ---------- 8. Hai kích cỡ, sáng tối, không lỗi JS ---------- */
   await h.test('8. Danh sách Ghi chú: 390px và 1280px, sáng và tối', async () => { await h.checkScreen('ghi-chu'); });
   await h.test('8. Tài liệu Ghi chú: 390px và 1280px, sáng và tối', async () => { await h.checkScreen('ghi-chu', 'doc=d-chiaso'); });
+
+  await h.test('Đợt 2 · Danh sách xếp theo sửa gần nhất; xem trước chỉ khi có nội dung trong bộ nhớ; trạng thái trống; title nút +', async () => {
+    const page = await h.open({ w: 1280, hash: '#/ghi-chu' });
+    await page.evaluate(() => { const l = LP.store.get().docs; l.forEach(d => { if (d.id === 'd-chiaso') d.updated_at = '2026-11-20 08:00:00'; if (d.id === 'd-y-tuong') d.updated_at = '2026-11-24 09:00:00'; }); });
+    await page.evaluate(() => LP.router.go('ghi-chu'));
+    // Hai tài liệu cùng nhóm Công việc/Cá nhân: thêm một tài liệu cùng nhóm Cá nhân có updated_at mới hơn và một cái chưa có updated_at
+    const order = await page.evaluate(() => {
+      const l = LP.store.get().docs;
+      l.push({ id: 'x-moi', space: 'Cá nhân', title: 'Mới tinh', sort_order: 9, headings: '[]', updated_at: '', deleted: '' });
+      l.push({ id: 'x-cu', space: 'Cá nhân', title: 'Cũ hơn', sort_order: 0, headings: '[]', updated_at: '2026-11-01 08:00:00', deleted: '' });
+      LP.router.go('ghi-chu');
+      return null;
+    });
+    await page.waitForTimeout(150);
+    const names = await page.locator('.gc-space').nth(1).locator('.gc-docrow-t').allInnerTexts();
+    A.deepStrictEqual(names.map(x => x.trim()), ['Mới tinh', 'Ý tưởng tháng 12', 'Cũ hơn'], names.join('|'));
+    A.strictEqual(await page.locator('.gc-docrow-p').count(), 0, 'chưa có nội dung trong bộ nhớ thì không có dòng xem trước');
+    A.strictEqual(await page.locator('.gc-add').first().getAttribute('title'), 'Tạo tài liệu mới trong Công việc');
+    A.strictEqual(await page.locator('.gc-add').first().getAttribute('aria-label'), 'Tạo tài liệu mới trong Công việc');
+    const e = await page.locator('.gc-empty').innerText();
+    A.ok(/Chưa mở tài liệu nào/.test(e) && /\+ Tài liệu mới/.test(e) && !/Chọn một tài liệu/.test(e) && await page.locator('.gc-empty .ph-flower').count() === 1);
+    await page.evaluate(() => LP.router.go('ghi-chu', { doc: 'd-chiaso' })); await page.waitForSelector('.gc-title');
+    await page.evaluate(() => LP.router.go('ghi-chu')); await page.waitForTimeout(150);
+    const pv = await page.locator('.gc-docrow[data-doc="d-chiaso"] .gc-docrow-p').innerText();
+    A.ok(pv.length > 0 && pv.length <= 61 && !/<|#/.test(pv), 'xem trước: ' + pv);
+    await page.locator('[data-new-empty]').click(); await page.waitForSelector('.gc-title');
+    A.strictEqual(await page.locator('.gc-space-sel').inputValue(), 'Công việc');
+    h.noErrors(page);
+  });
 };

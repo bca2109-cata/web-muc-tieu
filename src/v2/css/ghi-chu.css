@@ -15,7 +15,10 @@
 .gc-docrow .icon{color:var(--accent)}
 .gc-docrow:hover{background:var(--plain-bg)}
 .gc-docrow.is-on{background:var(--accent-soft);color:var(--accent-deep)}
-.gc-docrow-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gc-docrow-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.gc-docrow-t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gc-docrow-p{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:600;line-height:1.3}
+.gc-trashrow .gc-docrow-t{flex:1}
 .gc-docrow-m{font-size:12px}
 .gc-none{margin:4px 10px;font-size:14px}
 .gc-trash{margin:0;padding-top:8px;border-top:2px dashed var(--line)}
