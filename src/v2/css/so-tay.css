@@ -51,3 +51,14 @@ main h1,main h2,.card h2,.page-head h1,.lich-title{font-family:var(--hand);font-
 .lblk.lstrip .lp-cute{display:none}
 .mt-sticker .lp-cute{margin:0}
 .mt-sticker .lp-cute svg{width:30px;height:30px}
+
+/* Chọn biểu tượng cho tiêu đề */
+.cute-field{margin-bottom:12px}
+.cute-toggle .lp-cute{margin:0 8px 0 0;vertical-align:middle}
+.cute-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px;margin-top:8px}
+.cute-grid[hidden]{display:none}
+.cute-opt{display:flex;align-items:center;justify-content:center;min-height:48px;padding:6px;border:2px solid var(--line);border-radius:14px;background:var(--surface);cursor:pointer}
+.cute-opt .lp-cute{margin:0}
+.cute-opt.is-on{border-color:var(--accent);background:var(--accent-soft)}
+.cute-auto{font-size:13px;font-weight:700}
+.mc-item-cute{margin:8px 0}

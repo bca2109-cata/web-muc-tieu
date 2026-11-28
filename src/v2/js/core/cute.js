@@ -44,7 +44,25 @@ LP.cute = (function () {
     house: '<path d="M5 15L16 5l11 10v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" fill="#ffc7dc"/>' +
       '<path d="M16 24.5c-2.4-1.7-4-3.1-4-4.8a2.2 2.2 0 0 1 4-1 2.2 2.2 0 0 1 4 1c0 1.7-1.6 3.1-4 4.8z" fill="#ff8fb3" stroke-width="1.4"/>',
     sprout: '<path d="M16 28V15"/><path d="M16 17C16 11 11 8 5 8.5c0 6 4.5 9 11 8.5z" fill="#a6e3c4"/><path d="M16 15c0-5 4-8 10-7.5 0 5-4 8-10 7.5z" fill="#7fd1a8"/>' +
-      '<path d="M10 28h12" />'
+      '<path d="M10 28h12" />',
+    phone: '<rect x="9" y="3.5" width="14" height="25" rx="4" fill="#b9dbff"/><path d="M14 6.5h4"/><circle cx="16" cy="24.5" r="1.3" fill="#fff"/><path d="M12.5 12h7M12.5 15.5h7"/>',
+    laptop: '<rect x="6" y="7" width="20" height="14" rx="3" fill="#d4c4ff"/><path d="M3 24.5h26"/><path d="M13 14.5q3 2 6 0"/>',
+    gift: '<rect x="5" y="13" width="22" height="14" rx="3" fill="#ffc7dc"/><rect x="4" y="9.5" width="24" height="5" rx="2" fill="#ff9fc0"/><path d="M16 9.5V27M16 9.5c-1-4-6-5-6-2.5s4 2.5 6 2.5zM16 9.5c1-4 6-5 6-2.5s-4 2.5-6 2.5z"/>',
+    plane: '<path d="M4 17l22-10-5 19-6-5-4 5-1-7z" fill="#b9dbff"/><path d="M10 19.5l11-9"/>',
+    music: '<path d="M12 22V8l12-2.5V19" /><circle cx="9" cy="22" r="3.5" fill="#ffc7dc"/><circle cx="21" cy="19.5" r="3.5" fill="#ffc7dc"/>',
+    star: '<path d="M16 4l3.6 7.4 8.1 1.1-5.9 5.7 1.4 8.1L16 22.4l-7.2 3.9 1.4-8.1-5.9-5.7 8.1-1.1z" fill="#ffd56b" stroke="#e8a317"/>' + eyes,
+    bulb: '<path d="M16 3.5a8.5 8.5 0 0 0-5 15.4c.8.7 1.2 1.5 1.2 2.6h7.6c0-1.1.4-1.9 1.2-2.6A8.5 8.5 0 0 0 16 3.5z" fill="#ffe58f"/><path d="M12.5 25h7M13.5 28h5"/><path d="M14 13l2 2.5 2-2.5"/>',
+    camera: '<rect x="3.5" y="9" width="25" height="17" rx="4.5" fill="#c9b6ff"/><path d="M10.5 9l1.5-3h8l1.5 3"/><circle cx="16" cy="17.5" r="5" fill="#fff"/><circle cx="16" cy="17.5" r="2" fill="#9fd8f5"/>',
+    pencil: '<path d="M6 26l1.5-6L21 6.5l4.5 4.5L12 24.5z" fill="#ffe58f"/><path d="M18.5 9l4.5 4.5M7.5 20l4.5 4.5"/><path d="M6 26l1.5-6 4.5 4.5z" fill="#ffc9a8"/>',
+    trophy: '<path d="M9.5 5h13v8a6.5 6.5 0 0 1-13 0z" fill="#ffd56b" stroke="#e8a317"/><path d="M9.5 8H5.5c0 4 1.5 5.5 4.5 6M22.5 8h4c0 4-1.5 5.5-4.5 6M16 19.5V24M11 27.5h10M12.5 24h7"/>',
+    people: '<circle cx="11" cy="11" r="4.5" fill="#ffc7dc"/><circle cx="22" cy="12.5" r="3.5" fill="#d4c4ff"/><path d="M3.5 26c0-5 3.5-8 7.5-8s7.5 3 7.5 8zM19.5 20.5c4 0 7 2 9 5.5H21"/>',
+    paw: '<ellipse cx="16" cy="21" rx="6.5" ry="5.5" fill="#ffc29e"/><circle cx="8.5" cy="14" r="2.6" fill="#ffc29e"/><circle cx="23.5" cy="14" r="2.6" fill="#ffc29e"/><circle cx="12.5" cy="8.5" r="2.6" fill="#ffc29e"/><circle cx="19.5" cy="8.5" r="2.6" fill="#ffc29e"/>',
+    pill: '<rect x="4" y="11" width="24" height="10" rx="5" transform="rotate(-35 16 16)" fill="#fff"/><path d="M8 22.5a5 5 0 0 1-1-7l2.6-3.6 5.6 4-2.6 3.6a5 5 0 0 1-4.6 3z" fill="#ff9fc0"/><path d="M14.5 12.5l5.5 4"/>',
+    car: '<path d="M5 20v-5l3-6.5h16l3 6.5v5z" fill="#9fd8f5"/><path d="M5 15h22"/><circle cx="10.5" cy="21.5" r="3" fill="#fff"/><circle cx="21.5" cy="21.5" r="3" fill="#fff"/>',
+    cart: '<path d="M3.5 5h4l3 14h14l2.5-10H9" fill="#ffe58f"/><circle cx="12" cy="25" r="2.2" fill="#fff"/><circle cx="22" cy="25" r="2.2" fill="#fff"/>',
+    cloud: '<path d="M9 24h14a5.5 5.5 0 0 0 .8-10.9A8 8 0 0 0 8.2 12.5 5.8 5.8 0 0 0 9 24z" fill="#cfe9fb"/>' + eyes.replace(/19/g,'18'),
+    flower: '<circle cx="16" cy="16" r="3.5" fill="#ffd56b"/><circle cx="16" cy="8" r="4.5" fill="#ffc7dc"/><circle cx="24" cy="16" r="4.5" fill="#ffc7dc"/><circle cx="16" cy="24" r="4.5" fill="#ffc7dc"/><circle cx="8" cy="16" r="4.5" fill="#ffc7dc"/><circle cx="16" cy="16" r="3.2" fill="#ffd56b"/>',
+    key: '<circle cx="10.5" cy="12" r="6" fill="#ffd56b" stroke="#e8a317"/><circle cx="10.5" cy="12" r="2" fill="#fff"/><path d="M15 16.5L27 28M22 23l3-3M19.5 20.5l2.5-2.5"/>'
   };
   // Thứ tự quan trọng: khớp từ đầu tiên trong danh sách
   var RULES = [
@@ -55,18 +73,77 @@ LP.cute = (function () {
     [/bao cao|tong hop|(^| )cop |ghi chep|van ban|file|tai lieu|ke hoach/, 'clipboard'],
     [/cuoc hop|(^| )hop (voi|nhom|team)|^hop |(^| )goi |trao doi|nhan tin|chat/, 'chat'],
     [/dat lich|(^| )lich |(^| )hen /, 'calendar'], [/(^| )tien|thanh toan|chi tieu|luong/, 'coin'], [/(^| )mua |(^| )cho |sieu thi/, 'bag'],
+    [/(^| )goi dien|dien thoai|(^| )alo/, 'phone'], [/may tinh|code|lap trinh|excel|sheet|crm/, 'laptop'], [/qua |sinh nhat|tang /, 'gift'],
+    [/di cong tac|chuyen bay|du lich|ve may bay/, 'plane'], [/y tuong|sang kien|brainstorm/, 'bulb'],
+    [/thanh tich|vinh danh/, 'trophy'],
     [/(^| )an |(^| )com |nau |(^| )bua /, 'bowl'], [/buoi toi|(^| )ngu |toi cua/, 'moon'], [/buoi sang|(^| )sang /, 'sun']
   ];
   function fold(t) {
     return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase() + ' ';
   }
-  function html(title, fallback) {
-    var t = fold(title), name = fallback || '';
-    for (var i = 0; i < RULES.length; i++) if (RULES[i][0].test(t)) { name = RULES[i][1]; break; }
+  /* Biểu tượng do người dùng chọn: lưu trong Settings khóa cute_icons, dạng JSON { "tên đã bỏ dấu": "tên hình" }.
+     Chọn theo tên nên cùng một tên hiện cùng một hình ở mọi màn. Không chọn thì tự khớp theo chữ như cũ. */
+  var ovRaw = null, ovMap = {};
+  function overrides() {
+    var raw = '{}';
+    try { raw = LP.store.setting('cute_icons', '{}'); } catch (e) { /* store chưa sẵn sàng */ }
+    if (raw !== ovRaw) { ovRaw = raw; try { ovMap = JSON.parse(raw) || {}; } catch (e2) { ovMap = {}; } }
+    return ovMap;
+  }
+  function key(title) { return fold(title).trim(); }
+  function chosen(title) { var n = overrides()[key(title)]; return n && CUTE[n] ? n : ''; }
+  function auto(title, fallback) {
+    var t = fold(title);
+    for (var i = 0; i < RULES.length; i++) if (RULES[i][0].test(t)) return RULES[i][1];
+    return fallback || '';
+  }
+  function html(title, fallback, forceName) {
+    var name = forceName || chosen(title) || auto(title, fallback);
     if (name && CUTE[name]) return '<span class="lp-cute" aria-hidden="true">' + svg(CUTE[name]) + '</span>';
     var f = LP.flowers.pick(title);
     return '<span class="lp-cute" aria-hidden="true">' + LP.flowers.html(f.name, 26, f.tone) + '</span>';
   }
+  // Ghi lựa chọn cho một tên ('' = tự chọn). oldTitle: tên cũ khi đổi tên, để bỏ lựa chọn cũ.
+  function save(title, name, oldTitle) {
+    var m = Object.assign({}, overrides()), k = key(title);
+    if (oldTitle && key(oldTitle) !== k) delete m[key(oldTitle)];
+    if (name && CUTE[name]) m[k] = name; else delete m[k];
+    var out = JSON.stringify(m);
+    if (out !== JSON.stringify(overrides())) LP.store.setSetting('cute_icons', out);
+  }
 
-  return { html: html, NAMES: Object.keys(CUTE) };
+  /* Ô chọn biểu tượng nhúng trong biểu mẫu. HTML: LP.cute.picker(tên hiện tại, nhãn).
+     Sau khi chèn vào trang gọi LP.cute.wire(gốc, hàmLấyTên) một lần. Đọc giá trị: LP.cute.read(gốc). */
+  var PNAMES = {
+    clipboard: 'Bảng ghi', chart: 'Số liệu', mail: 'Thư', book: 'Sách', shoe: 'Giày', drop: 'Nước', health: 'Sức khỏe', broom: 'Dọn dẹp',
+    chat: 'Trao đổi', calendar: 'Lịch', moon: 'Buổi tối', sun: 'Buổi sáng', bowl: 'Ăn uống', bag: 'Mua sắm', coin: 'Tiền', case: 'Công việc',
+    house: 'Cá nhân', sprout: 'Thói quen', phone: 'Điện thoại', laptop: 'Máy tính', gift: 'Quà tặng', plane: 'Di chuyển', music: 'Âm nhạc', star: 'Nổi bật', bulb: 'Ý tưởng', camera: 'Chụp ảnh', pencil: 'Viết', trophy: 'Thành tích', people: 'Cuộc hẹn', paw: 'Thú cưng', pill: 'Thuốc', car: 'Xe', cart: 'Giỏ hàng', cloud: 'Đám mây', flower: 'Hoa', key: 'Chìa khóa'
+  };
+  function picker(title, label, fallback) {
+    var cur = chosen(title), shown = cur || auto(title, fallback || '');
+    var cells = '<button type="button" class="cute-opt' + (cur ? '' : ' is-on') + '" data-cute="" aria-pressed="' + (!cur) + '"><span class="cute-auto">Tự chọn</span></button>' +
+      Object.keys(CUTE).map(function (n) {
+        return '<button type="button" class="cute-opt' + (cur === n ? ' is-on' : '') + '" data-cute="' + n + '" aria-pressed="' + (cur === n) + '" aria-label="' + (PNAMES[n] || n) + '" title="' + (PNAMES[n] || n) + '">' + html('', '', n) + '</button>';
+      }).join('');
+    return '<div class="cute-pick" data-icon="' + cur + '"><button type="button" class="btn btn-soft cute-toggle" aria-expanded="false">' +
+      '<span class="cute-now">' + html(title, fallback, shown || undefined) + '</span>' + (label || 'Biểu tượng') + '</button>' +
+      '<div class="cute-grid" hidden role="group" aria-label="Chọn biểu tượng">' + cells + '</div></div>';
+  }
+  function wire(root, getTitle) {
+    root.addEventListener('click', function (e) {
+      var pick = e.target.closest('.cute-pick'); if (!pick || !root.contains(pick)) return;
+      var tg = e.target.closest('.cute-toggle'), opt = e.target.closest('.cute-opt'), grid = pick.querySelector('.cute-grid');
+      if (tg) { var open = grid.hidden; grid.hidden = !open; tg.setAttribute('aria-expanded', String(open)); return; }
+      if (!opt) return;
+      var name = opt.getAttribute('data-cute');
+      pick.setAttribute('data-icon', name);
+      Array.prototype.forEach.call(grid.querySelectorAll('.cute-opt'), function (b) { var on = b === opt; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on)); });
+      var t = getTitle ? getTitle(pick) : '';
+      pick.querySelector('.cute-now').innerHTML = html(t, '', name || auto(t, '') || undefined);
+      grid.hidden = true; pick.querySelector('.cute-toggle').setAttribute('aria-expanded', 'false');
+    });
+  }
+  function read(pick) { return pick ? pick.getAttribute('data-icon') || '' : ''; }
+
+  return { html: html, save: save, chosen: chosen, picker: picker, wire: wire, read: read, NAMES: Object.keys(CUTE) };
 })();

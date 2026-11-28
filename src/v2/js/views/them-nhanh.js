@@ -36,7 +36,8 @@ LP.quickAdd = (function () {
   function taskFormHTML(kind, t, steps, isEdit) {
     var adhoc = kind === 'adhoc';
     var h = '<form class="qa-form" id="qa-form" novalidate>' +
-      '<label class="field is-req"><span>Tên</span><input class="input" data-f="title" id="qa-title" autocomplete="off" autofocus placeholder="' + (adhoc ? 'Ví dụ: Báo cáo nguồn tháng 11' : 'Ví dụ: Đặt lịch khám') + '" value="' + esc(t.title || '') + '"></label>';
+      '<label class="field is-req"><span>Tên</span><input class="input" data-f="title" id="qa-title" autocomplete="off" autofocus placeholder="' + (adhoc ? 'Ví dụ: Báo cáo nguồn tháng 11' : 'Ví dụ: Đặt lịch khám') + '" value="' + esc(t.title || '') + '"></label>' +
+      '<div class="field cute-field" id="qa-cute">' + LP.cute.picker(t.title || '', 'Biểu tượng') + '</div>';
     if (adhoc) {
       h += '<label class="field"><span>Người đặt</span><input class="input" data-f="requester" autocomplete="off" placeholder="TBP, giám đốc, phòng…" value="' + esc(t.requester || '') + '"></label>' +
         '<div class="row2"><label class="field"><span>' + icon('flag', 'ic18') + 'Hạn chót</span><input type="date" class="input" data-f="due_date" value="' + esc(t.due_date || '') + '"><small class="date-read muted" data-hint="due_date">' + esc(hintFor(t.due_date)) + '</small></label>' +
@@ -98,6 +99,11 @@ LP.quickAdd = (function () {
       LP.logic.tasks.setCancelled(LP.store.find('Tasks', t.id), false);
       ui.closeSheet(); ui.toast('Đã khôi phục việc.'); if (done) done(null);
     });
+    LP.cute.wire(form, function () { return val(form, '[data-f="title"]'); });
+    $(form, '[data-f="title"]').addEventListener('input', function () {
+      var pick = $(form, '#qa-cute .cute-pick');
+      if (pick && !LP.cute.read(pick)) pick.querySelector('.cute-now').innerHTML = LP.cute.html(val(form, '[data-f="title"]'), '');
+    });
     form.addEventListener('submit', function (e) { e.preventDefault(); submit(); });
 
     function submit() {
@@ -131,6 +137,7 @@ LP.quickAdd = (function () {
         status: t.status || 'todo', done_at: t.done_at || '', carried_from: t.carried_from || '', deleted: ''
       });
       var saved = LP.store.upsert('Tasks', row);
+      LP.cute.save(title, LP.cute.read($(form, '#qa-cute .cute-pick')), t.title);
       if (steps) {
         var old = LP.logic.tasks.stepsOf(saved.id), seen = {};
         rows.forEach(function (r, i) {

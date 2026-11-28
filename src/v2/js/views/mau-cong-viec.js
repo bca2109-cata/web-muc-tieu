@@ -122,12 +122,12 @@ LP.views = LP.views || {};
   /* ================= Form sửa ================= */
   function itemRowHTML(it) {
     it = it || {};
-    return '<li class="mc-item" data-src="' + esc(it.id || '') + '">' +
+    return '<li class="mc-item" data-src="' + esc(it.id || '') + '" data-title="' + esc(it.title || '') + '">' +
       '<span class="mc-grip" title="Kéo để đổi thứ tự">' + icon('sort', 'ic18') + '</span>' +
       '<div class="mc-item-fields">' +
       '<div class="mc-item-top"><input type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time class="input mc-time" data-f="time" aria-label="Giờ" value="' + esc(it.time || '') + '">' +
       '<input class="input" data-f="title" aria-label="Tên hạng mục" placeholder="Tên hạng mục" value="' + esc(it.title || '') + '"></div>' +
-      '<div class="mc-item-mid"><select class="select" data-f="day_offset" aria-label="Ngày làm"><option value="0">Cùng ngày</option><option value="1"' + (parseInt(it.day_offset, 10) > 0 ? ' selected' : '') + '>+1 ngày</option></select>' +
+      '<div class="cute-field mc-item-cute">' + LP.cute.picker(it.title || '', 'Biểu tượng') + '</div><div class="mc-item-mid"><select class="select" data-f="day_offset" aria-label="Ngày làm"><option value="0">Cùng ngày</option><option value="1"' + (parseInt(it.day_offset, 10) > 0 ? ' selected' : '') + '>+1 ngày</option></select>' +
       '<label class="mc-est"><input type="number" class="input" data-f="est_min" min="0" step="5" aria-label="Thời lượng ước tính (phút)" placeholder="0" value="' + esc(it.est_min || '') + '"><span class="muted">phút</span></label></div>' +
       '<input class="input" data-f="note" aria-label="Lưu ý" placeholder="Lưu ý ngắn" value="' + esc(it.note || '') + '">' +
       '<input class="input" data-f="link" aria-label="Link" placeholder="Link (https://...)" value="' + esc(it.link || '') + '"></div>' +
@@ -145,6 +145,7 @@ LP.views = LP.views || {};
       '<div class="mc-form-head"><button type="button" class="icon-btn mc-back" data-back aria-label="Về danh sách">' + icon('back') + '</button>' +
       '<h1>' + (isNew ? 'Daily mới' : esc(r.name)) + '</h1></div>' +
       '<label class="field is-req"><span>Tên</span><input class="input" id="mc-name" value="' + esc(r.name) + '" placeholder="Ví dụ: Chia số AI Class" autocomplete="off"></label>' +
+      '<div class="field cute-field" id="mc-cute">' + LP.cute.picker(r.name, 'Biểu tượng của Daily', 'clipboard') + '</div>' +
       '<div class="field"><span>Nhóm</span><div class="seg" role="radiogroup" aria-label="Nhóm">' +
       [['cong_viec', 'Công việc'], ['ca_nhan', 'Cá nhân']].map(function (g) {
         return '<label><input type="radio" name="mc-group" value="' + g[0] + '"' + ((r.group || 'cong_viec') === g[0] ? ' checked' : '') + '><span>' + g[1] + '</span></label>';
@@ -220,6 +221,15 @@ LP.views = LP.views || {};
     list.addEventListener('dragend', function () { if (dragging) { dragging.classList.remove('is-drag'); dragging.draggable = false; dragging = null; } });
     list.addEventListener('drop', function (e) { e.preventDefault(); });
 
+    LP.cute.wire(form, function (pick) {
+      var li = pick.closest('.mc-item');
+      return (li ? li.querySelector('[data-f="title"]') : form.querySelector('#mc-name')).value.trim();
+    });
+    form.addEventListener('input', function (e) {   // tên đổi thì hình tự chọn đổi theo
+      if (e.target.id !== 'mc-name' && e.target.getAttribute('data-f') !== 'title') return;
+      var pick = (e.target.closest('.mc-item') || form.querySelector('#mc-cute')).querySelector('.cute-pick');
+      if (pick && !LP.cute.read(pick)) pick.querySelector('.cute-now').innerHTML = LP.cute.html(e.target.value.trim(), '');
+    });
     form.addEventListener('submit', function (e) { e.preventDefault(); save(form, r, isNew, err); });
     var del = form.querySelector('#mc-del'), pause = form.querySelector('#mc-pause');
     if (pause) pause.addEventListener('click', function () {
@@ -242,7 +252,7 @@ LP.views = LP.views || {};
     return Array.prototype.map.call(form.querySelectorAll('.mc-item'), function (li, i) {
       var f = function (k) { var el = li.querySelector('[data-f="' + k + '"]'); return el ? el.value.trim() : ''; };
       return { srcId: li.getAttribute('data-src'), sort_order: i + 1, time: f('time'), title: f('title'), day_offset: parseInt(f('day_offset'), 10) || 0,
-        est_min: f('est_min'), note: f('note'), link: f('link') };
+        est_min: f('est_min'), note: f('note'), link: f('link'), icon: LP.cute.read(li.querySelector('.cute-pick')), oldTitle: li.getAttribute('data-title') || '' };
     });
   }
   var CONTENT = ['time', 'title', 'day_offset', 'est_min', 'note', 'link'];
@@ -282,6 +292,8 @@ LP.views = LP.views || {};
       active: isNew ? 'TRUE' : r.active, sort_order: isNew ? all + 1 : r.sort_order
     });
     var saved = LP.store.upsert('Routines', row);
+    LP.cute.save(name, LP.cute.read(form.querySelector('#mc-cute .cute-pick')), r && r.name);
+    items.forEach(function (x) { LP.cute.save(x.title, x.icon, x.oldTitle); });
     var existing = isNew ? [] : LP.store.get().routineItems.filter(function (x) { return x.routine_id === saved.id && (!x.valid_to || x.valid_to >= E); });
     var keep = {};
     items.forEach(function (x) {
