@@ -164,17 +164,68 @@ LP.views = LP.views || {};
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
   }
+  function nameList(arr, max) {
+    var names = arr.slice(0, max || 5);
+    return names.join(', ') + (arr.length > names.length ? '…' : '');
+  }
+  // Tải từng tài liệu, tách tài liệu tải được và tài liệu lỗi. todo: danh sách { id, title }
+  function fetchDocs(todo) {
+    var got = [], bad = [];
+    return todo.reduce(function (p, d) {
+      return p.then(function () { return LP.api.docGet(d.id).then(function (full) { got.push(full); }, function () { bad.push(d); }); });
+    }, Promise.resolve()).then(function () { return { got: got, bad: bad }; });
+  }
   function backup(btn) {
     btn.disabled = true; ui.toast('Đang gom dữ liệu…');
     var data = LP.util.clone(LP.store.get()); delete data.docs;
-    LP.p5.refreshDocs().then(function (list) {
-      return list.reduce(function (p, d) {
-        return p.then(function (acc) { return LP.api.docGet(d.id).then(function (full) { acc.push(full); return acc; }, function () { return acc; }); });
-      }, Promise.resolve([]));
-    }).then(function (docs) {
+    var docs = [];
+    function save() {
       download('life-planner-v2-sao-luu-' + D.today() + '.json', JSON.stringify({ app: 'life-planner-v2', version: 1, exported_at: D.stamp(), data: data, docs: docs }));
       ui.toast('Đã tải file sao lưu.');
-    }, function () { ui.toast('Chưa sao lưu được. Thử lại nhé.'); }).then(function () { btn.disabled = false; });
+    }
+    // Có tài liệu lỗi thì hỏi: Vẫn tải (file thiếu) hay Thử lại (chỉ tải lại các tài liệu lỗi)
+    function step(todo) {
+      return fetchDocs(todo).then(function (r) {
+        docs = docs.concat(r.got);
+        if (!r.bad.length) return save();
+        return ui.confirm('Sao lưu chưa đủ', 'Có ' + r.bad.length + ' tài liệu chưa tải được: ' + nameList(r.bad.map(function (d) { return d.title || 'Chưa đặt tên'; })) +
+          '. Tải file sao lưu thiếu các tài liệu này, hay thử lại?', { ok: 'Vẫn tải', cancel: 'Thử lại' }).then(function (skip) {
+          if (skip) return save();
+          ui.toast('Đang thử lại…'); return step(r.bad);
+        });
+      });
+    }
+    LP.p5.refreshDocs().then(function (list) { return step(list); }, function () { ui.toast('Chưa sao lưu được. Thử lại nhé.'); })
+      .then(function () { btn.disabled = false; }, function () { btn.disabled = false; ui.toast('Chưa sao lưu được. Thử lại nhé.'); });
+  }
+  // Gửi các tài liệu; trả về { ok, bad } (bad: tài liệu lỗi)
+  function saveDocs(list) {
+    var bad = [], ok = 0;
+    return list.reduce(function (p, d) {
+      return p.then(function () {
+        return LP.api.docSave(Object.assign({}, d, { force: true })).then(function () { ok++; }, function () { bad.push(d); });
+      });
+    }, Promise.resolve()).then(function () { return { ok: ok, bad: bad }; });
+  }
+  // Báo kết quả khôi phục. Còn phần lỗi thì không bao giờ báo "Đã khôi phục" mà hỏi có thử lại phần lỗi không.
+  function reportRestore(rows, keys, docs, docBad) {
+    var rowBad = keys.filter(function (k) { return LP.store.outboxHas(k[0], k[1]); });
+    if (!rowBad.length && !docBad.length) {
+      ui.toast('Đã khôi phục ' + keys.length + ' dòng và ' + docs.length + ' tài liệu.');
+      if (S) LP.router.render();
+      return;
+    }
+    var fails = [];
+    if (rowBad.length) fails.push(rowBad.length + ' dòng dữ liệu');
+    if (docBad.length) fails.push(nameList(docBad.map(function (d) { return d.title || 'Chưa đặt tên'; })));
+    ui.confirm('Khôi phục chưa xong', 'Đã khôi phục ' + (keys.length - rowBad.length) + '/' + keys.length + ' dòng và ' + (docs.length - docBad.length) + '/' + docs.length +
+      ' tài liệu. Chưa khôi phục được: ' + fails.join(', ') + '.', { ok: 'Thử lại phần lỗi', cancel: 'Đóng' }).then(function (again) {
+      if (S) LP.router.render();
+      if (!again) return;
+      ui.toast('Đang thử lại phần lỗi…');
+      LP.store.retry();   // chỉ gửi lại các dòng còn trong hàng chờ
+      saveDocs(docBad).then(function (r) { return LP.store.flush().then(function () { reportRestore(rows, keys, docs, r.bad); }); });
+    });
   }
   function restoreFile(input) {
     var f = input.files && input.files[0]; input.value = '';
@@ -187,13 +238,9 @@ LP.views = LP.views || {};
       return ui.confirm('Khôi phục từ file sao lưu?', 'File có ' + rows + ' dòng dữ liệu và ' + docs.length + ' tài liệu (sao lưu lúc ' + (j.exported_at || 'không rõ') + '). Dòng trùng mã sẽ lấy theo file. Không xóa gì đang có.', { ok: 'Khôi phục' }).then(function (yes) {
         if (!yes) return;
         ui.toast('Đang khôi phục…');
-        sheets.forEach(function (s) { j.data[LP.config.SHEETS[s]].forEach(function (r) { if (r && r.id) LP.store.upsert(s, r); }); });
-        return docs.reduce(function (p, d) {
-          return p.then(function () { return LP.api.docSave(Object.assign({}, d, { force: true })).catch(function () { /* bỏ qua tài liệu lỗi */ }); });
-        }, Promise.resolve()).then(function () { return LP.store.flush(); }).then(function () {
-          ui.toast('Đã khôi phục ' + rows + ' dòng và ' + docs.length + ' tài liệu.');
-          if (S) LP.router.render();
-        });
+        var keys = [];
+        sheets.forEach(function (s) { j.data[LP.config.SHEETS[s]].forEach(function (r) { if (r && r.id) { LP.store.upsert(s, r); keys.push([s, r.id]); } }); });
+        return saveDocs(docs).then(function (r) { return LP.store.flush().then(function () { reportRestore(rows, keys, docs, r.bad); }); });
       });
     }, function () { ui.toast('Không đọc được file.'); });
   }
