@@ -60,13 +60,69 @@ LP.cute = (function () {
   function fold(t) {
     return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'd').toLowerCase() + ' ';
   }
-  function html(title, fallback) {
-    var t = fold(title), name = fallback || '';
-    for (var i = 0; i < RULES.length; i++) if (RULES[i][0].test(t)) { name = RULES[i][1]; break; }
+  /* Biểu tượng do người dùng chọn: lưu trong Settings khóa cute_icons, dạng JSON { "tên đã bỏ dấu": "tên hình" }.
+     Chọn theo tên nên cùng một tên hiện cùng một hình ở mọi màn. Không chọn thì tự khớp theo chữ như cũ. */
+  var ovRaw = null, ovMap = {};
+  function overrides() {
+    var raw = '{}';
+    try { raw = LP.store.setting('cute_icons', '{}'); } catch (e) { /* store chưa sẵn sàng */ }
+    if (raw !== ovRaw) { ovRaw = raw; try { ovMap = JSON.parse(raw) || {}; } catch (e2) { ovMap = {}; } }
+    return ovMap;
+  }
+  function key(title) { return fold(title).trim(); }
+  function chosen(title) { var n = overrides()[key(title)]; return n && CUTE[n] ? n : ''; }
+  function auto(title, fallback) {
+    var t = fold(title);
+    for (var i = 0; i < RULES.length; i++) if (RULES[i][0].test(t)) return RULES[i][1];
+    return fallback || '';
+  }
+  function html(title, fallback, forceName) {
+    var name = forceName || chosen(title) || auto(title, fallback);
     if (name && CUTE[name]) return '<span class="lp-cute" aria-hidden="true">' + svg(CUTE[name]) + '</span>';
     var f = LP.flowers.pick(title);
     return '<span class="lp-cute" aria-hidden="true">' + LP.flowers.html(f.name, 26, f.tone) + '</span>';
   }
+  // Ghi lựa chọn cho một tên ('' = tự chọn). oldTitle: tên cũ khi đổi tên, để bỏ lựa chọn cũ.
+  function save(title, name, oldTitle) {
+    var m = Object.assign({}, overrides()), k = key(title);
+    if (oldTitle && key(oldTitle) !== k) delete m[key(oldTitle)];
+    if (name && CUTE[name]) m[k] = name; else delete m[k];
+    var out = JSON.stringify(m);
+    if (out !== JSON.stringify(overrides())) LP.store.setSetting('cute_icons', out);
+  }
 
-  return { html: html, NAMES: Object.keys(CUTE) };
+  /* Ô chọn biểu tượng nhúng trong biểu mẫu. HTML: LP.cute.picker(tên hiện tại, nhãn).
+     Sau khi chèn vào trang gọi LP.cute.wire(gốc, hàmLấyTên) một lần. Đọc giá trị: LP.cute.read(gốc). */
+  var PNAMES = {
+    clipboard: 'Bảng ghi', chart: 'Số liệu', mail: 'Thư', book: 'Sách', shoe: 'Giày', drop: 'Nước', health: 'Sức khỏe', broom: 'Dọn dẹp',
+    chat: 'Trao đổi', calendar: 'Lịch', moon: 'Buổi tối', sun: 'Buổi sáng', bowl: 'Ăn uống', bag: 'Mua sắm', coin: 'Tiền', case: 'Công việc',
+    house: 'Cá nhân', sprout: 'Thói quen'
+  };
+  function picker(title, label, fallback) {
+    var cur = chosen(title), shown = cur || auto(title, fallback || '');
+    var cells = '<button type="button" class="cute-opt' + (cur ? '' : ' is-on') + '" data-cute="" aria-pressed="' + (!cur) + '"><span class="cute-auto">Tự chọn</span></button>' +
+      Object.keys(CUTE).map(function (n) {
+        return '<button type="button" class="cute-opt' + (cur === n ? ' is-on' : '') + '" data-cute="' + n + '" aria-pressed="' + (cur === n) + '" aria-label="' + (PNAMES[n] || n) + '" title="' + (PNAMES[n] || n) + '">' + html('', '', n) + '</button>';
+      }).join('');
+    return '<div class="cute-pick" data-icon="' + cur + '"><button type="button" class="btn btn-soft cute-toggle" aria-expanded="false">' +
+      '<span class="cute-now">' + html(title, fallback, shown || undefined) + '</span>' + (label || 'Biểu tượng') + '</button>' +
+      '<div class="cute-grid" hidden role="group" aria-label="Chọn biểu tượng">' + cells + '</div></div>';
+  }
+  function wire(root, getTitle) {
+    root.addEventListener('click', function (e) {
+      var pick = e.target.closest('.cute-pick'); if (!pick || !root.contains(pick)) return;
+      var tg = e.target.closest('.cute-toggle'), opt = e.target.closest('.cute-opt'), grid = pick.querySelector('.cute-grid');
+      if (tg) { var open = grid.hidden; grid.hidden = !open; tg.setAttribute('aria-expanded', String(open)); return; }
+      if (!opt) return;
+      var name = opt.getAttribute('data-cute');
+      pick.setAttribute('data-icon', name);
+      Array.prototype.forEach.call(grid.querySelectorAll('.cute-opt'), function (b) { var on = b === opt; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on)); });
+      var t = getTitle ? getTitle(pick) : '';
+      pick.querySelector('.cute-now').innerHTML = html(t, '', name || auto(t, '') || undefined);
+      grid.hidden = true; pick.querySelector('.cute-toggle').setAttribute('aria-expanded', 'false');
+    });
+  }
+  function read(pick) { return pick ? pick.getAttribute('data-icon') || '' : ''; }
+
+  return { html: html, save: save, chosen: chosen, picker: picker, wire: wire, read: read, NAMES: Object.keys(CUTE) };
 })();

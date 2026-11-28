@@ -62,6 +62,7 @@ LP.thoiQuen = (function () {
     var sel = String(h.weekdays || '').split(',');
     var body = '<form class="mt-form" novalidate>' +
       '<label class="field is-req"><span>Tên thói quen</span><input class="input" name="name" maxlength="80" value="' + esc(h.name) + '" required></label>' +
+      '<div class="field cute-field" id="mt-cute">' + LP.cute.picker(h.name, 'Biểu tượng', 'sprout') + '</div>' +
       '<label class="field"><span>Giờ (không bắt buộc)</span><input class="input" type="text" inputmode="numeric" maxlength="5" placeholder="hh:mm" autocomplete="off" data-time name="time" value="' + esc(h.time) + '"></label>' +
       '<div class="field"><span>Các ngày trong tuần</span><div class="chips">' + WD.map(function (w) {
         return '<label><input type="checkbox" name="wd" value="' + w[0] + '"' + (sel.indexOf(w[0]) >= 0 ? ' checked' : '') + '><span>' + w[1] + '</span></label>';
@@ -70,12 +71,18 @@ LP.thoiQuen = (function () {
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button><button type="submit" class="btn btn-primary">' + icon('check') + 'Lưu</button></div></form>';
     var s = LP.ui.sheet(h.id ? 'Sửa thói quen' : 'Thêm thói quen', body);
     var f = s.el.querySelector('form');
+    LP.cute.wire(f, function () { return f.elements['name'].value.trim(); });
+    f.elements['name'].addEventListener('input', function () {
+      var pick = f.querySelector('#mt-cute .cute-pick');
+      if (!LP.cute.read(pick)) pick.querySelector('.cute-now').innerHTML = LP.cute.html(f.elements['name'].value.trim(), 'sprout');
+    });
     f.addEventListener('submit', function (e) {
       e.preventDefault();
       var name = f.elements['name'].value.trim(), wds = Array.prototype.map.call(f.querySelectorAll('input[name=wd]:checked'), function (i) { return i.value; });
       var err = f.querySelector('.form-error');
       if (!name) { LP.ui.fieldError(f.elements['name'], 'Nhập tên thói quen.'); return; }
       if (!wds.length) { LP.ui.fieldError(f.querySelector('input[name=wd]'), 'Chọn ít nhất một ngày trong tuần.'); return; }
+      LP.cute.save(name, LP.cute.read(f.querySelector('#mt-cute .cute-pick')), h.name);
       LP.store.upsert('Habits', Object.assign({}, h, { name: name, time: f.time.value, weekdays: wds.join(','), active: 'TRUE' }));
       s.close(); LP.ui.toast(h.id ? 'Đã lưu thói quen.' : 'Đã thêm thói quen.');
     });
