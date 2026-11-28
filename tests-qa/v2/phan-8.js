@@ -187,7 +187,7 @@ module.exports = async function (h) {
     const a = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, today: LP.logic.routines.runsFor('2026-11-25').some(r => r.routine.id === 'r-chiaso'), p: LP.p5.pendingOf('r-chiaso') }));
     A.strictEqual(a.wd, '1,2,3,4,5,6'); A.ok(a.today, 'hôm nay vẫn phải có Daily này'); A.ok(a.p && a.p.from === '2026-11-26' && !a.p.fields.weekdays.split(',').includes('3'));
     // Form mở lại hiện lịch chờ
-    await page.evaluate(() => LP.router.go('mau', { id: 'r-chiaso' })); await page.waitForSelector('.mc-pend');
+    await page.evaluate(() => LP.router.go('mau', { id: 'r-chiaso' })); await page.waitForSelector('.mc-ver');
     A.ok(!(await page.locator('.mc-wd input[value="3"]').isChecked()), 'form phải hiện lịch mới đang chờ');
     // Mở lại, chỉ đổi tên rồi Lưu (nút chọn mặc định Từ hôm nay): lịch chờ vẫn giữ, không bị áp sớm
     await page.fill('#mc-name', 'Chia số AI Class (đổi tên)'); await page.click('#mc-save'); await page.evaluate(() => LP.store.flush());
@@ -197,6 +197,67 @@ module.exports = async function (h) {
     await page.evaluate(() => { LP.date.today = () => '2026-11-26'; LP.p5.applyPending(); });
     const b = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, p: LP.p5.pendingOf('r-chiaso') }));
     A.strictEqual(b.wd, '1,2,4,5,6'); A.strictEqual(b.p, null);
+    h.noErrors(page);
+  });
+
+  await h.test('9. Form Daily hiện bản mới nhất; sửa "Từ ngày mai" nhiều lần không tạo dòng thừa; Xem bản hôm nay; Từ hôm nay dùng lại bản chờ', async () => {
+    const page = await h.open({ w: 1280, hash: '#/mau?id=r-chiaso' });
+    await page.waitForSelector('#mc-save');
+    const live = () => page.evaluate(() => LP.store.get().routineItems.filter(i => i.routine_id === 'r-chiaso').length);
+    const deleted = () => page.evaluate(async () => { await LP.store.flush(); return JSON.parse(localStorage.getItem('lpv2_mock_v1')).routineItems.filter(i => i.routine_id === 'r-chiaso' && String(i.deleted).toUpperCase() === 'TRUE').length; });
+    const title0 = await page.locator('.mc-item [data-f="title"]').first().inputValue();
+    const edit = async (name, apply) => {
+      await page.locator('.mc-item [data-f="title"]').first().fill(name);
+      if (apply) await page.locator('label:has([name="mc-apply"][value="' + apply + '"])').click();
+      await page.click('#mc-save'); await page.evaluate(() => LP.store.flush());
+      await page.evaluate(() => LP.router.render()); await page.waitForSelector('#mc-save');
+    };
+    // Tick hạng mục đầu hôm nay trên dòng cũ
+    await page.evaluate(() => { const it = LP.logic.routines.itemsOf(LP.logic.routines.byId('r-chiaso'), '2026-11-25')[0]; LP.logic.routines.check('r-chiaso', it.id, '2026-11-25', 'done'); });
+    await edit('Bản mới 1', 'tomorrow');
+    A.ok((await page.locator('.mc-ver').innerText()).includes('Bản này áp dụng từ 26/11'), await page.locator('.mc-ver').innerText());
+    A.strictEqual(await page.locator('.mc-item [data-f="title"]').first().inputValue(), 'Bản mới 1', 'form phải hiện bản chờ');
+    A.ok(await page.locator('[name="mc-apply"][value="tomorrow"]').isChecked(), 'mặc định Từ ngày mai');
+    const n1 = await live(), d1 = await deleted();
+    for (const k of [2, 3, 4]) { await edit('Bản mới ' + k); A.strictEqual(await page.locator('.mc-item [data-f="title"]').first().inputValue(), 'Bản mới ' + k); }
+    A.strictEqual(await live(), n1, 'số hạng mục không được tăng'); A.strictEqual(await deleted(), d1, 'không được có dòng xóa mềm mới');
+    // Xem bản hôm nay
+    await page.click('[data-ver="today"]'); await page.waitForSelector('[data-ver="pending"]');
+    A.strictEqual(await page.locator('.mc-item [data-f="title"]').first().inputValue(), title0, 'bản hôm nay phải là bản cũ');
+    A.ok((await page.locator('.mc-ver').innerText()).includes('Đang xem bản hôm nay'));
+    await page.click('[data-ver="pending"]'); await page.waitForSelector('[data-ver="today"]');
+    // Sửa bản chờ với Từ hôm nay: dùng lại bản chờ, tick chuyển sang, không còn bản chờ
+    await page.locator('label:has([name="mc-apply"][value="today"])').click();
+    await page.click('#mc-save'); await page.evaluate(() => LP.store.flush()); await page.waitForTimeout(150);
+    const r = await page.evaluate(() => {
+      const items = LP.logic.routines.itemsOf(LP.logic.routines.byId('r-chiaso'), '2026-11-25');
+      const all = LP.store.get().routineItems.filter(i => i.routine_id === 'r-chiaso');
+      const first = items[0], ck = LP.store.get().routineChecks.filter(c => c.run_date === '2026-11-25' && c.item_id === first.id && c.status === 'done').length;
+      return { first: first.title, n: all.length, pending: all.filter(i => i.valid_from > '2026-11-25').length, p: LP.p5.pendingDate(LP.logic.routines.byId('r-chiaso')), ck, today: LP.logic.routines.runsFor('2026-11-25').filter(x => x.routine.id === 'r-chiaso')[0].items.map(m => m.item.title) };
+    });
+    A.strictEqual(r.first, 'Bản mới 4'); A.strictEqual(r.pending, 0, 'không còn bản chờ'); A.strictEqual(r.p, ''); A.strictEqual(r.ck, 1, 'tick hôm nay phải chuyển sang hạng mục mới');
+    A.ok(r.today.includes('Bản mới 4') && !r.today.includes(title0), 'Agenda hôm nay phải hiện nội dung mới');
+    A.ok(r.n <= n1, 'không tạo thêm dòng: ' + r.n + ' > ' + n1);
+    h.noErrors(page);
+  });
+
+  await h.test('10. Sửa bản hôm nay khi đã có bản chờ: hỏi xác nhận, chỉ sửa hôm nay, bản chờ giữ nguyên', async () => {
+    const page = await h.open({ w: 1280, hash: '#/mau?id=r-chiaso' });
+    await page.waitForSelector('#mc-save');
+    const orig = await page.evaluate(() => LP.logic.routines.itemsOf(LP.logic.routines.byId('r-chiaso'), '2026-11-25').map(i => i.title));
+    await page.locator('.mc-item [data-f="title"]').nth(1).fill('Mai đổi mục 2');
+    await page.locator('label:has([name="mc-apply"][value="tomorrow"])').click();
+    await page.click('#mc-save'); await page.evaluate(() => LP.store.flush());
+    await page.evaluate(() => LP.router.go('mau', { id: 'r-chiaso', ban: 'hom-nay' })); await page.waitForSelector('[data-ver="pending"]');
+    A.strictEqual(await page.locator('[name="mc-apply"]').count(), 0, 'xem bản hôm nay không có lựa chọn ngày');
+    await page.locator('.mc-item [data-f="title"]').nth(2).fill('Hôm nay đổi mục 3');
+    await page.click('#mc-save'); await page.waitForSelector('.modal');
+    A.ok((await page.locator('.modal p').innerText()).includes('Daily này đã có bản áp dụng từ 26/11. Sửa bản hôm nay sẽ không đổi bản đó.'));
+    await page.click('[data-ans="1"]'); await page.evaluate(() => LP.store.flush());
+    const t = await page.evaluate(() => { const r = LP.logic.routines.byId('r-chiaso'), g = d => LP.logic.routines.itemsOf(r, d).map(i => i.title); return { today: g('2026-11-25'), mai: g('2026-11-26'), mai2: g('2026-11-27') }; });
+    A.strictEqual(t.today[2], 'Hôm nay đổi mục 3'); A.strictEqual(t.today[1], orig[1], 'hôm nay giữ mục 2 cũ');
+    A.strictEqual(t.mai[1], 'Mai đổi mục 2'); A.strictEqual(t.mai[2], orig[2], 'bản chờ không bị đổi mục 3');
+    A.deepStrictEqual(t.mai2, t.mai, 'các ngày sau giữ bản chờ');
     h.noErrors(page);
   });
 };

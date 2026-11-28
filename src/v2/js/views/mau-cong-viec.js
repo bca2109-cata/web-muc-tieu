@@ -76,6 +76,32 @@ LP.views = LP.views || {};
     }
     return mid;
   }
+  // Bỏ hạng mục chỉ trong khoảng [from, to]; phần trước và phần sau (nếu có) giữ nguyên
+  function removeRange(it, from, to) {
+    var st = LP.store, oldFrom = it.valid_from || '', oldTo = it.valid_to || '';
+    var hasBefore = !oldFrom || oldFrom < from, hasAfter = !oldTo || D.add(to, 1) <= oldTo;
+    if (hasBefore && hasAfter) {
+      st.upsert('RoutineItems', Object.assign({}, it, { valid_to: D.add(from, -1) }));
+      var a = Object.assign({}, it, { valid_from: D.add(to, 1), valid_to: oldTo }); delete a.id; delete a.created_at;
+      a = st.upsert('RoutineItems', a);
+      st.get().routineChecks.filter(function (c) { return c.item_id === it.id && c.run_date > to; }).forEach(function (c) { st.upsert('RoutineChecks', Object.assign({}, c, { item_id: a.id })); });
+    } else if (hasBefore) st.upsert('RoutineItems', Object.assign({}, it, { valid_to: D.add(from, -1) }));
+    else if (hasAfter) st.upsert('RoutineItems', Object.assign({}, it, { valid_from: D.add(to, 1) }));
+    else st.remove('RoutineItems', it.id);
+  }
+  // Ngày bắt đầu của bản chờ áp dụng (hạng mục chưa xóa có valid_from > hôm nay, hoặc lịch lặp chờ). '' = không có bản chờ
+  function pendingDate(r) {
+    var t = D.today(), v = '';
+    LP.store.get().routineItems.forEach(function (x) { if (x.routine_id === r.id && x.valid_from && x.valid_from > t && x.valid_from > v) v = x.valid_from; });
+    var p = pendingOf(r.id); if (p && p.from > t && p.from > v) v = p.from;
+    return v;
+  }
+  // mode: 'new' | 'plain' (không có bản chờ) | 'pending' (đang sửa bản chờ) | 'today' (xem bản hôm nay khi đã có bản chờ)
+  function versionCtx(r, isNew, wantToday) {
+    if (isNew) return { mode: 'new', V: '' };
+    var V = pendingDate(r);
+    return { mode: !V ? 'plain' : wantToday ? 'today' : 'pending', V: V };
+  }
   // Bỏ hạng mục từ ngày `from`: chưa từng có hiệu lực trước đó thì xóa mềm, không thì đóng valid_to
   function closeItem(it, from) {
     if (it.valid_from && it.valid_from >= from) LP.store.remove('RoutineItems', it.id);
@@ -104,7 +130,7 @@ LP.views = LP.views || {};
   }
   LP.store.on('ready', applyPending);
   LP.router.on('route', function () { if (LP.store.isReady()) applyPending(); });
-  LP.p5 = { applyPending: applyPending, pendingOf: pendingOf, docs: docs, refreshDocs: refreshDocs, headsOf: headsOf, docPickerHTML: docPickerHTML, bindDocPicker: bindDocPicker, reviseItem: reviseItem, closeItem: closeItem };
+  LP.p5 = { applyPending: applyPending, pendingOf: pendingOf, docs: docs, refreshDocs: refreshDocs, headsOf: headsOf, docPickerHTML: docPickerHTML, bindDocPicker: bindDocPicker, reviseItem: reviseItem, closeItem: closeItem, removeRange: removeRange, pendingDate: pendingDate };
 
   /* ================= Hiển thị danh sách ================= */
   var WD = ['', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -159,16 +185,23 @@ LP.views = LP.views || {};
       '<button type="button" class="icon-btn" data-act="del" aria-label="Xóa hạng mục">' + icon('trash', 'ic18') + '</button></div></li>';
   }
 
-  function formHTML(r, isNew) {
+  // Dòng nhỏ dưới tiêu đề khi Daily có bản chờ: đổi qua lại giữa bản chờ và bản hôm nay
+  function verLine(ctx) {
+    if (ctx.mode === 'pending') return '<p class="muted mc-ver">Bản này áp dụng từ ' + esc(D.fmt(ctx.V)) + '. Hôm nay vẫn dùng bản cũ · <button type="button" class="mc-verlink" data-ver="today">Xem bản hôm nay</button></p>';
+    if (ctx.mode === 'today') return '<p class="muted mc-ver">Đang xem bản hôm nay · <button type="button" class="mc-verlink" data-ver="pending">Xem bản từ ' + esc(D.fmt(ctx.V)) + '</button></p>';
+    return '';
+  }
+  function formHTML(r, isNew, ctx) {
     r = r || { name: '', group: 'cong_viec', repeat: 'weekday', weekdays: '1,2,3,4,5,6', month_from: '', month_to: '', done_before: '', importance: 1, doc_id: '', heading_id: '', active: 'TRUE' };
-    var pend = isNew ? null : pendingOf(r.id);
-    if (pend) r = Object.assign({}, r, pend.fields);   // hiện lịch lặp sẽ có hiệu lực từ ngày mai
+    ctx = ctx || { mode: isNew ? 'new' : 'plain', V: '' };
+    var pend = ctx.mode === 'pending' ? pendingOf(r.id) : null;
+    if (pend) r = Object.assign({}, r, pend.fields);   // hiện lịch lặp chờ
     var wds = String(r.weekdays || '').split(',').map(function (x) { return x.trim(); });
-    var items = isNew ? [] : currentItems(r);
+    var items = isNew ? [] : currentItems(r, ctx.mode === 'pending' ? ctx.V : undefined);
     var imp = parseInt(r.importance, 10) || 1;
     var h = '<form class="card mc-form" id="mc-form" novalidate>' +
       '<div class="mc-form-head"><button type="button" class="icon-btn mc-back" data-back aria-label="Về danh sách">' + icon('back') + '</button>' +
-      '<h1>' + (isNew ? 'Daily mới' : esc(r.name)) + '</h1></div>' +
+      '<h1>' + (isNew ? 'Daily mới' : esc(r.name)) + '</h1></div>' + verLine(ctx) +
       '<label class="field is-req"><span>Tên</span><input class="input" id="mc-name" value="' + esc(r.name) + '" placeholder="Ví dụ: Chia số AI Class" autocomplete="off"></label>' +
       '<div class="field cute-field" id="mc-cute">' + LP.cute.picker(r.name, 'Biểu tượng của Daily', 'clipboard') + '</div>' +
       '<div class="field"><span>Nhóm</span><div class="seg" role="radiogroup" aria-label="Nhóm">' +
@@ -188,11 +221,12 @@ LP.views = LP.views || {};
       '<div class="mc-items-head"><h2>Hạng mục</h2><span class="muted mc-items-n"></span></div>' +
       '<ul class="mc-items" id="mc-items">' + items.map(itemRowHTML).join('') + '</ul>' +
       '<button type="button" class="btn btn-soft mc-add-item" id="mc-add-item">' + icon('plus', 'ic18') + 'Thêm hạng mục</button>' +
-      '<div class="field mc-apply"><span>Áp dụng</span><div class="seg" role="radiogroup" aria-label="Áp dụng từ khi nào">' +
-      '<label><input type="radio" name="mc-apply" value="today" checked><span>Từ hôm nay</span></label>' +
-      '<label><input type="radio" name="mc-apply" value="tomorrow"><span>Từ ngày mai</span></label></div>' +
-      '<small class="muted">Các ngày trước đó giữ nguyên giờ và tên cũ. Lịch lặp mới chọn "Từ ngày mai" sẽ chạy từ ngày mai.</small>' +
-      (pend ? '<small class="muted mc-pend">Lịch lặp đang chờ: có hiệu lực từ ' + esc(D.fmt(pend.from)) + '.</small>' : '') + '</div>' +
+      (ctx.mode === 'today' ?
+        '<div class="field mc-apply"><span>Áp dụng</span><small class="muted">Chỉ sửa trong hôm nay. Bản từ ' + esc(D.fmt(ctx.V)) + ' giữ nguyên.</small></div>' :
+        '<div class="field mc-apply"><span>Áp dụng</span><div class="seg" role="radiogroup" aria-label="Áp dụng từ khi nào">' +
+        '<label><input type="radio" name="mc-apply" value="today"' + (ctx.mode === 'pending' ? '' : ' checked') + '><span>Từ hôm nay</span></label>' +
+        '<label><input type="radio" name="mc-apply" value="tomorrow"' + (ctx.mode === 'pending' ? ' checked' : '') + '><span>Từ ngày mai</span></label></div>' +
+        '<small class="muted">Các ngày trước đó giữ nguyên giờ và tên cũ. Lịch lặp mới chọn "Từ ngày mai" sẽ chạy từ ngày mai.</small></div>') +
       '<p class="form-error" id="mc-err" role="alert" hidden></p>' +
       '<div class="modal-foot mc-foot">' +
       (isNew ? '' : '<button type="button" class="btn btn-danger" id="mc-del">' + icon('trash', 'ic18') + 'Xóa</button>' +
@@ -201,7 +235,8 @@ LP.views = LP.views || {};
     return h;
   }
 
-  function bindForm(root, r, isNew) {
+  function bindForm(root, r, isNew, ctx) {
+    ctx = ctx || { mode: isNew ? 'new' : 'plain', V: '' };
     var form = root.querySelector('#mc-form'), list = form.querySelector('#mc-items');
     bindDocPicker(form, r && r.doc_id, r && r.heading_id);
     function err(t, el) {
@@ -256,7 +291,10 @@ LP.views = LP.views || {};
       var pick = (e.target.closest('.mc-item') || form.querySelector('#mc-cute')).querySelector('.cute-pick');
       if (pick && !LP.cute.read(pick)) pick.querySelector('.cute-now').innerHTML = LP.cute.html(e.target.value.trim(), '');
     });
-    form.addEventListener('submit', function (e) { e.preventDefault(); save(form, r, isNew, err); });
+    form.addEventListener('submit', function (e) { e.preventDefault(); save(form, r, isNew, err, ctx); });
+    Array.prototype.forEach.call(form.querySelectorAll('[data-ver]'), function (b) {
+      b.addEventListener('click', function () { LP.router.go('mau', b.getAttribute('data-ver') === 'today' ? { id: r.id, ban: 'hom-nay' } : { id: r.id }); });
+    });
     var del = form.querySelector('#mc-del'), pause = form.querySelector('#mc-pause');
     if (pause) pause.addEventListener('click', function () {
       var on = LP.util.truthy(r.active);
@@ -290,7 +328,8 @@ LP.views = LP.views || {};
   }
 
   function list(form) { return form.querySelectorAll('.mc-item'); }
-  function save(form, r, isNew, err) {
+  function save(form, r, isNew, err, ctx) {
+    ctx = ctx || { mode: isNew ? 'new' : 'plain', V: '' };
     var name = form.querySelector('#mc-name').value.trim();
     var repeat = form.querySelector('[name="mc-repeat"]:checked').value;
     var wds = Array.prototype.filter.call(form.querySelectorAll('.mc-wd input:checked'), function () { return true; }).map(function (i) { return i.value; });
@@ -308,7 +347,17 @@ LP.views = LP.views || {};
       if (it.est_min !== '' && !(num(it.est_min, -1) >= 0)) { err('Hạng mục ' + (i + 1) + ': thời lượng chưa đúng.', li.querySelector('[data-f="est_min"]')); return; }
     }
     err('');
-    var E = form.querySelector('[name="mc-apply"]:checked').value === 'tomorrow' ? D.add(D.today(), 1) : D.today();
+    if (ctx.mode === 'today') {
+      ui.confirm('Sửa bản hôm nay?', 'Daily này đã có bản áp dụng từ ' + D.fmt(ctx.V) + '. Sửa bản hôm nay sẽ không đổi bản đó.', { ok: 'Vẫn sửa' }).then(function (yes) { if (yes) commit(); });
+      return;
+    }
+    commit();
+
+    function commit() {
+    var T = D.today(), chk = form.querySelector('[name="mc-apply"]:checked');
+    var tomorrow = !!chk && chk.value === 'tomorrow';
+    // Ngày hiệu lực: sửa bản chờ + "Từ ngày mai" thì cập nhật tại chỗ bản chờ (ngày V); xem bản hôm nay khi có bản chờ thì chỉ sửa trong [hôm nay, V-1]
+    var E = ctx.mode === 'pending' && tomorrow ? ctx.V : tomorrow ? D.add(T, 1) : T;
     var all = sortedRoutines().length ? Math.max.apply(null, sortedRoutines().map(function (x) { return num(x.sort_order); })) : 0;
     var row = Object.assign({}, r || {}, {
       name: name, group: form.querySelector('[name="mc-group"]:checked').value, repeat: repeat,
@@ -317,37 +366,69 @@ LP.views = LP.views || {};
       doc_id: form.querySelector('[data-f="doc_id"]').value, heading_id: form.querySelector('[data-f="heading_id"]').value,
       active: isNew ? 'TRUE' : r.active, sort_order: isNew ? all + 1 : r.sort_order
     });
-    // Lịch lặp: "Từ hôm nay" ghi ngay; "Từ ngày mai" thì Daily giữ lịch cũ, lịch mới chờ tới ngày
+    // Lịch lặp: "Từ hôm nay" ghi ngay; "Từ ngày mai" thì Daily giữ lịch cũ, lịch mới chờ tới ngày. Xem bản hôm nay: không đụng lịch chờ
     var newSched = {}; SCHED.forEach(function (k) { newSched[k] = row[k]; });
-    if (!isNew) {
+    if (!isNew && ctx.mode !== 'today') {
       var cur = LP.store.find('Routines', r.id) || r, same = SCHED.every(function (k) { return String(cur[k] == null ? '' : cur[k]) === String(newSched[k] == null ? '' : newSched[k]); });
       var pd = pendingOf(r.id), samePend = pd && SCHED.every(function (k) { return String(pd.fields[k] == null ? '' : pd.fields[k]) === String(newSched[k] == null ? '' : newSched[k]); });
-      if (samePend) {
-        SCHED.forEach(function (k) { row[k] = cur[k]; });   // lịch trong form không đổi so với lịch chờ: giữ nguyên lịch chờ và ngày hiệu lực
-      } else if (E > D.today() && !same) {
+      if (E > T) {
         SCHED.forEach(function (k) { row[k] = cur[k]; });
-        LP.store.setSetting(PEND + r.id, JSON.stringify({ from: E, fields: newSched }));
-      } else if (LP.store.setting(PEND + r.id, '')) LP.store.setSetting(PEND + r.id, '');
+        if (samePend) { /* lịch trong form không đổi so với lịch chờ: giữ nguyên lịch chờ và ngày hiệu lực */ }
+        else if (!same) LP.store.setSetting(PEND + r.id, JSON.stringify({ from: E, fields: newSched }));
+        else if (pd) LP.store.setSetting(PEND + r.id, '');
+      } else if (pd) LP.store.setSetting(PEND + r.id, '');
     }
     var saved = LP.store.upsert('Routines', row);
     LP.cute.save(name, LP.cute.read(form.querySelector('#mc-cute .cute-pick')), r && r.name);
     items.forEach(function (x) { LP.cute.save(x.title, x.icon, x.oldTitle); });
-    var existing = isNew ? [] : LP.store.get().routineItems.filter(function (x) { return x.routine_id === saved.id && (!x.valid_to || x.valid_to >= E); });
+    var allItems = isNew ? [] : LP.store.get().routineItems.filter(function (x) { return x.routine_id === saved.id; });
+    var fieldsOf = function (x) { return { sort_order: x.sort_order, time: x.time, title: x.title, day_offset: x.day_offset, est_min: x.est_min, note: x.note, link: x.link }; };
     var keep = {};
-    items.forEach(function (x) {
-      var src = x.srcId && existing.filter(function (e) { return e.id === x.srcId; })[0];
-      var fields = { sort_order: x.sort_order, time: x.time, title: x.title, day_offset: x.day_offset, est_min: x.est_min, note: x.note, link: x.link };
-      if (!src) {
-        LP.store.upsert('RoutineItems', Object.assign({ routine_id: saved.id, valid_from: E, valid_to: '' }, fields));
-      } else {
+
+    if (ctx.mode === 'today') {
+      // Chỉ sửa khoảng [hôm nay, V-1]; bản chờ từ V giữ nguyên
+      var last = D.add(ctx.V, -1), atToday = allItems.filter(function (x) { return (!x.valid_from || x.valid_from <= T) && (!x.valid_to || x.valid_to >= T); });
+      items.forEach(function (x) {
+        var src = x.srcId && atToday.filter(function (e) { return e.id === x.srcId; })[0], fields = fieldsOf(x);
+        if (!src) { LP.store.upsert('RoutineItems', Object.assign({ routine_id: saved.id, valid_from: T, valid_to: last }, fields)); return; }
         keep[src.id] = true;
         if (sameContent(src, x)) { if (num(src.sort_order) !== x.sort_order) LP.store.upsert('RoutineItems', Object.assign({}, src, { sort_order: x.sort_order })); }
+        else reviseItem(src, fields, T, last);
+      });
+      atToday.forEach(function (e) { if (!keep[e.id]) removeRange(e, T, last); });
+    } else {
+      var existing = allItems.filter(function (x) { return !x.valid_to || x.valid_to >= E; }), reused = [];
+      items.forEach(function (x) {
+        var src = x.srcId && existing.filter(function (e) { return e.id === x.srcId; })[0], fields = fieldsOf(x);
+        if (!src) { LP.store.upsert('RoutineItems', Object.assign({ routine_id: saved.id, valid_from: E, valid_to: '' }, fields)); return; }
+        keep[src.id] = true;
+        if (src.valid_from && src.valid_from > E) {
+          // Bản chờ chuyển về hôm nay: dùng lại chính dòng đó (đổi valid_from), không tạo thêm
+          reused.push({ id: src.id, sort_order: String(src.sort_order), title: src.title, time: src.time || '' });
+          LP.store.upsert('RoutineItems', Object.assign({}, src, fields, { valid_from: E }));
+        } else if (sameContent(src, x)) { if (num(src.sort_order) !== x.sort_order) LP.store.upsert('RoutineItems', Object.assign({}, src, { sort_order: x.sort_order })); }
         else reviseItem(src, fields, E, '');
+      });
+      var gone = existing.filter(function (e) { return !keep[e.id]; });
+      if (reused.length) {
+        // Lượt tick từ hôm nay của bản hôm nay cũ chuyển sang dòng được dùng lại: khớp theo thứ tự, rồi tên, rồi giờ
+        var left = gone.filter(function (e) { return e.valid_to === D.add(ctx.V, -1); }), pairs = [];
+        ['sort_order', 'title', 'time'].forEach(function (k) {
+          reused.slice().forEach(function (n) {
+            if (n.done) return;
+            var i = left.findIndex(function (o) { return String(o[k] == null ? '' : o[k]) === String(n[k] == null ? '' : n[k]); });
+            if (i >= 0) { pairs.push([left[i].id, n.id]); left.splice(i, 1); n.done = true; }
+          });
+        });
+        pairs.forEach(function (pr) {
+          LP.store.get().routineChecks.filter(function (c) { return c.item_id === pr[0] && c.run_date >= E; }).forEach(function (c) { LP.store.upsert('RoutineChecks', Object.assign({}, c, { item_id: pr[1] })); });
+        });
       }
-    });
-    existing.forEach(function (e) { if (!keep[e.id]) closeItem(e, E); });
+      gone.forEach(function (e) { closeItem(e, E); });
+    }
     ui.toast('Đã lưu "' + name + '".');
     LP.router.go('mau', { id: saved.id });
+    }
   }
 
   /* ================= Màn ================= */
@@ -355,6 +436,7 @@ LP.views = LP.views || {};
     S = { el: el, id: params.id || '' };
     var isNew = S.id === 'new', r = isNew ? null : LP.logic.routines.byId(S.id);
     if (S.id && !isNew && !r) S.id = '';
+    var ctx = r || isNew ? versionCtx(r, isNew, params.ban === 'hom-nay') : null;
     el.innerHTML = '<div class="mc" data-tier="' + (S.id ? 'form' : 'list') + '">' +
       '<aside class="mc-list card" aria-label="Danh sách Daily"><div class="mc-list-head"><button type="button" class="icon-btn" data-settings aria-label="Về Cài đặt">' + icon('back') + '</button><h1>Daily</h1>' +
       '<button type="button" class="btn btn-primary" id="mc-new">' + icon('plus', 'ic18') + 'Daily mới</button></div><div class="mc-list-body"></div></aside>' +
@@ -364,7 +446,7 @@ LP.views = LP.views || {};
     el.querySelector('[data-settings]').addEventListener('click', function () { LP.router.go('cai-dat'); });
     el.querySelector('#mc-new').addEventListener('click', function () { LP.router.go('mau', { id: 'new' }); });
     listBody.addEventListener('click', function (e) { var b = e.target.closest('[data-id]'); if (b) LP.router.go('mau', { id: b.getAttribute('data-id') }); });
-    if (S.id) { main.innerHTML = formHTML(r, isNew); bindForm(main, r, isNew); }
+    if (S.id) { main.innerHTML = formHTML(r, isNew, ctx); bindForm(main, r, isNew, ctx); }
     else main.innerHTML = '<div class="card mc-empty"><div class="ph-flower">' + LP.flowers.html('daisy', 56, 2) + '</div><h2>Daily</h2>' +
       '<p class="muted">Chọn một Daily ở bên trái để sửa, hoặc tạo Daily mới.</p></div>';
   }
