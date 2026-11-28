@@ -154,7 +154,28 @@ LP.ui = (function () {
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay || e.target.closest('[data-close]')) closeSheet();
     });
-    function onKey(e) { if (e.key === 'Escape') closeSheet(); }
+    var TABBABLE = 'a[href],button,input,select,textarea,[tabindex],[contenteditable="true"]';
+    function tabbables() {
+      var m = overlay.querySelector('.modal');
+      return Array.prototype.filter.call(m.querySelectorAll(TABBABLE), function (n) {
+        if (n.disabled || n.hidden || n.getAttribute('tabindex') === '-1' || (n.type === 'hidden')) return false;
+        if (n.closest('[hidden]') || n.closest('[inert]')) return false;
+        if (n.type === 'radio' && n.name && !n.checked) {   // Tab chỉ dừng ở nút đã chọn của nhóm (chưa chọn: nút đầu)
+          var g = Array.prototype.filter.call(m.querySelectorAll('input[type=radio]'), function (r) { return r.name === n.name; });
+          if (g.some(function (r) { return r.checked; }) || g[0] !== n) return false;
+        }
+        var cs = getComputedStyle(n);
+        return cs.visibility !== 'hidden' && cs.display !== 'none' && n.getClientRects().length > 0;
+      });
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { closeSheet(); return; }
+      if (e.key !== 'Tab' || !current || current.el !== overlay) return;
+      var list = tabbables(); if (!list.length) { e.preventDefault(); return; }
+      var first = list[0], last = list[list.length - 1], a = document.activeElement, inside = overlay.contains(a);
+      if (e.shiftKey && (a === first || !inside)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (a === last || !inside)) { e.preventDefault(); first.focus(); }
+    }
     document.addEventListener('keydown', onKey);
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';

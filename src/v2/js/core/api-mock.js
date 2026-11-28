@@ -14,16 +14,22 @@ LP.createMockApi = function (opts) {
     return db;
   }
   function key(sheet) { var k = LP.config.SHEETS[sheet]; if (!k) throw new Error('Sheet không hợp lệ: ' + sheet); return k; }
+  // Giả lập lỗi (chỉ để thử): LP.api.__fail = true / false ghi đè ?fail; khóa localStorage lpv2_mock_fail = '1' giữ lỗi qua lần tải lại.
+  // LP.api.__failDocGet / __failDocSave: true hoặc danh sách mã tài liệu sẽ lỗi.
+  function flagFail() { try { return localStorage.getItem('lpv2_mock_fail') === '1'; } catch (e) { return false; } }
   function maybeFail() {
-    if (opts.failRate && Math.random() < opts.failRate) return Promise.reject(new Error('Lỗi giả lập (?fail)'));
+    var f = api.__fail;
+    if (f === undefined) f = flagFail() || (opts.failRate && Math.random() < opts.failRate);
+    if (f) return Promise.reject(new Error('Lỗi giả lập (?fail)'));
     return null;
   }
+  function docFail(list, id) { return list === true || (Array.isArray(list) && list.indexOf(id) >= 0); }
   function inRange(row, range, field) {
     if (!range || !row[field]) return true;
     return (!range.from || row[field] >= range.from) && (!range.to || row[field] <= range.to);
   }
 
-  return {
+  var api = {
     mode: 'mock',
     // range: { from, to } lọc RoutineChecks, HabitLogs, Interruptions theo ngày
     load: function (range) {
@@ -59,11 +65,13 @@ LP.createMockApi = function (opts) {
       return Promise.resolve(LP.util.clone(open().docs));
     },
     docGet: function (id) {
+      if (docFail(api.__failDocGet, id)) return Promise.reject(new Error('Lỗi giả lập (docGet)'));
       var d = open(), r = d.docs.filter(function (x) { return x.id === id; })[0];
       if (!r) return Promise.reject(new Error('Không thấy tài liệu'));
       return Promise.resolve(Object.assign(LP.util.clone(r), { content: (d.docContents || {})[id] || '' }));
     },
     docSave: function (doc) {
+      if (docFail(api.__failDocSave, doc && doc.id)) return Promise.reject(new Error('Lỗi giả lập (docSave)'));
       var d = open(), content = doc.content || '', row = Object.assign({}, doc);
       delete row.content;
       if (!row.id) row.id = LP.util.uid();
@@ -92,4 +100,5 @@ LP.createMockApi = function (opts) {
     // Chỉ dùng khi thử: đặt lại dữ liệu mẫu
     reset: function () { db = LP.mockSeed(); persist(); return Promise.resolve({}); }
   };
+  return api;
 };
