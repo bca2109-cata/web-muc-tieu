@@ -124,3 +124,5 @@
   .gc-list{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
   .gc-doc{padding:18px 22px 24px}
 }
+
+.gc-cutebar{margin:0 0 8px}

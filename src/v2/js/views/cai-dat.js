@@ -71,6 +71,13 @@ LP.views = LP.views || {};
       '<div class="field"><span>' + icon('flower', 'ic18') + 'Hoa rơi</span>' + seg('cd-fall', [['on', 'Luôn bật'], ['system', 'Theo máy'], ['off', 'Tắt']], LP.flowers.getFall(), 'Hoa rơi') + '</div>' +
       '<p class="muted cd-note">Chỉ áp dụng cho thiết bị này.</p>');
   }
+  function blocksHTML() {
+    return section('blocks', 'Biểu tượng các khối', 'sparkle',
+      Object.keys(LP.cute.BLOCKS).map(function (k) {
+        var b = LP.cute.BLOCKS[k];
+        return '<div class="field cute-field" data-block="' + k + '">' + LP.cute.picker(b[0], b[1], b[2]) + '</div>';
+      }).join('') + '<p class="muted cd-note">Hình ở đầu các khối Ad-hoc, Personal và Thói quen trong Agenda.</p>');
+  }
   function connectHTML() {
     var mock = LP.config.mock, has = !!LP.settings.getToken();
     return section('connect', 'Kết nối', 'cloud',
@@ -94,7 +101,9 @@ LP.views = LP.views || {};
     el.innerHTML = '<div class="cd"><div class="page-head"><h1>Cài đặt</h1></div>' +
       '<section class="card cd-card cd-daily"><h2>' + icon('calcheck', 'ic18') + 'Daily</h2><p class="muted">Các danh sách lặp lại theo lịch: sáng, cuối ngày, tối, chốt số tháng…</p>' +
       '<a class="btn btn-primary" href="#/mau" id="cd-daily">Quản lý Daily</a></section>' +
-      workHTML() + offHTML() + notifyHTML() + lookHTML() + connectHTML() + dataHTML() + '</div>';
+      workHTML() + offHTML() + notifyHTML() + lookHTML() + blocksHTML() + connectHTML() + dataHTML() + '</div>';
+    LP.cute.wire(el.querySelector('#cd-blocks'), function (pick) { return LP.cute.BLOCKS[pick.parentNode.getAttribute('data-block')][0]; },
+      function (name, pick) { LP.cute.save(LP.cute.BLOCKS[pick.parentNode.getAttribute('data-block')][0], name); });
     bind(el);
   }
   function unmount() { S = null; }
