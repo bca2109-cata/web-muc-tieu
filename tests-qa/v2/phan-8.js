@@ -175,4 +175,24 @@ module.exports = async function (h) {
     A.ok((await page.locator('.toast').innerText()).includes('từ ngày mai'));
     h.noErrors(page);
   });
+
+  await h.test('8. Daily: đổi lịch lặp với "Từ ngày mai" thì hôm nay giữ lịch cũ, tới ngày mai mới đổi', async () => {
+    const page = await h.open({ w: 1280, hash: '#/mau?id=r-chiaso' });   // 25/11 là Thứ Tư; mẫu đang chạy T2 đến T7
+    await page.waitForSelector('#mc-save');
+    const wed = page.locator('.mc-wd input[value="3"]');
+    A.ok(await wed.isChecked(), 'mẫu đang có Thứ Tư');
+    await page.locator('label:has(.mc-wd input[value="3"]), .mc-wd label:has(input[value="3"])').first().click();
+    await page.locator('label:has([name="mc-apply"][value="tomorrow"])').click();
+    await page.click('#mc-save'); await page.evaluate(() => LP.store.flush());
+    const a = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, today: LP.logic.routines.runsFor('2026-11-25').some(r => r.routine.id === 'r-chiaso'), p: LP.p5.pendingOf('r-chiaso') }));
+    A.strictEqual(a.wd, '1,2,3,4,5,6'); A.ok(a.today, 'hôm nay vẫn phải có Daily này'); A.ok(a.p && a.p.from === '2026-11-26' && !a.p.fields.weekdays.split(',').includes('3'));
+    // Form mở lại hiện lịch chờ
+    await page.evaluate(() => LP.router.go('mau', { id: 'r-chiaso' })); await page.waitForSelector('.mc-pend');
+    A.ok(!(await page.locator('.mc-wd input[value="3"]').isChecked()), 'form phải hiện lịch mới đang chờ');
+    // Tới ngày mai: áp dụng
+    await page.evaluate(() => { LP.date.today = () => '2026-11-26'; LP.p5.applyPending(); });
+    const b = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, p: LP.p5.pendingOf('r-chiaso') }));
+    A.strictEqual(b.wd, '1,2,4,5,6'); A.strictEqual(b.p, null);
+    h.noErrors(page);
+  });
 };
