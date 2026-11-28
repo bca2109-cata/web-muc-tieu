@@ -189,6 +189,10 @@ module.exports = async function (h) {
     // Form mở lại hiện lịch chờ
     await page.evaluate(() => LP.router.go('mau', { id: 'r-chiaso' })); await page.waitForSelector('.mc-pend');
     A.ok(!(await page.locator('.mc-wd input[value="3"]').isChecked()), 'form phải hiện lịch mới đang chờ');
+    // Mở lại, chỉ đổi tên rồi Lưu (nút chọn mặc định Từ hôm nay): lịch chờ vẫn giữ, không bị áp sớm
+    await page.fill('#mc-name', 'Chia số AI Class (đổi tên)'); await page.click('#mc-save'); await page.evaluate(() => LP.store.flush());
+    const keep = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, p: LP.p5.pendingOf('r-chiaso') }));
+    A.strictEqual(keep.wd, '1,2,3,4,5,6'); A.ok(keep.p && keep.p.from === '2026-11-26', 'lịch chờ phải còn nguyên');
     // Tới ngày mai: áp dụng
     await page.evaluate(() => { LP.date.today = () => '2026-11-26'; LP.p5.applyPending(); });
     const b = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, p: LP.p5.pendingOf('r-chiaso') }));

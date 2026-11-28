@@ -321,7 +321,10 @@ LP.views = LP.views || {};
     var newSched = {}; SCHED.forEach(function (k) { newSched[k] = row[k]; });
     if (!isNew) {
       var cur = LP.store.find('Routines', r.id) || r, same = SCHED.every(function (k) { return String(cur[k] == null ? '' : cur[k]) === String(newSched[k] == null ? '' : newSched[k]); });
-      if (E > D.today() && !same) {
+      var pd = pendingOf(r.id), samePend = pd && SCHED.every(function (k) { return String(pd.fields[k] == null ? '' : pd.fields[k]) === String(newSched[k] == null ? '' : newSched[k]); });
+      if (samePend) {
+        SCHED.forEach(function (k) { row[k] = cur[k]; });   // lịch trong form không đổi so với lịch chờ: giữ nguyên lịch chờ và ngày hiệu lực
+      } else if (E > D.today() && !same) {
         SCHED.forEach(function (k) { row[k] = cur[k]; });
         LP.store.setSetting(PEND + r.id, JSON.stringify({ from: E, fields: newSched }));
       } else if (LP.store.setting(PEND + r.id, '')) LP.store.setSetting(PEND + r.id, '');
