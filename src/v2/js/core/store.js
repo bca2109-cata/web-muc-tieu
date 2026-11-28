@@ -127,6 +127,8 @@ LP.store = (function () {
     return queue;
   }
   function sendOutbox() { outbox.slice().forEach(function (e) { enqueueKey(obKey(e.sheet, e.id)); }); }
+  // Chỉ gửi lại các mục được chỉ định ([[sheet, id], ...]) còn trong hàng chờ
+  function retryKeys(keys) { lastError = null; keys.forEach(function (k) { if (obFind(obKey(k[0], k[1]))) enqueueKey(obKey(k[0], k[1])); }); return queue; }
   function retry() { lastError = null; sendOutbox(); return queue; }
   window.addEventListener('online', function () { if (outbox.length) retry(); });
 
@@ -166,7 +168,7 @@ LP.store = (function () {
 
   return {
     get: function () { return state; }, load: load, loadCached: loadCached, changedSinceCache: function () { return !!load.changed; }, loadRange: loadRange, find: find, upsert: upsert, remove: remove,
-    setting: setting, setSetting: setSetting, on: on, off: off, emit: emit, flush: flush, retry: retry,
+    setting: setting, setSetting: setSetting, on: on, off: off, emit: emit, flush: flush, retry: retry, retryKeys: retryKeys,
     outboxCount: function () { return outbox.length; },
     outboxHas: function (sheet, id) { return !!obFind(obKey(sheet, id)); },
     outboxList: function () { return LP.util.clone(outbox); },

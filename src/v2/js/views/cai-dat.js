@@ -188,10 +188,18 @@ LP.views = LP.views || {};
       return fetchDocs(todo).then(function (r) {
         docs = docs.concat(r.got);
         if (!r.bad.length) return save();
-        return ui.confirm('Sao lưu chưa đủ', 'Có ' + r.bad.length + ' tài liệu chưa tải được: ' + nameList(r.bad.map(function (d) { return d.title || 'Chưa đặt tên'; })) +
-          '. Tải file sao lưu thiếu các tài liệu này, hay thử lại?', { ok: 'Vẫn tải', cancel: 'Thử lại' }).then(function (skip) {
-          if (skip) return save();
-          ui.toast('Đang thử lại…'); return step(r.bad);
+        // Hộp riêng: bấm Esc hoặc ra ngoài là hủy sao lưu (không tự thử lại, không tự tải)
+        return new Promise(function (resolve) {
+          var ans = '';
+          var s = ui.sheet('Sao lưu chưa đủ', '<p>' + esc('Có ' + r.bad.length + ' tài liệu chưa tải được: ' + nameList(r.bad.map(function (d) { return d.title || 'Chưa đặt tên'; })) +
+            '. Tải file sao lưu thiếu các tài liệu này, hay thử lại?') + '</p><div class="modal-foot"><span class="spacer"></span>' +
+            '<button type="button" class="btn" data-ans="retry">Thử lại</button><button type="button" class="btn btn-primary" data-ans="skip">Vẫn tải</button></div>',
+            { onClose: function () { resolve(ans); } });
+          s.el.addEventListener('click', function (e) { var b = e.target.closest('[data-ans]'); if (b) { ans = b.getAttribute('data-ans'); s.close(); } });
+        }).then(function (a) {
+          if (a === 'skip') return save();
+          if (a === 'retry') { ui.toast('Đang thử lại…'); return step(r.bad); }
+          ui.toast('Đã hủy sao lưu.');
         });
       });
     }
@@ -223,7 +231,7 @@ LP.views = LP.views || {};
       if (S) LP.router.render();
       if (!again) return;
       ui.toast('Đang thử lại phần lỗi…');
-      LP.store.retry();   // chỉ gửi lại các dòng còn trong hàng chờ
+      LP.store.retryKeys(rowBad);   // chỉ gửi lại các dòng lỗi của lần khôi phục này
       saveDocs(docBad).then(function (r) { return LP.store.flush().then(function () { reportRestore(rows, keys, docs, r.bad); }); });
     });
   }

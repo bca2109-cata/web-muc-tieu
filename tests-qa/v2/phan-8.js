@@ -65,23 +65,28 @@ module.exports = async function (h) {
   await h.test('3. Sao lưu: tài liệu lỗi thì hỏi Vẫn tải / Thử lại; không lỗi thì như cũ', async () => {
     const page = await h.open({ w: 1280, hash: CD });
     const docId = await page.evaluate(() => { LP.api.__failDocGet = ['d-chiaso']; return 'd-chiaso'; });
-    let [dl] = await Promise.all([page.waitForEvent('download', { timeout: 4000 }).catch(() => null), page.click('#cd-backup').then(() => page.waitForSelector('.modal [data-ans="1"]'))]);
+    let [dl] = await Promise.all([page.waitForEvent('download', { timeout: 4000 }).catch(() => null), page.click('#cd-backup').then(() => page.waitForSelector('.modal [data-ans="skip"]'))]);
     A.strictEqual(dl, null, 'chưa được tải khi còn hỏi');
     const msg = await page.locator('.modal p').innerText();
     A.ok(/Có 1 tài liệu chưa tải được: .+Tải file sao lưu thiếu các tài liệu này, hay thử lại\?/.test(msg), msg);
     A.deepStrictEqual(await page.locator('.modal-foot .btn').allInnerTexts(), ['Thử lại', 'Vẫn tải']);
+    // Esc = hủy, không tải, không hỏi lại
+    await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+    A.strictEqual(await page.locator('.modal').count(), 0, 'Esc phải đóng hộp');
+    A.ok((await page.locator('.toast').innerText()).includes('Đã hủy sao lưu'));
+    await page.click('#cd-backup'); await page.waitForSelector('.modal [data-ans="skip"]');
     // Thử lại khi còn lỗi: hỏi lại; hết lỗi: tải đủ
-    await page.click('[data-ans="0"]'); await page.waitForSelector('.modal [data-ans="1"]');
+    await page.click('[data-ans="retry"]'); await page.waitForSelector('.modal [data-ans="skip"]');
     await page.evaluate(() => { LP.api.__failDocGet = false; });
     const p1 = page.waitForEvent('download', { timeout: 5000 });
-    await page.click('[data-ans="0"]');
+    await page.click('[data-ans="retry"]');
     const full = await readDownload(await p1);
     A.strictEqual(full.docs.length, 2, 'sau khi thử lại phải đủ 2 tài liệu');
     // Vẫn tải: file thiếu
     await page.evaluate(() => { LP.api.__failDocGet = ['d-chiaso']; });
-    await page.click('#cd-backup'); await page.waitForSelector('.modal [data-ans="1"]');
+    await page.click('#cd-backup'); await page.waitForSelector('.modal [data-ans="skip"]');
     const p2 = page.waitForEvent('download', { timeout: 5000 });
-    await page.click('[data-ans="1"]');
+    await page.click('[data-ans="skip"]');
     const part = await readDownload(await p2);
     A.strictEqual(part.docs.length, 1);
     h.noErrors(page);
