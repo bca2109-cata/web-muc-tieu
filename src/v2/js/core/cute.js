@@ -44,7 +44,25 @@ LP.cute = (function () {
     house: '<path d="M5 15L16 5l11 10v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" fill="#ffc7dc"/>' +
       '<path d="M16 24.5c-2.4-1.7-4-3.1-4-4.8a2.2 2.2 0 0 1 4-1 2.2 2.2 0 0 1 4 1c0 1.7-1.6 3.1-4 4.8z" fill="#ff8fb3" stroke-width="1.4"/>',
     sprout: '<path d="M16 28V15"/><path d="M16 17C16 11 11 8 5 8.5c0 6 4.5 9 11 8.5z" fill="#a6e3c4"/><path d="M16 15c0-5 4-8 10-7.5 0 5-4 8-10 7.5z" fill="#7fd1a8"/>' +
-      '<path d="M10 28h12" />'
+      '<path d="M10 28h12" />',
+    phone: '<rect x="9" y="3.5" width="14" height="25" rx="4" fill="#b9dbff"/><path d="M14 6.5h4"/><circle cx="16" cy="24.5" r="1.3" fill="#fff"/><path d="M12.5 12h7M12.5 15.5h7"/>',
+    laptop: '<rect x="6" y="7" width="20" height="14" rx="3" fill="#d4c4ff"/><path d="M3 24.5h26"/><path d="M13 14.5q3 2 6 0"/>',
+    gift: '<rect x="5" y="13" width="22" height="14" rx="3" fill="#ffc7dc"/><rect x="4" y="9.5" width="24" height="5" rx="2" fill="#ff9fc0"/><path d="M16 9.5V27M16 9.5c-1-4-6-5-6-2.5s4 2.5 6 2.5zM16 9.5c1-4 6-5 6-2.5s-4 2.5-6 2.5z"/>',
+    plane: '<path d="M4 17l22-10-5 19-6-5-4 5-1-7z" fill="#b9dbff"/><path d="M10 19.5l11-9"/>',
+    music: '<path d="M12 22V8l12-2.5V19" /><circle cx="9" cy="22" r="3.5" fill="#ffc7dc"/><circle cx="21" cy="19.5" r="3.5" fill="#ffc7dc"/>',
+    star: '<path d="M16 4l3.6 7.4 8.1 1.1-5.9 5.7 1.4 8.1L16 22.4l-7.2 3.9 1.4-8.1-5.9-5.7 8.1-1.1z" fill="#ffd56b" stroke="#e8a317"/>' + eyes,
+    bulb: '<path d="M16 3.5a8.5 8.5 0 0 0-5 15.4c.8.7 1.2 1.5 1.2 2.6h7.6c0-1.1.4-1.9 1.2-2.6A8.5 8.5 0 0 0 16 3.5z" fill="#ffe58f"/><path d="M12.5 25h7M13.5 28h5"/><path d="M14 13l2 2.5 2-2.5"/>',
+    camera: '<rect x="3.5" y="9" width="25" height="17" rx="4.5" fill="#c9b6ff"/><path d="M10.5 9l1.5-3h8l1.5 3"/><circle cx="16" cy="17.5" r="5" fill="#fff"/><circle cx="16" cy="17.5" r="2" fill="#9fd8f5"/>',
+    pencil: '<path d="M6 26l1.5-6L21 6.5l4.5 4.5L12 24.5z" fill="#ffe58f"/><path d="M18.5 9l4.5 4.5M7.5 20l4.5 4.5"/><path d="M6 26l1.5-6 4.5 4.5z" fill="#ffc9a8"/>',
+    trophy: '<path d="M9.5 5h13v8a6.5 6.5 0 0 1-13 0z" fill="#ffd56b" stroke="#e8a317"/><path d="M9.5 8H5.5c0 4 1.5 5.5 4.5 6M22.5 8h4c0 4-1.5 5.5-4.5 6M16 19.5V24M11 27.5h10M12.5 24h7"/>',
+    people: '<circle cx="11" cy="11" r="4.5" fill="#ffc7dc"/><circle cx="22" cy="12.5" r="3.5" fill="#d4c4ff"/><path d="M3.5 26c0-5 3.5-8 7.5-8s7.5 3 7.5 8zM19.5 20.5c4 0 7 2 9 5.5H21"/>',
+    paw: '<ellipse cx="16" cy="21" rx="6.5" ry="5.5" fill="#ffc29e"/><circle cx="8.5" cy="14" r="2.6" fill="#ffc29e"/><circle cx="23.5" cy="14" r="2.6" fill="#ffc29e"/><circle cx="12.5" cy="8.5" r="2.6" fill="#ffc29e"/><circle cx="19.5" cy="8.5" r="2.6" fill="#ffc29e"/>',
+    pill: '<rect x="4" y="11" width="24" height="10" rx="5" transform="rotate(-35 16 16)" fill="#fff"/><path d="M8 22.5a5 5 0 0 1-1-7l2.6-3.6 5.6 4-2.6 3.6a5 5 0 0 1-4.6 3z" fill="#ff9fc0"/><path d="M14.5 12.5l5.5 4"/>',
+    car: '<path d="M5 20v-5l3-6.5h16l3 6.5v5z" fill="#9fd8f5"/><path d="M5 15h22"/><circle cx="10.5" cy="21.5" r="3" fill="#fff"/><circle cx="21.5" cy="21.5" r="3" fill="#fff"/>',
+    cart: '<path d="M3.5 5h4l3 14h14l2.5-10H9" fill="#ffe58f"/><circle cx="12" cy="25" r="2.2" fill="#fff"/><circle cx="22" cy="25" r="2.2" fill="#fff"/>',
+    cloud: '<path d="M9 24h14a5.5 5.5 0 0 0 .8-10.9A8 8 0 0 0 8.2 12.5 5.8 5.8 0 0 0 9 24z" fill="#cfe9fb"/>' + eyes.replace(/19/g,'18'),
+    flower: '<circle cx="16" cy="16" r="3.5" fill="#ffd56b"/><circle cx="16" cy="8" r="4.5" fill="#ffc7dc"/><circle cx="24" cy="16" r="4.5" fill="#ffc7dc"/><circle cx="16" cy="24" r="4.5" fill="#ffc7dc"/><circle cx="8" cy="16" r="4.5" fill="#ffc7dc"/><circle cx="16" cy="16" r="3.2" fill="#ffd56b"/>',
+    key: '<circle cx="10.5" cy="12" r="6" fill="#ffd56b" stroke="#e8a317"/><circle cx="10.5" cy="12" r="2" fill="#fff"/><path d="M15 16.5L27 28M22 23l3-3M19.5 20.5l2.5-2.5"/>'
   };
   // Thứ tự quan trọng: khớp từ đầu tiên trong danh sách
   var RULES = [
@@ -55,6 +73,9 @@ LP.cute = (function () {
     [/bao cao|tong hop|(^| )cop |ghi chep|van ban|file|tai lieu|ke hoach/, 'clipboard'],
     [/cuoc hop|(^| )hop (voi|nhom|team)|^hop |(^| )goi |trao doi|nhan tin|chat/, 'chat'],
     [/dat lich|(^| )lich |(^| )hen /, 'calendar'], [/(^| )tien|thanh toan|chi tieu|luong/, 'coin'], [/(^| )mua |(^| )cho |sieu thi/, 'bag'],
+    [/(^| )goi dien|dien thoai|(^| )alo/, 'phone'], [/may tinh|code|lap trinh|excel|sheet|crm/, 'laptop'], [/qua |sinh nhat|tang /, 'gift'],
+    [/di cong tac|chuyen bay|du lich|ve may bay/, 'plane'], [/y tuong|sang kien|brainstorm/, 'bulb'],
+    [/thanh tich|vinh danh/, 'trophy'],
     [/(^| )an |(^| )com |nau |(^| )bua /, 'bowl'], [/buoi toi|(^| )ngu |toi cua/, 'moon'], [/buoi sang|(^| )sang /, 'sun']
   ];
   function fold(t) {
@@ -96,7 +117,7 @@ LP.cute = (function () {
   var PNAMES = {
     clipboard: 'Bảng ghi', chart: 'Số liệu', mail: 'Thư', book: 'Sách', shoe: 'Giày', drop: 'Nước', health: 'Sức khỏe', broom: 'Dọn dẹp',
     chat: 'Trao đổi', calendar: 'Lịch', moon: 'Buổi tối', sun: 'Buổi sáng', bowl: 'Ăn uống', bag: 'Mua sắm', coin: 'Tiền', case: 'Công việc',
-    house: 'Cá nhân', sprout: 'Thói quen'
+    house: 'Cá nhân', sprout: 'Thói quen', phone: 'Điện thoại', laptop: 'Máy tính', gift: 'Quà tặng', plane: 'Di chuyển', music: 'Âm nhạc', star: 'Nổi bật', bulb: 'Ý tưởng', camera: 'Chụp ảnh', pencil: 'Viết', trophy: 'Thành tích', people: 'Cuộc hẹn', paw: 'Thú cưng', pill: 'Thuốc', car: 'Xe', cart: 'Giỏ hàng', cloud: 'Đám mây', flower: 'Hoa', key: 'Chìa khóa'
   };
   function picker(title, label, fallback) {
     var cur = chosen(title), shown = cur || auto(title, fallback || '');
