@@ -160,4 +160,19 @@ module.exports = async function (h) {
     A.strictEqual(await act(), 'opener');
     h.noErrors(page);
   });
+
+  await h.test('7. Sửa nhanh Daily từ Agenda: chọn "Từ ngày mai" thì hiệu lực từ 26/11, hôm nay giữ nguyên', async () => {
+    const page = await h.open({ w: 390 });
+    const ids = await page.evaluate(() => { const run = LP.logic.routines.runsFor('2026-11-25')[0]; return { r: run.routine.id, i: run.items[0].item.id, t: run.items[0].item.title }; });
+    await page.evaluate(i => LP.views.editItemQuick(i.r, i.i, '2026-11-25'), ids);
+    A.deepStrictEqual(await page.locator('[name="eq-scope"]').evaluateAll(n => n.map(x => x.value)), ['today', 'forward', 'tomorrow']);
+    await page.locator('label:has([name="eq-scope"][value="tomorrow"])').click();
+    await page.fill('#eq-title', 'Tên mới từ mai'); await page.click('#eq-ok');
+    await page.evaluate(() => LP.store.flush());
+    const r = await page.evaluate(i => LP.store.get().routineItems.filter(x => x.routine_id === i.r).map(x => [x.title, x.valid_from || '', x.valid_to || '']), ids);
+    A.ok(r.some(x => x[0] === 'Tên mới từ mai' && x[1] === '2026-11-26'), JSON.stringify(r));
+    A.ok(r.some(x => x[0] === ids.t && x[2] === '2026-11-25'), 'bản cũ phải đóng ở 25/11');
+    A.ok((await page.locator('.toast').innerText()).includes('từ ngày mai'));
+    h.noErrors(page);
+  });
 };

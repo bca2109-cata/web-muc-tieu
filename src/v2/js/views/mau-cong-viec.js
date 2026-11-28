@@ -344,17 +344,18 @@ LP.views = LP.views || {};
       '<label class="field"><span>Tên</span><input class="input" id="eq-title" value="' + esc(it.title) + '" autocomplete="off"></label></div>' +
       '<div class="field"><span>Áp dụng</span><div class="seg" role="radiogroup" aria-label="Phạm vi">' +
       '<label><input type="radio" name="eq-scope" value="today" checked><span>Chỉ hôm nay</span></label>' +
-      '<label><input type="radio" name="eq-scope" value="forward"><span>Từ nay về sau</span></label></div></div>' +
+      '<label><input type="radio" name="eq-scope" value="forward"><span>Từ nay về sau</span></label>' +
+      '<label><input type="radio" name="eq-scope" value="tomorrow"><span>Từ ngày mai</span></label></div></div>' +
       '<p class="form-error" id="eq-err" hidden></p>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button><button type="button" class="btn btn-primary" id="eq-ok">Lưu</button></div>');
     s.el.querySelector('#eq-ok').addEventListener('click', function () {
       var time = s.el.querySelector('#eq-time').value, title = s.el.querySelector('#eq-title').value.trim(), er = s.el.querySelector('#eq-err');
       if (!title) { er.textContent = 'Nhập tên hạng mục.'; er.hidden = false; return; }
       if (time && !D.isTime(time)) { er.textContent = 'Giờ chưa đúng.'; er.hidden = false; return; }
-      var forward = s.el.querySelector('[name="eq-scope"]:checked').value === 'forward';
-      if (time !== (it.time || '') || title !== it.title) reviseItem(it, { time: time, title: title }, d, forward ? '' : d);
+      var scope = s.el.querySelector('[name="eq-scope"]:checked').value, forward = scope !== 'today', from = scope === 'tomorrow' ? D.add(D.today(), 1) : d;
+      if (time !== (it.time || '') || title !== it.title) reviseItem(it, { time: time, title: title }, from, forward ? '' : d);
       s.close();
-      ui.toast(forward ? 'Đã sửa từ nay về sau.' : 'Đã sửa riêng hôm nay.');
+      ui.toast(scope === 'tomorrow' ? 'Đã sửa từ ngày mai.' : forward ? 'Đã sửa từ nay về sau.' : 'Đã sửa riêng hôm nay.');
     });
   };
 })();
