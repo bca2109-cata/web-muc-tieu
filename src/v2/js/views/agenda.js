@@ -406,7 +406,7 @@ LP.agenda = (function () {
   }
 
   function taskSection(title, list, empty) {
-    return '<section class="card ag-tasks" aria-label="' + esc(title) + '"><div class="ag-sec-head"><h2>' + tam_cute('', /Ad-hoc/.test(title) ? 'case' : 'house') + esc(title) + '</h2>' +
+    return '<section class="card ag-tasks" aria-label="' + esc(title) + '"><div class="ag-sec-head"><h2>' + (/Ad-hoc/.test(title) ? tam_cute(LP.cute.blockTitle('adhoc'), 'case') : tam_cute(LP.cute.blockTitle('personal'), 'house')) + esc(title) + '</h2>' +
       (list.length ? '<span class="num">' + list.filter(function (x) { return x.done; }).length + '/' + list.length + '</span>' : '') + '</div>' +
       (list.length ? '<ul class="ag-ul">' + list.map(taskRow).join('') + '</ul>' : '<p class="ag-empty">' + empty + '</p>' + (readOnly() ? '' : '<div class="ag-empty-act"><button type="button" class="btn btn-soft" data-act="add" data-kind="adhoc">' + icon('plus', 'ic18') + 'Thêm Ad-hoc</button><button type="button" class="btn btn-soft" data-act="add" data-kind="canhan">' + icon('plus', 'ic18') + 'Thêm Personal</button></div>')) + '</section>';
   }
@@ -421,7 +421,7 @@ LP.agenda = (function () {
     if (ad.length) h += taskSection('Ad-hoc hôm nay', ad, '');
     if (cn.length) h += taskSection('Personal hôm nay', cn, '');
     if (!tasks.length) h += taskSection('Ad-hoc / Personal ' + (st.date === D.today() ? 'hôm nay' : D.fmt(st.date)), [], 'Chưa có việc nào có ngày làm ' + (st.date === D.today() ? 'là hôm nay' : 'ngày này') + '.');
-    h += '<section class="card ag-habits" aria-label="Thói quen"><div class="ag-sec-head"><h2>' + tam_cute('', 'sprout') + 'Thói quen</h2></div>' +
+    h += '<section class="card ag-habits" aria-label="Thói quen"><div class="ag-sec-head"><h2>' + tam_cute(LP.cute.blockTitle('habit'), 'sprout') + 'Thói quen</h2></div>' +
       (habits.length ? '<div class="chips">' + habits.map(habitChip).join('') + '</div>' : '<p class="ag-empty">Không có thói quen nào hôm nay.</p>') + '</section></div>';
     if (st.date === D.today()) h += '<div class="ag-foot"><button type="button" class="btn btn-primary" data-act="soat">' + icon('moon', 'ic18') + 'Soát cuối ngày</button></div>';
     return h + '</div>';

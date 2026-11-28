@@ -285,6 +285,7 @@ LP.views = LP.views || {};
       '<input class="gc-title" type="text" maxlength="160" aria-label="Tên tài liệu" placeholder="Tên tài liệu">' +
       '<button type="button" class="icon-btn gc-tocbtn" data-toc aria-label="Mục lục">' + ui.icon('list') + '</button>' +
       '<button type="button" class="icon-btn" data-del aria-label="Chuyển tài liệu vào Thùng rác">' + ui.icon('trash') + '</button></div>' +
+      '<div class="gc-cutebar cute-field">' + LP.cute.picker(doc.title || '', 'Biểu tượng', 'book') + '</div>' +
       '<div class="gc-meta"><select class="select gc-space-sel" aria-label="Không gian">' + SPACES.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('') + '</select>' +
       '<span class="gc-info muted num"></span><span class="gc-status muted" role="status"></span></div>' +
       '<div class="gc-toolhost"></div>' +
@@ -306,6 +307,12 @@ LP.views = LP.views || {};
     S.titleEl = titleEl; S.spaceEl = spaceEl; S.statusEl = S.mainEl.querySelector('.gc-status'); S.infoEl = S.mainEl.querySelector('.gc-info');
     S.hbtn = S.mainEl.querySelector('.gc-hbtn');
 
+    S.cuteTitle = doc.title || '';
+    LP.cute.wire(S.mainEl.querySelector('.gc-cutebar'), function () { return titleEl.value.trim(); }, function () { cuteSave(); renderList(); });
+    titleEl.addEventListener('input', function () {
+      var pick = S.mainEl.querySelector('.gc-cutebar .cute-pick');
+      if (pick && !LP.cute.read(pick)) pick.querySelector('.cute-now').innerHTML = LP.cute.html(titleEl.value.trim(), 'book');
+    });
     titleEl.addEventListener('input', touch);
     spaceEl.addEventListener('change', touch);
     S.mainEl.addEventListener('click', onDocClick);
@@ -351,7 +358,14 @@ LP.views = LP.views || {};
     var row = docs().filter(function (d) { return d.id === S.doc.id; })[0];
     if (row) { row.title = S.titleEl.value; var lr = S.listEl.querySelector('[data-doc="' + S.doc.id + '"] .gc-docrow-t'); if (lr) lr.textContent = row.title || 'Chưa đặt tên'; }
   }
+  // Ghi hình đã chọn theo tên hiện tại của tài liệu (đổi tên thì chuyển lựa chọn sang tên mới)
+  function cuteSave() {
+    var t = S.titleEl.value.trim() || 'Chưa đặt tên';
+    LP.cute.save(t, LP.cute.read(S.mainEl.querySelector('.gc-cutebar .cute-pick')), S.cuteTitle);
+    S.cuteTitle = t;
+  }
   function payload() {
+    cuteSave();
     var d = S.doc, hs = S.ed.headings();
     return { id: d.id, space: S.spaceEl.value, title: S.titleEl.value.trim() || 'Chưa đặt tên', sort_order: d.sort_order, headings: JSON.stringify(hs),
       content: S.ed.getHTML(), deleted: '', created_at: d.created_at, base_updated_at: S.base };

@@ -119,6 +119,8 @@ LP.cute = (function () {
     chat: 'Trao đổi', calendar: 'Lịch', moon: 'Buổi tối', sun: 'Buổi sáng', bowl: 'Ăn uống', bag: 'Mua sắm', coin: 'Tiền', case: 'Công việc',
     house: 'Cá nhân', sprout: 'Thói quen', phone: 'Điện thoại', laptop: 'Máy tính', gift: 'Quà tặng', plane: 'Di chuyển', music: 'Âm nhạc', star: 'Nổi bật', bulb: 'Ý tưởng', camera: 'Chụp ảnh', pencil: 'Viết', trophy: 'Thành tích', people: 'Cuộc hẹn', paw: 'Thú cưng', pill: 'Thuốc', car: 'Xe', cart: 'Giỏ hàng', cloud: 'Đám mây', flower: 'Hoa', key: 'Chìa khóa'
   };
+  // Khối cố định ở Agenda: khóa → [tên khóa dùng để lưu, nhãn, hình mặc định]
+  var BLOCKS = { adhoc: ['khối ad-hoc', 'Khối Ad-hoc', 'case'], personal: ['khối personal', 'Khối Personal', 'house'], habit: ['khối thói quen', 'Khối Thói quen', 'sprout'] };
   function picker(title, label, fallback) {
     var cur = chosen(title), shown = cur || auto(title, fallback || '');
     var cells = '<button type="button" class="cute-opt' + (cur ? '' : ' is-on') + '" data-cute="" aria-pressed="' + (!cur) + '"><span class="cute-auto">Tự chọn</span></button>' +
@@ -129,7 +131,7 @@ LP.cute = (function () {
       '<span class="cute-now">' + html(title, fallback, shown || undefined) + '</span>' + (label || 'Biểu tượng') + '</button>' +
       '<div class="cute-grid" hidden role="group" aria-label="Chọn biểu tượng">' + cells + '</div></div>';
   }
-  function wire(root, getTitle) {
+  function wire(root, getTitle, onPick) {
     root.addEventListener('click', function (e) {
       var pick = e.target.closest('.cute-pick'); if (!pick || !root.contains(pick)) return;
       var tg = e.target.closest('.cute-toggle'), opt = e.target.closest('.cute-opt'), grid = pick.querySelector('.cute-grid');
@@ -141,9 +143,10 @@ LP.cute = (function () {
       var t = getTitle ? getTitle(pick) : '';
       pick.querySelector('.cute-now').innerHTML = html(t, '', name || auto(t, '') || undefined);
       grid.hidden = true; pick.querySelector('.cute-toggle').setAttribute('aria-expanded', 'false');
+      if (onPick) onPick(name, pick);
     });
   }
   function read(pick) { return pick ? pick.getAttribute('data-icon') || '' : ''; }
 
-  return { html: html, save: save, chosen: chosen, picker: picker, wire: wire, read: read, NAMES: Object.keys(CUTE) };
+  return { BLOCKS: BLOCKS, blockTitle: function (k) { return BLOCKS[k][0]; }, html: html, save: save, chosen: chosen, picker: picker, wire: wire, read: read, NAMES: Object.keys(CUTE) };
 })();
