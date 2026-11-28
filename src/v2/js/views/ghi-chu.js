@@ -40,7 +40,7 @@ LP.views = LP.views || {};
   }
   /* Danh sách tài liệu nhớ trên máy: lần sau mở tab thấy ngay, bản mới từ Google Sheet về sau thì thay vào */
   var IDX = 'lpv2_gc_index';
-  function idxSave() { try { localStorage.setItem(IDX, JSON.stringify({ docs: docs(), trash: trashRows })); } catch (e) { /* bỏ qua */ } }
+  function idxSave() { try { localStorage.setItem(IDX, JSON.stringify({ docs: docs().filter(function (r) { return !localIds[r.id]; }), trash: trashRows })); } catch (e) { /* bỏ qua */ } }
   function idxHydrate() {
     if (docs().length) return;
     try {
@@ -209,6 +209,7 @@ LP.views = LP.views || {};
   function unmount() {
     if (!S) return;
     if (S.dirty && S.ed) save();
+    else if (S.doc && localIds[S.doc.id] && !S.saving) dropLocal(S.doc.id);
     clearTimeout(S.timer); clearTimeout(S.draftTimer);
     S.cleanup.forEach(function (f) { try { f(); } catch (e) { /* bỏ qua */ } });
     if (S.bar && S.bar.destroy) S.bar.destroy();
@@ -230,25 +231,26 @@ LP.views = LP.views || {};
   }
   function flushThen(fn) { if (S && S.dirty) { save(); } fn(); }
 
-  var pendingCreate = {};
+  var pendingCreate = {}, localIds = {};
   function newDoc(space) {
     var max = docs().reduce(function (m, d) { return Math.max(m, LP.util.num(d.sort_order)); }, 0);
     var doc = { id: LP.util.uid(), space: space, title: 'Tài liệu mới', sort_order: max + 1, headings: '[]', deleted: '', content: '<p><br></p>' };
     flushThen(function () {
-      /* Mở ngay, không chờ Google Sheet (mỗi lần gọi mất vài giây); tạo trên Sheet chạy nền.
-         Gõ nhanh hơn lúc tạo xong thì bản lưu kế tiếp chờ lượt tạo (xem save). */
+      /* Mở ngay và chưa gọi Google Sheet: tài liệu chỉ nằm trên máy tới lần lưu đầu tiên (khi bạn gõ gì đó).
+         Mỗi lần gọi Sheet mất vài giây nên làm vậy chỉ tốn một lượt thay vì hai, và bỏ ngang thì không để lại tài liệu rỗng. */
+      localIds[doc.id] = true;
       cache[doc.id] = Object.assign({}, doc);
       patchStore(doc);
       LP.router.go('ghi-chu', { doc: doc.id, nov: '1' });
-      pendingCreate[doc.id] = LP.api.docSave(doc).then(function (row) {
-        cache[row.id] = Object.assign({}, cache[row.id] || doc, row, { content: (cache[row.id] || doc).content });
-        patchStore(Object.assign({}, cache[row.id]));
-        if (S && S.doc && S.doc.id === row.id) { S.base = row.updated_at || S.base; S.doc.updated_at = row.updated_at; S.doc.created_at = row.created_at || S.doc.created_at; }
-      }, function () {
-        ui.toast('Chưa tạo được tài liệu trên Google Sheet. Bản nháp vẫn giữ trên máy này, sẽ thử lưu lại khi bạn sửa.');
-        if (S && S.doc && S.doc.id === doc.id) { S.dirty = true; clearTimeout(S.timer); S.timer = setTimeout(save, 10000); }
-      }).then(function () { delete pendingCreate[doc.id]; });
     });
+  }
+  // Tài liệu mới bỏ ngang mà chưa gõ gì: gỡ khỏi danh sách trên máy
+  function dropLocal(id) {
+    delete localIds[id]; delete cache[id];
+    var list = docs(), i = list.findIndex(function (r) { return r.id === id; });
+    if (i >= 0) list.splice(i, 1);
+    try { localStorage.removeItem(DRAFT + id); } catch (e) { /* bỏ qua */ }
+    idxSave();
   }
 
   function restore(id) {
@@ -374,6 +376,7 @@ LP.views = LP.views || {};
   function applySaved(my, p, res) {
     var row = Object.assign({}, my.doc, res || {}, { content: p.content, headings: p.headings, title: p.title, space: p.space });
     row.updated_at = (res && res.updated_at) || row.updated_at;
+    delete localIds[row.id];
     my.doc = row; my.base = row.updated_at; cache[row.id] = row; patchStore(row);
     if (!my.dirty) draftClear(row.id);
     if (S === my) { setStatus('Đã lưu ' + LP.date.now()); refreshInfo(); renderList(); S.ed.setLinks(linkMap(row.id)); }
