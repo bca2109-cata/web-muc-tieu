@@ -85,14 +85,16 @@ LP.shell = (function () {
   function bindSync() {
     var el = $('sync');
     function paint(s) {
-      el.classList.toggle('is-error', !!(s && s.error));
+      var left = (s && s.outbox) || 0;
+      el.classList.toggle('is-error', !!(s && s.error) || (left > 0 && !s.pending));
+      if (left > 0 && !s.pending) { el.innerHTML = LP.ui.icon('cloudoff', 'ic14') + left + ' thay đổi chưa lưu lên Sheet'; return; }
       if (LP.config.mock && !s.pending && !s.error) { el.innerHTML = LP.ui.icon('cloudoff', 'ic14') + 'Trên trình duyệt'; return; }
       if (s.error) el.innerHTML = LP.ui.icon('cloudoff', 'ic14') + 'Chưa lưu được';
       else if (s.pending) el.innerHTML = LP.ui.icon('refresh', 'ic14') + 'Đang lưu…';
       else el.innerHTML = LP.ui.icon('cloud', 'ic14') + 'Đã lưu';
     }
     LP.store.on('sync', paint);
-    paint({ pending: 0, error: null });
+    paint({ pending: 0, error: null, outbox: LP.store.outboxCount() });
   }
 
   /* ---------- Thanh "Có bản mới": góc dưới trái, có nút ×, tự ẩn sau 15 giây, tắt rồi thì không hiện lại trong phiên ---------- */

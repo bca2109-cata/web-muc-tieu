@@ -6,7 +6,7 @@ var LP = window.LP || (window.LP = {});
 
 LP.store = (function () {
   var C = LP.config.SHEETS, state = emptyState(), handlers = {}, ready = false;
-  var queue = Promise.resolve(), pending = 0, lastError = null, failed = [];
+  var queue = Promise.resolve(), pending = 0, lastError = null;
 
   function emptyState() { var s = {}; Object.keys(C).forEach(function (k) { s[C[k]] = []; }); return s; }
   function on(ev, fn) { (handlers[ev] = handlers[ev] || []).push(fn); }
@@ -38,7 +38,7 @@ LP.store = (function () {
     if (!cacheOn()) return false;
     try {
       var j = localStorage.getItem(CACHE_KEY); if (!j) return false;
-      state = normalize(JSON.parse(j)); cacheSig = j; afterLoad(); return true;
+      state = normalize(JSON.parse(j)); cacheSig = j; applyOutbox(); afterLoad(); return true;
     } catch (e) { return false; }
   }
   // Tải toàn bộ. range { from, to } giới hạn các bảng theo ngày (lượt, thói quen, đột xuất)
@@ -46,9 +46,10 @@ LP.store = (function () {
     // Mặc định tải TOÀN BỘ lịch sử (from rỗng = không chặn dưới): màn Tồn tổng cần biết mục Daily sót từ bất kỳ ngày nào đã tick hay chưa
     range = range || { from: '', to: LP.date.add(LP.date.today(), 90) };
     return LP.api.load(range).then(function (data) {
-      state = normalize(data); afterLoad();
+      state = normalize(data); applyOutbox(); afterLoad();
       var j = ''; try { j = JSON.stringify(state); } catch (e) { /* bỏ qua */ }
       var changed = !!cacheSig && j !== cacheSig; writeCache(); load.changed = changed;
+      sendOutbox();   // gửi lại những thay đổi chưa lên được Sheet
       return state;
     });
   }
@@ -67,27 +68,69 @@ LP.store = (function () {
   function listOf(sheet) { var k = C[sheet]; if (!k) throw new Error('Sheet không hợp lệ: ' + sheet); return state[k]; }
   function find(sheet, id) { return listOf(sheet).filter(function (r) { return r.id === id; })[0] || null; }
 
-  /* ---------- Hàng đợi lưu ---------- */
-  function setSync() {
-    emit('sync', { pending: pending, error: lastError, failed: failed.length });
-    if (!pending && !lastError) { clearTimeout(cacheTimer); cacheTimer = setTimeout(writeCache, 600); }
+  /* ---------- Hàng chờ lưu bền (localStorage lpv2-outbox) ----------
+     Mỗi lần upsert / remove ghi một mục { op:'save'|'remove', sheet, id, row, ts }; mỗi sheet+id chỉ giữ mục mới nhất.
+     Lưu lên Sheet xong thì xóa mục. Mở lại web: áp các mục còn lại vào state rồi gửi lại. */
+  var OUTBOX_KEY = 'lpv2-outbox', outbox = readOutbox();
+  function readOutbox() {
+    try {
+      var a = JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]');
+      return (Array.isArray(a) ? a : []).filter(function (e) { return e && e.sheet && e.id && !!e.mock === !!LP.config.mock; });
+    } catch (e) { return []; }
   }
-  function enqueue(label, fn) {
+  function writeOutbox() {
+    try {
+      var other = [];   // giữ nguyên mục của chế độ kia (mock / thật), không đụng vào
+      try { other = (JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]') || []).filter(function (e) { return e && !!e.mock !== !!LP.config.mock; }); } catch (e) { /* bỏ qua */ }
+      localStorage.setItem(OUTBOX_KEY, JSON.stringify(other.concat(outbox)));
+    } catch (e) { /* đầy bộ nhớ hoặc bị chặn: vẫn còn trong bộ nhớ trang */ }
+  }
+  function obKey(sheet, id) { return sheet + ':' + id; }
+  function obFind(key) { return outbox.filter(function (e) { return obKey(e.sheet, e.id) === key; })[0] || null; }
+  function obPut(entry) {
+    if (LP.config.mock) entry.mock = true;
+    outbox = outbox.filter(function (e) { return obKey(e.sheet, e.id) !== obKey(entry.sheet, entry.id); });
+    outbox.push(entry); writeOutbox();
+  }
+  function obDrop(entry) { outbox = outbox.filter(function (e) { return e !== entry; }); writeOutbox(); }
+  // Áp các mục còn trong hàng chờ vào state. Bản trên Sheet có updated_at mới hơn ts của mục thì giữ bản Sheet, bỏ mục chờ.
+  function applyOutbox() {
+    outbox.slice().forEach(function (e) {
+      var list = state[C[e.sheet]]; if (!list) { obDrop(e); return; }
+      var i = list.findIndex(function (r) { return r.id === e.id; }), cur = i >= 0 ? list[i] : null;
+      if (cur && cur.updated_at && String(cur.updated_at) > String(e.ts)) { obDrop(e); return; }
+      if (e.op === 'save' && e.row) { var row = Object.assign({}, e.row); if (i >= 0) list[i] = row; else list.push(row); }
+      else if (e.op === 'remove') { if (i < 0) { obDrop(e); return; } list.splice(i, 1); }
+    });
+    LP.date.setDaysOff(state.daysOff);
+  }
+
+  /* ---------- Hàng đợi gửi ---------- */
+  function setSync() {
+    emit('sync', { pending: pending, error: lastError, outbox: outbox.length, failed: outbox.length });
+    if (!pending && !lastError && !outbox.length) { clearTimeout(cacheTimer); cacheTimer = setTimeout(writeCache, 600); }
+  }
+  function sendEntry(e) { return e.op === 'remove' ? LP.api.remove(e.sheet, e.id) : LP.api.save(e.sheet, Object.assign({}, e.row)); }
+  // Gửi mục mới nhất của sheet+id (đọc lúc gửi, không dùng bản cũ trong closure)
+  function enqueueKey(key) {
     pending++; setSync();
-    queue = queue.then(fn).then(function () {
-      pending--; lastError = null; failed = failed.filter(function (f) { return f.label !== label; }); setSync();
-    }, function (e) {
-      pending--; lastError = e; failed.push({ label: label, fn: fn }); setSync();
-      LP.ui.toast('Không lưu được: ' + (e && e.message ? e.message : e), {
-        sticky: true, actionLabel: 'Thử lại', action: retry
-      });
+    queue = queue.then(function () {
+      var e = obFind(key); if (!e) return;
+      return sendEntry(e).then(function () { if (obFind(key) === e) obDrop(e); });
+    }).then(function () {
+      pending--; lastError = null; setSync();
+      if (!outbox.length && !pending) LP.ui.clearSticky();
+    }, function (err) {
+      pending--; lastError = err; setSync();
+      LP.ui.toast('Chưa lưu được ' + outbox.length + ' thay đổi', { sticky: true, actionLabel: 'Thử lại', action: retry });
     });
     return queue;
   }
-  function retry() {
-    var todo = failed.slice(); failed = []; lastError = null;
-    todo.forEach(function (f) { enqueue(f.label, f.fn); });
-  }
+  function sendOutbox() { outbox.slice().forEach(function (e) { enqueueKey(obKey(e.sheet, e.id)); }); }
+  // Chỉ gửi lại các mục được chỉ định ([[sheet, id], ...]) còn trong hàng chờ
+  function retryKeys(keys) { lastError = null; keys.forEach(function (k) { if (obFind(obKey(k[0], k[1]))) enqueueKey(obKey(k[0], k[1])); }); return queue; }
+  function retry() { lastError = null; sendOutbox(); return queue; }
+  window.addEventListener('online', function () { if (outbox.length) retry(); });
 
   function upsert(sheet, row) {
     var list = listOf(sheet), now = LP.date.stamp();
@@ -99,8 +142,8 @@ LP.store = (function () {
     row.updated_at = now;
     if (sheet === 'DaysOff') LP.date.setDaysOff(state.daysOff);
     emit('change', { sheet: sheet, row: row }); emit('change:' + sheet, row);
-    var copy = Object.assign({}, row);
-    enqueue(sheet + ':' + row.id, function () { return LP.api.save(sheet, copy); });
+    obPut({ op: 'save', sheet: sheet, id: row.id, row: Object.assign({}, row), ts: now });
+    enqueueKey(obKey(sheet, row.id));
     return row;
   }
   function remove(sheet, id) {
@@ -108,7 +151,8 @@ LP.store = (function () {
     state[k] = state[k].filter(function (r) { return r.id !== id; });
     if (sheet === 'DaysOff') LP.date.setDaysOff(state.daysOff);
     if (state[k].length !== before) { emit('change', { sheet: sheet, id: id }); emit('change:' + sheet, { id: id, removed: true }); }
-    return enqueue(sheet + ':' + id + ':xoa', function () { return LP.api.remove(sheet, id); });
+    obPut({ op: 'remove', sheet: sheet, id: id, ts: LP.date.stamp() });
+    return enqueueKey(obKey(sheet, id));
   }
   // Giá trị cài đặt dạng khóa/giá trị
   function setting(key, def) {
@@ -124,8 +168,11 @@ LP.store = (function () {
 
   return {
     get: function () { return state; }, load: load, loadCached: loadCached, changedSinceCache: function () { return !!load.changed; }, loadRange: loadRange, find: find, upsert: upsert, remove: remove,
-    setting: setting, setSetting: setSetting, on: on, off: off, emit: emit, flush: flush, retry: retry,
-    isReady: function () { return ready; }, syncState: function () { return { pending: pending, error: lastError }; },
+    setting: setting, setSetting: setSetting, on: on, off: off, emit: emit, flush: flush, retry: retry, retryKeys: retryKeys,
+    outboxCount: function () { return outbox.length; },
+    outboxHas: function (sheet, id) { return !!obFind(obKey(sheet, id)); },
+    outboxList: function () { return LP.util.clone(outbox); },
+    isReady: function () { return ready; }, syncState: function () { return { pending: pending, error: lastError, outbox: outbox.length }; },
     // Chỉ dùng cho test: nạp thẳng một bộ dữ liệu
     _set: function (data) { state = normalize(data); afterLoad(); }
   };

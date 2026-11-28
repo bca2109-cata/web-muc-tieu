@@ -735,6 +735,7 @@ LP.agenda = (function () {
   // Báo khi vừa tới giờ (trong 5 phút đầu). Mục đã tick trước giờ thì không báo. Mỗi mục báo một lần mỗi ngày.
   function checkNotify() {
     if (!LP.store.isReady()) return;
+    if (LP.store.setting('notify', '1') === '0') return;   // Cài đặt > Nhắc việc đang tắt: không báo, không toast thay thế
     var d = D.today(), n = D.timeToMin(D.now());
     notifyCandidates(d).forEach(function (c) {
       var t = D.timeToMin(c.time), k = d + '|' + c.key;
