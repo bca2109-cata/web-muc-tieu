@@ -160,4 +160,43 @@ module.exports = async function (h) {
     A.strictEqual(await act(), 'opener');
     h.noErrors(page);
   });
+
+  await h.test('7. Sửa nhanh Daily từ Agenda: chọn "Từ ngày mai" thì hiệu lực từ 26/11, hôm nay giữ nguyên', async () => {
+    const page = await h.open({ w: 390 });
+    const ids = await page.evaluate(() => { const run = LP.logic.routines.runsFor('2026-11-25')[0]; return { r: run.routine.id, i: run.items[0].item.id, t: run.items[0].item.title }; });
+    await page.evaluate(i => LP.views.editItemQuick(i.r, i.i, '2026-11-25'), ids);
+    A.deepStrictEqual(await page.locator('[name="eq-scope"]').evaluateAll(n => n.map(x => x.value)), ['today', 'forward', 'tomorrow']);
+    await page.locator('label:has([name="eq-scope"][value="tomorrow"])').click();
+    await page.fill('#eq-title', 'Tên mới từ mai'); await page.click('#eq-ok');
+    await page.evaluate(() => LP.store.flush());
+    const r = await page.evaluate(i => LP.store.get().routineItems.filter(x => x.routine_id === i.r).map(x => [x.title, x.valid_from || '', x.valid_to || '']), ids);
+    A.ok(r.some(x => x[0] === 'Tên mới từ mai' && x[1] === '2026-11-26'), JSON.stringify(r));
+    A.ok(r.some(x => x[0] === ids.t && x[2] === '2026-11-25'), 'bản cũ phải đóng ở 25/11');
+    A.ok((await page.locator('.toast').innerText()).includes('từ ngày mai'));
+    h.noErrors(page);
+  });
+
+  await h.test('8. Daily: đổi lịch lặp với "Từ ngày mai" thì hôm nay giữ lịch cũ, tới ngày mai mới đổi', async () => {
+    const page = await h.open({ w: 1280, hash: '#/mau?id=r-chiaso' });   // 25/11 là Thứ Tư; mẫu đang chạy T2 đến T7
+    await page.waitForSelector('#mc-save');
+    const wed = page.locator('.mc-wd input[value="3"]');
+    A.ok(await wed.isChecked(), 'mẫu đang có Thứ Tư');
+    await page.locator('label:has(.mc-wd input[value="3"]), .mc-wd label:has(input[value="3"])').first().click();
+    await page.locator('label:has([name="mc-apply"][value="tomorrow"])').click();
+    await page.click('#mc-save'); await page.evaluate(() => LP.store.flush());
+    const a = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, today: LP.logic.routines.runsFor('2026-11-25').some(r => r.routine.id === 'r-chiaso'), p: LP.p5.pendingOf('r-chiaso') }));
+    A.strictEqual(a.wd, '1,2,3,4,5,6'); A.ok(a.today, 'hôm nay vẫn phải có Daily này'); A.ok(a.p && a.p.from === '2026-11-26' && !a.p.fields.weekdays.split(',').includes('3'));
+    // Form mở lại hiện lịch chờ
+    await page.evaluate(() => LP.router.go('mau', { id: 'r-chiaso' })); await page.waitForSelector('.mc-pend');
+    A.ok(!(await page.locator('.mc-wd input[value="3"]').isChecked()), 'form phải hiện lịch mới đang chờ');
+    // Mở lại, chỉ đổi tên rồi Lưu (nút chọn mặc định Từ hôm nay): lịch chờ vẫn giữ, không bị áp sớm
+    await page.fill('#mc-name', 'Chia số AI Class (đổi tên)'); await page.click('#mc-save'); await page.evaluate(() => LP.store.flush());
+    const keep = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, p: LP.p5.pendingOf('r-chiaso') }));
+    A.strictEqual(keep.wd, '1,2,3,4,5,6'); A.ok(keep.p && keep.p.from === '2026-11-26', 'lịch chờ phải còn nguyên');
+    // Tới ngày mai: áp dụng
+    await page.evaluate(() => { LP.date.today = () => '2026-11-26'; LP.p5.applyPending(); });
+    const b = await page.evaluate(() => ({ wd: LP.store.find('Routines', 'r-chiaso').weekdays, p: LP.p5.pendingOf('r-chiaso') }));
+    A.strictEqual(b.wd, '1,2,4,5,6'); A.strictEqual(b.p, null);
+    h.noErrors(page);
+  });
 };

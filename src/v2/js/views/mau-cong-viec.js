@@ -81,7 +81,30 @@ LP.views = LP.views || {};
     if (it.valid_from && it.valid_from >= from) LP.store.remove('RoutineItems', it.id);
     else LP.store.upsert('RoutineItems', Object.assign({}, it, { valid_to: D.add(from, -1) }));
   }
-  LP.p5 = { docs: docs, refreshDocs: refreshDocs, headsOf: headsOf, docPickerHTML: docPickerHTML, bindDocPicker: bindDocPicker, reviseItem: reviseItem, closeItem: closeItem };
+  /* Lịch lặp của cả Daily (repeat, weekdays, month_from, month_to) không có cột ngày hiệu lực. Chọn "Từ ngày mai" thì lưu chờ trong
+     Settings (khóa pending_sched:<id>) và tự áp vào Daily khi tới ngày; trước đó Daily vẫn chạy theo lịch cũ. */
+  var SCHED = ['repeat', 'weekdays', 'month_from', 'month_to'], PEND = 'pending_sched:';
+  function pendingOf(id) {
+    var v = LP.store.setting(PEND + id, ''), p = null;
+    if (!v) return null;
+    try { p = JSON.parse(v); } catch (e) { return null; }
+    return p && p.from && p.fields ? p : null;
+  }
+  function applyPending() {
+    var today = D.today();
+    LP.store.get().settings.slice().forEach(function (s) {
+      if (!s.key || s.key.indexOf(PEND) !== 0 || !s.value) return;
+      var id = s.key.slice(PEND.length), p = pendingOf(id);
+      if (!p) { LP.store.setSetting(s.key, ''); return; }
+      if (p.from > today) return;
+      var r = LP.store.find('Routines', id);
+      if (r) LP.store.upsert('Routines', Object.assign({}, r, p.fields));
+      LP.store.setSetting(s.key, '');
+    });
+  }
+  LP.store.on('ready', applyPending);
+  LP.router.on('route', function () { if (LP.store.isReady()) applyPending(); });
+  LP.p5 = { applyPending: applyPending, pendingOf: pendingOf, docs: docs, refreshDocs: refreshDocs, headsOf: headsOf, docPickerHTML: docPickerHTML, bindDocPicker: bindDocPicker, reviseItem: reviseItem, closeItem: closeItem };
 
   /* ================= Hiển thị danh sách ================= */
   var WD = ['', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -138,6 +161,8 @@ LP.views = LP.views || {};
 
   function formHTML(r, isNew) {
     r = r || { name: '', group: 'cong_viec', repeat: 'weekday', weekdays: '1,2,3,4,5,6', month_from: '', month_to: '', done_before: '', importance: 1, doc_id: '', heading_id: '', active: 'TRUE' };
+    var pend = isNew ? null : pendingOf(r.id);
+    if (pend) r = Object.assign({}, r, pend.fields);   // hiện lịch lặp sẽ có hiệu lực từ ngày mai
     var wds = String(r.weekdays || '').split(',').map(function (x) { return x.trim(); });
     var items = isNew ? [] : currentItems(r);
     var imp = parseInt(r.importance, 10) || 1;
@@ -166,7 +191,8 @@ LP.views = LP.views || {};
       '<div class="field mc-apply"><span>Áp dụng</span><div class="seg" role="radiogroup" aria-label="Áp dụng từ khi nào">' +
       '<label><input type="radio" name="mc-apply" value="today" checked><span>Từ hôm nay</span></label>' +
       '<label><input type="radio" name="mc-apply" value="tomorrow"><span>Từ ngày mai</span></label></div>' +
-      '<small class="muted">Các ngày trước đó giữ nguyên giờ và tên cũ.</small></div>' +
+      '<small class="muted">Các ngày trước đó giữ nguyên giờ và tên cũ. Lịch lặp mới chọn "Từ ngày mai" sẽ chạy từ ngày mai.</small>' +
+      (pend ? '<small class="muted mc-pend">Lịch lặp đang chờ: có hiệu lực từ ' + esc(D.fmt(pend.from)) + '.</small>' : '') + '</div>' +
       '<p class="form-error" id="mc-err" role="alert" hidden></p>' +
       '<div class="modal-foot mc-foot">' +
       (isNew ? '' : '<button type="button" class="btn btn-danger" id="mc-del">' + icon('trash', 'ic18') + 'Xóa</button>' +
@@ -291,6 +317,18 @@ LP.views = LP.views || {};
       doc_id: form.querySelector('[data-f="doc_id"]').value, heading_id: form.querySelector('[data-f="heading_id"]').value,
       active: isNew ? 'TRUE' : r.active, sort_order: isNew ? all + 1 : r.sort_order
     });
+    // Lịch lặp: "Từ hôm nay" ghi ngay; "Từ ngày mai" thì Daily giữ lịch cũ, lịch mới chờ tới ngày
+    var newSched = {}; SCHED.forEach(function (k) { newSched[k] = row[k]; });
+    if (!isNew) {
+      var cur = LP.store.find('Routines', r.id) || r, same = SCHED.every(function (k) { return String(cur[k] == null ? '' : cur[k]) === String(newSched[k] == null ? '' : newSched[k]); });
+      var pd = pendingOf(r.id), samePend = pd && SCHED.every(function (k) { return String(pd.fields[k] == null ? '' : pd.fields[k]) === String(newSched[k] == null ? '' : newSched[k]); });
+      if (samePend) {
+        SCHED.forEach(function (k) { row[k] = cur[k]; });   // lịch trong form không đổi so với lịch chờ: giữ nguyên lịch chờ và ngày hiệu lực
+      } else if (E > D.today() && !same) {
+        SCHED.forEach(function (k) { row[k] = cur[k]; });
+        LP.store.setSetting(PEND + r.id, JSON.stringify({ from: E, fields: newSched }));
+      } else if (LP.store.setting(PEND + r.id, '')) LP.store.setSetting(PEND + r.id, '');
+    }
     var saved = LP.store.upsert('Routines', row);
     LP.cute.save(name, LP.cute.read(form.querySelector('#mc-cute .cute-pick')), r && r.name);
     items.forEach(function (x) { LP.cute.save(x.title, x.icon, x.oldTitle); });
@@ -344,17 +382,18 @@ LP.views = LP.views || {};
       '<label class="field"><span>Tên</span><input class="input" id="eq-title" value="' + esc(it.title) + '" autocomplete="off"></label></div>' +
       '<div class="field"><span>Áp dụng</span><div class="seg" role="radiogroup" aria-label="Phạm vi">' +
       '<label><input type="radio" name="eq-scope" value="today" checked><span>Chỉ hôm nay</span></label>' +
-      '<label><input type="radio" name="eq-scope" value="forward"><span>Từ nay về sau</span></label></div></div>' +
+      '<label><input type="radio" name="eq-scope" value="forward"><span>Từ nay về sau</span></label>' +
+      '<label><input type="radio" name="eq-scope" value="tomorrow"><span>Từ ngày mai</span></label></div></div>' +
       '<p class="form-error" id="eq-err" hidden></p>' +
       '<div class="modal-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Hủy</button><button type="button" class="btn btn-primary" id="eq-ok">Lưu</button></div>');
     s.el.querySelector('#eq-ok').addEventListener('click', function () {
       var time = s.el.querySelector('#eq-time').value, title = s.el.querySelector('#eq-title').value.trim(), er = s.el.querySelector('#eq-err');
       if (!title) { er.textContent = 'Nhập tên hạng mục.'; er.hidden = false; return; }
       if (time && !D.isTime(time)) { er.textContent = 'Giờ chưa đúng.'; er.hidden = false; return; }
-      var forward = s.el.querySelector('[name="eq-scope"]:checked').value === 'forward';
-      if (time !== (it.time || '') || title !== it.title) reviseItem(it, { time: time, title: title }, d, forward ? '' : d);
+      var scope = s.el.querySelector('[name="eq-scope"]:checked').value, forward = scope !== 'today', from = scope === 'tomorrow' ? D.add(D.today(), 1) : d;
+      if (time !== (it.time || '') || title !== it.title) reviseItem(it, { time: time, title: title }, from, forward ? '' : d);
       s.close();
-      ui.toast(forward ? 'Đã sửa từ nay về sau.' : 'Đã sửa riêng hôm nay.');
+      ui.toast(scope === 'tomorrow' ? 'Đã sửa từ ngày mai.' : forward ? 'Đã sửa từ nay về sau.' : 'Đã sửa riêng hôm nay.');
     });
   };
 })();
